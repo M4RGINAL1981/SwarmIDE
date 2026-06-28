@@ -1,3 +1,6 @@
+#ifndef GRID_HPP
+#define GRID_HPP
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -30,8 +33,8 @@ public:
         // Если не открылось из корня, пробуем путь для запуска из build/Debug
         if (!ShaderVFile.is_open() || !ShaderFFile.is_open()) {
             ShaderVFile.close(); ShaderFFile.close();
-            vPath = "../../resources/shaders/grid_vertex.glsl";
-            fPath = "../../resources/shaders/grid_fragment.glsl";
+            vPath = "resources/shaders/grid_vertex.glsl";
+            fPath = "resources/shaders/grid_fragment.glsl";
             ShaderVFile.open(vPath);
             ShaderFFile.open(fPath);
         }
@@ -162,3 +165,6 @@ private:
     // Вершины одной линии
     std::vector<glm::vec2> lineVertices;
 };
+
+
+#endif // GRID_HPP

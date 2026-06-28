@@ -1,28 +1,50 @@
 cmake_minimum_required(VERSION 3.22)
-project(SwarmIDE LANGUAGES CXX C) # Добавили поддержку C для glad.c
+project(SwarmIDE LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(EXTERNAL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external)
+# Ищем все .cpp файлы в папках src и include
+file(GLOB_RECURSE SOURCE_FILES "src/*.cpp" "src/*.c" "include/*.cpp")
+file(GLOB_RECURSE HEADER_FILES "include/*.hpp")
 
-# 1. Создаем отдельную статическую либу для GLAD
+set(EXTERNAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external")
+
+# 1. Либа GLAD
 add_library(glad STATIC src/glad.c)
-target_include_directories(glad PRIVATE ${EXTERNAL_DIR}/glad)
+target_include_directories(glad PUBLIC "${EXTERNAL_DIR}/glad")
 
-# 2. Основной исполняемый файл
-add_executable(agent_framework src/main.cpp)
-
-# 3. Настройки инклудов для твоего кода
-target_include_directories(agent_framework PRIVATE 
-    include
-    ${EXTERNAL_DIR}/glad
-    ${EXTERNAL_DIR}/glfw/include
-    ${EXTERNAL_DIR}/glm
+# 2. Либа ImGui (добавляем все файлы из бекендов для надежности)
+add_library(imgui_lib STATIC 
+    "${EXTERNAL_DIR}/imgui/imgui.cpp"
+    "${EXTERNAL_DIR}/imgui/imgui_draw.cpp"
+    "${EXTERNAL_DIR}/imgui/imgui_widgets.cpp"
+    "${EXTERNAL_DIR}/imgui/imgui_tables.cpp"
+    "${EXTERNAL_DIR}/imgui/backends/imgui_impl_glfw.cpp"
+    "${EXTERNAL_DIR}/imgui/backends/imgui_impl_opengl3.cpp"
+)
+target_include_directories(imgui_lib PUBLIC 
+    "${EXTERNAL_DIR}/imgui"
+    "${EXTERNAL_DIR}/imgui/backends"
+    "${EXTERNAL_DIR}/glfw/include"
 )
 
-# Пути к GLFW
-target_link_directories(agent_framework PRIVATE ${EXTERNAL_DIR}/glfw/lib)
+# 3. Основной исполняемый файл
+add_executable(SwarmIDE ${SOURCE_FILES} ${HEADER_FILES})
 
-# 4. Линкуем и GLFW, и нашу принудительную либу glad
-target_link_libraries(agent_framework PRIVATE glfw3 glad)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebugDLL")
+
+# Подключаем все пути к инклюдам
+target_include_directories(SwarmIDE PRIVATE 
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${EXTERNAL_DIR}/glm"
+    "${EXTERNAL_DIR}/imgui"
+    "${EXTERNAL_DIR}/glfw/include"
+)
+
+# Линкуем библиотеки
+target_link_libraries(SwarmIDE PRIVATE 
+    "${EXTERNAL_DIR}/glfw/lib/glfw3.lib"
+    glad 
+    imgui_lib
+    opengl32.lib # Нужно для Windows
+)

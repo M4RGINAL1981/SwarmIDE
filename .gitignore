@@ -1,8 +1,27 @@
-﻿/build/
-*.exe
-*.pdb
-*.lib
-.DS_Store
-Thumbs.db
+﻿# Python виртуальное окружение
+.venv/
+venv/
+ENV/
+
+# Настройки редакторов
 .vscode/
+.idea/
+
+# Временные файлы систем и ImGui
+desktop.ini
+imgui.ini
+
+# Сборка и бинарники
+build/
+bin/
+obj/
+out/
 .vs/
+*.user
+*.sln
+
+# Внешние библиотеки (если они лежат локально и качаются отдельно)
+external/
+
+# Логи и временные файлы
+*.log
