@@ -1,5 +1,6 @@
 #pragma once
 #include "imgui.h"
+#include "SwarmIDE.hpp"
 #include <iostream>
 #include <vector>
 #include <string>
@@ -7,7 +8,6 @@
 namespace SwarmIDE::UI {
 
     struct AgentWindowConfig {
-        ImVec2 size;
         ImVec4 bgColor;
         ImGuiWindowFlags flags;
         float rounding;

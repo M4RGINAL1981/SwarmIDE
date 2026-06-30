@@ -1,12 +1,12 @@
 #include "ui/Menu.hpp"
-#include "core/AgentManager.hpp"
-#include "ai/ConversationalAgent.hpp"
-#include "ai/ToolsAgent.hpp"
-#include "ai/PlanExecuteAgent.hpp"
+#include "core/ObjectManager.hpp"
+#include "object/ai/ConversationalAgent.hpp"
+#include "object/ai/ToolsAgent.hpp"
+#include "object/ai/PlanExecuteAgent.hpp"
 #include "imgui.h"
 #include "graphics/Camera.hpp"
 
-using namespace SwarmIDE::AI;
+using namespace SwarmIDE::Object::AI;
 
 namespace SwarmIDE::UI {
 
@@ -15,9 +15,9 @@ namespace SwarmIDE::UI {
         return instance;
     }
 
-    void Menu::Push(std::unique_ptr<SwarmIDE::AI::BaseAgent> agent) { // Логика
+    void Menu::Push(std::unique_ptr<SwarmIDE::Object::AI::BaseAgent> agent) { // Логика
         if (manager) { 
-            manager->addAgent(std::move(agent));
+            manager->addObject(std::move(agent));
         }
     }
 
@@ -39,14 +39,13 @@ namespace SwarmIDE::UI {
         static int selected_type = 0;
         const char* items[] = { "ConversationAgent", "ToolsAgent", "PlanExecuteAgent" };
         ImGui::Combo("Select Agent Type", &selected_type, items, IM_ARRAYSIZE(items));
-        std::cout << "selecte agent type " << selected_type << std::endl;
 
         if(ImGui::Button("Create Selected")) {
             glm::vec2 centerScreen(winSize.x, winSize.y);
             glm::vec2 WorldPos = camera.screenToWorld(centerScreen, winSize);
 
             // Создаем пустой умный указатель на базовый класс
-            std::unique_ptr<SwarmIDE::AI::BaseAgent> newAgent = nullptr;
+            std::unique_ptr<SwarmIDE::Object::AI::BaseAgent> newAgent = nullptr;
 
             // Выделяем память под конкретный тип агента
             if(selected_type == 0) 
@@ -60,7 +59,7 @@ namespace SwarmIDE::UI {
                 // Передаем шрифты в агента перед тем, как отдать его менеджеру
                 newAgent->GetFonts(this->fonts);
                 // Передаем владение агентом в менеджер
-                manager->addAgent(std::move(newAgent));
+                manager->addObject(std::move(newAgent));
             }
         }
 

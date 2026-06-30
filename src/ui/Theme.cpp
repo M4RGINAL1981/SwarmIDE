@@ -11,7 +11,6 @@ namespace SwarmIDE::UI {
 
     AgentWindowConfig Theme::GetAgentConfig() {
         return {
-            ImVec2(400.0f, 400.0f),                                  // Размер окна агента
             ImVec4(0.12f, 0.12f, 0.12f, 1.0f),                       // Цвет фона (тёмно-серый)
             ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar, // Флаги
             30.0f                                                    // Закругление

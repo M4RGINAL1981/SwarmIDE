@@ -33,6 +33,9 @@ add_executable(SwarmIDE ${SOURCE_FILES} ${HEADER_FILES})
 
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebugDLL")
 
+# Игнорируем специфичную runtime-библиотеку для Release при сборке в Debug
+add_link_options("$<$<CONFIG:Debug>:/NODEFAULTLIB:MSVCRT>")
+
 # Подключаем все пути к инклюдам
 target_include_directories(SwarmIDE PRIVATE 
     "${CMAKE_CURRENT_SOURCE_DIR}/include"

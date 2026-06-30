@@ -2,32 +2,64 @@
 
 namespace SwarmIDE {
 
-    // Агенты
-    namespace AI {    
-        class BaseAgent; 
-        class ConversationAgent;
-        class ToolsAgent;
-        class PlanExecuteAgent;
+    namespace Object {
+        class BaseObject;
+
+            // Агенты
+        namespace AI {      
+            class BaseAgent;           // Базовый класс агентов
+            class ConversationAgent;   //
+            class ToolsAgent;          //
+            class PlanExecuteAgent;    // 
+        }
+
+        namespace Tool {
+            class BaseTool;
+        }
+
+        namespace Memory {
+            class BaseMemory;
+        }
+
+        namespace Model {
+            class BaseModel;
+        }
+
     }
 
-    // Отрисовка окон и меню через ImGui
+    
+    // Отрисовка окон и меню через ImGui, а также связи через OpenGl
     namespace UI {
-        class Menu;
-        class Theme;
+        class Menu;                // Меню, кнопки, создание связей, объектов, настройки и т.д.
+        class Theme;               // Темы, окон. Закругление, цвета и т.д.
+        class Topology;            // Описывает фундаментальные структуры для связей холста.
+        class ConnectionDrawer;    // Рисует связи между агентами (Кривые Безье)
+
+        namespace Shape {
+            class BaseShape;
+            class SquareShape;
+            class CircleShape;
+            class TriangleShape;
+        }
     }   
 
-    // Cuda и вызов всей логики агентов
+    // Cuda, вызов всей логики агентов и иницилизация приложения.
     namespace Core {
-        class AgentManager;
-        class AppController;
+        class AgentManager;        // Хранит всех агентов, запускает обход по ним.
+        class AppController;       // Сердце приложения. Иницилизирует все библиотеки, создаёт объекты и т.д.
+        class ConnectionManager;
     } 
 
     // Подключение стороних приложений Telegram, Gmail и т.д.
     namespace OI {
-        class BaseApp;
-        class Telegram;
-        class GMail;
-        class Mail;
-        class VK;
+        class BaseApp;             // Класс базового прилжения
+        class Telegram;            // Телеграмм
+        class GMail;               // Почта gmail.com
+        class Mail;                // Почта mail.ru
+        class VK;                  // Вк
+        class Word;                // Word документ
+        class Excel;               // Excel документ
+        class PowerPoint;
+        class TextDocument;        // Текстовый документ
     }   
 }

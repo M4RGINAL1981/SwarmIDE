@@ -20,6 +20,7 @@ public:
     }
 
     // Меняем только ЦЕЛЬ зума
+    
     void zoom(int direction){
         currentZoomFactor = std::clamp(currentZoomFactor + direction, 0, static_cast<int>(screenSize.size() - 1));
         targetZoom = screenSize[currentZoomFactor];
