@@ -63,7 +63,7 @@ namespace SwarmIDE::UI {
                 ImDrawList* drawList = ImGui::GetBackgroundDrawList();
 
                 ImU32 lassoColor = ImGui::GetColorU32(ImVec4(1.0f, 0.6f, 0.0f, 0.6f));
-                float thickness = 5.0f * camera.zoomFactor;
+                float thickness = 9.0f * camera.zoomFactor;
 
                 drawList->AddBezierCubic(imP0, imP1, imP2, imP3, lassoColor, thickness);
             }
@@ -122,14 +122,18 @@ namespace SwarmIDE::UI {
         }
         else if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && isConnecting) {
             if(hoveringAnyPin) {
-                if(hoveredObjectID != instance.sourceObjectID || hoveredPin.id != instance.sourcePinID) {
+
+                // Тут делаем выбор: Можно ли соединять пины одного и того же объекта?
+                // hoveredObjectID != instance.sourceObjectID || hoveredPin.id != instance.sourcePinID) - можно
+                // hoveredObjectID != instance.sourceObjectID - нельзя 
+                
+                if(hoveredObjectID != instance.sourceObjectID) { 
                     
                     SwarmIDE::UI::AnchorPin sourcePin;
                     bool sourceFound = false;
 
                     for (const auto& obj : instance.object_manager->objects) {
                         if (obj && obj->GetID() == instance.sourceObjectID) {
-                            // ИСПРАВЛЕНИЕ ТУТ: И здесь тоже вызываем GetLocalPins()
                             for (const auto& lp : obj->GetShape()->GetLocalPins()) {
                                 if (lp.id == instance.sourcePinID) {
                                     sourcePin = lp;
@@ -148,6 +152,16 @@ namespace SwarmIDE::UI {
             }
 
             isConnecting = false;
+        } else if(ImGui::IsMouseClicked(ImGuiMouseButton_Right) && hoveringAnyPin && !isConnecting){
+            ConnectionDrawer& instance = getInstance();
+            std::vector<SwarmIDE::Core::Connection> connection = instance.connection_manager->getConnection();
+
+            for(auto& connect : connection) {
+                if((connect.sourcePinID == hoveredPin.id && connect.sourceObjectID == hoveredObjectID) ||
+                   (connect.targetPinID == hoveredPin.id && connect.targetObjectID == hoveredObjectID)) {
+                    instance.connection_manager->disconnect(connect);
+                }
+            }
         }
     }
 }

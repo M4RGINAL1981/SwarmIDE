@@ -38,6 +38,7 @@ namespace SwarmIDE {
         namespace Shape {
             class BaseShape;
             class SquareShape;
+            class RectangleShape;
             class CircleShape;
             class TriangleShape;
         }
@@ -45,9 +46,10 @@ namespace SwarmIDE {
 
     // Cuda, вызов всей логики агентов и иницилизация приложения.
     namespace Core {
-        class AgentManager;        // Хранит всех агентов, запускает обход по ним.
-        class AppController;       // Сердце приложения. Иницилизирует все библиотеки, создаёт объекты и т.д.
-        class ConnectionManager;
+        class AppController;        // Сердце приложения. Иницилизирует все библиотеки, создаёт объекты и т.д
+        class ObjectManager;        // Хранит все объекты, запускает обход по ним.
+        class ConnectionManager;    // Хранит все связи между объектам
+        class TextureManger;        // Хранит текстуры(иконки) для объектов
     } 
 
     // Подключение стороних приложений Telegram, Gmail и т.д.
