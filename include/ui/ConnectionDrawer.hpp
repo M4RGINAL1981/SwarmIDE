@@ -20,6 +20,12 @@ namespace SwarmIDE::UI {
         static float tension;
         SwarmIDE::Core::ConnectionManager* connection_manager = nullptr;
         SwarmIDE::Core::ObjectManager* object_manager = nullptr;
+
+        // State Machine
+
+        static bool isConnecting;
+        int sourceObjectID;
+        std::string sourcePinID;
     };
 
 }

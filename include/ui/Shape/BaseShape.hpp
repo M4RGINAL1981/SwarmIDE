@@ -25,6 +25,8 @@ namespace SwarmIDE::UI::Shape {
         void SetRotation(float rot) { rotation = rot; }
         float GetRotation() { return rotation; }
 
+        const std::vector<SwarmIDE::UI::AnchorPin>& GetLocalPins() const { return localPins; }
+
         std::vector<AnchorPin> GetLocalPins () { return localPins; }
 
         // Главный метод: пересчет локальных пинов в глобальные экранные координаты
