@@ -1,4 +1,5 @@
 #include "core/ObjectManager.hpp"
+#include "core/ConnectionManager.hpp"
 
 namespace SwarmIDE::Core{
 
@@ -9,7 +10,13 @@ namespace SwarmIDE::Core{
 
     void ObjectManager::drawUIAllObject(Camera& cam, glm::vec2 winSize){
         for(auto& object : objects){
+
             object->drawUI(cam, winSize);
+
+            if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Delete)) {
+                int idToDelete = object->GetID();
+                removeObject(idToDelete); 
+            }
         }
     }
 
@@ -21,6 +28,18 @@ namespace SwarmIDE::Core{
 
     void ObjectManager::addObject(std::unique_ptr<SwarmIDE::Object::BaseObject> object) { 
         objects.push_back(std::move(object));
+    }
+
+    void ObjectManager::removeObject(int objectID) {
+        SwarmIDE::Core::ConnectionManager::getInstance().removeConnectionsForObject(objectID);
+
+        objects.erase(
+            std::remove_if(objects.begin(), objects.end(),
+                [objectID](const std::unique_ptr<SwarmIDE::Object::BaseObject>& obj) {
+                    return obj->GetID() == objectID;
+                }), 
+            objects.end()
+        );
     }
 
     std::optional<SwarmIDE::UI::TransformedPin> ObjectManager::GetTransformedPinForObject(int objectID, std::string PinID, float zoomFactor) const {

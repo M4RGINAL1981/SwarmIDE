@@ -39,6 +39,17 @@ namespace SwarmIDE::Core {
         return connectedOutputs;
     }
 
+    void ConnectionManager::removeConnectionsForObject(int objectID) {
+        // Бежим по вектору связей и удаляем все, где объект был источником или целью
+        connection.erase(
+            std::remove_if(connection.begin(), connection.end(),
+                [objectID](const Connection& conn) {
+                    return conn.sourceObjectID == objectID || conn.targetObjectID == objectID;
+                }), 
+            connection.end()
+        );
+    }
+
     ConnectionManager& ConnectionManager::getInstance() {
         static ConnectionManager instance;
         return instance;

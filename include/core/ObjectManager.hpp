@@ -18,6 +18,7 @@ namespace SwarmIDE::Core{
         void drawUIAllObject(Camera& cam, glm::vec2 winSize);        // Отрисовка всех объектов
         void updateAllObject();                                      // Обновление всех объектов
         void addObject(std::unique_ptr<SwarmIDE::Object::BaseObject> object);
+        void removeObject(int objectID);
 
         int getCountObject();                                        // Вернуть кол-во объектов
 

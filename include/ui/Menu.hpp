@@ -12,11 +12,11 @@ namespace SwarmIDE::UI {
         
         static Menu& getInstance(); 
 
-        void Push(std::unique_ptr<SwarmIDE::Object::AI::BaseAgent> agent);
-        void SetManager(SwarmIDE::Core::ObjectManager* mgr) { manager = mgr; }
-        void DrawMenu(Camera& camera);
-        void GetWinSize(glm::vec2 otherWinSize) { winSize = otherWinSize; }
-        void SetFonts(const SwarmIDE::UI::Fonts& fontsAtlas) { this->fonts = fontsAtlas; }
+        void Push(std::unique_ptr<SwarmIDE::Object::BaseObject> object);                    // Передать объект менеджеру объектов
+        void SetManager(SwarmIDE::Core::ObjectManager* mgr) { manager = mgr; }              // Объявить менеджера-объектов
+        void DrawMenu(Camera& camera);                                                      // Отрисовка меню
+        void GetWinSize(glm::vec2 otherWinSize) { winSize = otherWinSize; }                 // Установка размера окна
+        void SetFonts(const SwarmIDE::UI::Fonts& fontsAtlas) { this->fonts = fontsAtlas; }  // Установка шрифтов
 
     private:
         Menu() = default;
@@ -25,3 +25,5 @@ namespace SwarmIDE::UI {
         SwarmIDE::UI::Fonts fonts;
     };
 }
+
+// Boilerplate - это базовое хуйни приложение, которые качаешь с git. Пишишь одну команду и она иницилизирует файловую структуру.

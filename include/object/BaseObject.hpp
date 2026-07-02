@@ -1,6 +1,7 @@
 #pragma once
 #include "ui/Shape/BaseShape.hpp"
 #include <memory>
+#include <optional>
 
 namespace SwarmIDE::Object {
     
@@ -17,6 +18,7 @@ namespace SwarmIDE::Object {
         void GetFonts(SwarmIDE::UI::Fonts fonts) { this->fonts = fonts;}
 
         int GetID() { return id; }
+        std::string GetIconKey() { if(iconKey != std::nullopt) { return *iconKey; }}
     
     protected:
         std::string name;                                                // Имя объекта
@@ -24,6 +26,7 @@ namespace SwarmIDE::Object {
         glm::vec2 worldPos;                                              // Коодринаты Объекта
         SwarmIDE::UI::Fonts fonts;                                       // Шрифт объекта
         std::unique_ptr<SwarmIDE::UI::Shape::BaseShape> shape;           // Форма объекта (круг, квадрат и т.д.)
+        std::optional<std::string> iconKey;                              // Иконка объекта (опциоанальное поле)
 
         static int count;                                                // Кол-во объектов, которые было создано
     };

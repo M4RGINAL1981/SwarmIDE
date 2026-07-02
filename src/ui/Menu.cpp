@@ -1,12 +1,20 @@
 #include "ui/Menu.hpp"
 #include "core/ObjectManager.hpp"
-#include "object/ai/ConversationalAgent.hpp"
-#include "object/ai/ToolsAgent.hpp"
-#include "object/ai/PlanExecuteAgent.hpp"
 #include "imgui.h"
 #include "graphics/Camera.hpp"
 
+// Подключаем все типы объектов для инстанцирования
+#include "object/ai/ConversationalAgent.hpp"
+#include "object/ai/ToolsAgent.hpp"
+#include "object/ai/PlanExecuteAgent.hpp"
+#include "object/memory/PostgreSQL.hpp"
+#include "object/model/Gemini.hpp"
+#include "object/tool/JiraSoftware.hpp"
+
 using namespace SwarmIDE::Object::AI;
+using namespace SwarmIDE::Object::Memory;
+using namespace SwarmIDE::Object::Model;
+using namespace SwarmIDE::Object::Tool;
 
 namespace SwarmIDE::UI {
 
@@ -15,61 +23,105 @@ namespace SwarmIDE::UI {
         return instance;
     }
 
-    void Menu::Push(std::unique_ptr<SwarmIDE::Object::AI::BaseAgent> agent) { // Логика
+    void Menu::Push(std::unique_ptr<SwarmIDE::Object::BaseObject> object) {
         if (manager) { 
-            manager->addObject(std::move(agent));
+            manager->addObject(std::move(object));
         }
     }
 
-    void Menu::DrawMenu(Camera& camera){ // Отрисовка
-        // Настраиваем прозрачность фона (например, 0.2f - почти прозрачный)
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.2f));
-        
-        // Устанавливаем размер на всю высоту (2160) и фиксированную ширину (например, 300)
-        ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize(ImVec2(600, 2160));
+    void Menu::DrawMenu(Camera& camera) {
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.12f, 0.85f));
 
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | 
                                         ImGuiWindowFlags_NoResize | 
-                                        ImGuiWindowFlags_NoCollapse |
-                                        ImGuiWindowFlags_NoBackground;
+                                        ImGuiWindowFlags_NoCollapse;
 
-        ImGui::Begin("Agent Controller", nullptr, window_flags);
+        // Позиционируем панель управления, например, в левом верхнем углу экрана
+        ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(700, 2160), ImGuiCond_Always);
 
-        static int selected_type = 0;
-        const char* items[] = { "ConversationAgent", "ToolsAgent", "PlanExecuteAgent" };
-        ImGui::Combo("Select Agent Type", &selected_type, items, IM_ARRAYSIZE(items));
+        ImGui::Begin("SwarmIDE Spawn Panel", nullptr, window_flags);
+        
+        glm::vec2 centerScreen(winSize.x * 0.5f, winSize.y * 0.5f);
+        glm::vec2 spawnWorldPos = camera.screenToWorld(centerScreen, winSize);
 
-        if(ImGui::Button("Create Selected")) {
-            glm::vec2 centerScreen(winSize.x, winSize.y);
-            glm::vec2 WorldPos = camera.screenToWorld(centerScreen, winSize);
-
-            // Создаем пустой умный указатель на базовый класс
-            std::unique_ptr<SwarmIDE::Object::AI::BaseAgent> newAgent = nullptr;
-
-            // Выделяем память под конкретный тип агента
-            if(selected_type == 0) 
-                newAgent = std::make_unique<ConversationalAgent>("New Conversational", WorldPos);
-            if(selected_type == 1) 
-                newAgent = std::make_unique<ToolsAgent>("New ToolsAgent", WorldPos);
-            if(selected_type == 2) 
-                newAgent = std::make_unique<PlanExecuteAgent>("New PlanExecuteAgent", WorldPos);
+        // --- КАТЕГОРИЯ 1: AI AGENTS ---
+        if (ImGui::CollapsingHeader("AI Agents", ImGuiTreeNodeFlags_DefaultOpen)) {
+            static int selectedAgent = 0;
+            const char* agents[] = { "ConversationalAgent", "ToolsAgent", "PlanExecuteAgent" };
+            ImGui::Combo("Type##Agent", &selectedAgent, agents, IM_ARRAYSIZE(agents));
             
-            if (newAgent != nullptr) {
-                // Передаем шрифты в агента перед тем, как отдать его менеджеру
-                newAgent->GetFonts(this->fonts);
-                // Передаем владение агентом в менеджер
-                manager->addObject(std::move(newAgent));
+            if (ImGui::Button("Spawn Agent")) {
+                std::unique_ptr<SwarmIDE::Object::BaseObject> newObj = nullptr;
+                if (selectedAgent == 0) newObj = std::make_unique<ConversationalAgent>("ConversationalAgent", spawnWorldPos);
+                if (selectedAgent == 1) newObj = std::make_unique<ToolsAgent>("ToolsAgent", spawnWorldPos);
+                if (selectedAgent == 2) newObj = std::make_unique<PlanExecuteAgent>("PlanExecuteAgent", spawnWorldPos);
+                
+                if (newObj) {
+                    newObj->GetFonts(this->fonts);
+                    Push(std::move(newObj));
+                }
             }
         }
 
-        ImGui::SetCursorPos(ImVec2(10, 2000)); // Примерно внизу для разрешения 2160
-        if(ImGui::Button("Go to World Origin")) {
-            camera.reset();
+        ImGui::Separator();
+
+        // --- КАТЕГОРИЯ 2: MODELS ---
+        if (ImGui::CollapsingHeader("Cognitive Models", ImGuiTreeNodeFlags_DefaultOpen)) {
+            static int selectedModel = 0;
+            const char* models[] = { "GeminiLLM" };
+            ImGui::Combo("Type##Model", &selectedModel, models, IM_ARRAYSIZE(models));
+            
+            if (ImGui::Button("Spawn Model")) {
+                std::unique_ptr<SwarmIDE::Object::BaseObject> newObj = nullptr;
+                if (selectedModel == 0) newObj = std::make_unique<Gemini>("Gemini", spawnWorldPos);
+                
+                if (newObj) {
+                    newObj->GetFonts(this->fonts);
+                    Push(std::move(newObj));
+                }
+            }
+        }
+
+        ImGui::Separator();
+
+        // --- КАТЕГОРИЯ 3: MEMORY ---
+        if (ImGui::CollapsingHeader("Storage & Memory", ImGuiTreeNodeFlags_DefaultOpen)) {
+            static int selectedMemory = 0;
+            const char* memories[] = { "PostgreSQL" };
+            ImGui::Combo("Type##Memory", &selectedMemory, memories, IM_ARRAYSIZE(memories));
+            
+            if (ImGui::Button("Spawn Memory")) {
+                std::unique_ptr<SwarmIDE::Object::BaseObject> newObj = nullptr;
+                if (selectedMemory == 0) newObj = std::make_unique<PostgreSQL>("PostgreSQL", spawnWorldPos);
+                
+                if (newObj) {
+                    newObj->GetFonts(this->fonts);
+                    Push(std::move(newObj));
+                }
+            }
+        }
+
+        ImGui::Separator();
+
+        // --- КАТЕГОРИЯ 4: TOOLS ---
+        if (ImGui::CollapsingHeader("External Tools", ImGuiTreeNodeFlags_DefaultOpen)) {
+            static int selectedTool = 0;
+            const char* tools[] = { "JiraSoftware" };
+            ImGui::Combo("Type##Tool", &selectedTool, tools, IM_ARRAYSIZE(tools));
+            
+            if (ImGui::Button("Spawn Tool")) {
+                std::unique_ptr<SwarmIDE::Object::BaseObject> newObj = nullptr;
+                if (selectedTool == 0) newObj = std::make_unique<JiraSoftware>("JiraSoftware", spawnWorldPos);
+                
+                if (newObj) {
+                    newObj->GetFonts(this->fonts);
+                    Push(std::move(newObj));
+                }
+            }
         }
 
         ImGui::End();
-        ImGui::PopStyleColor(); // Возвращаем стиль
+        ImGui::PopStyleColor();
     }
-
 }

@@ -42,6 +42,7 @@ target_include_directories(SwarmIDE PRIVATE
     "${EXTERNAL_DIR}/glm"
     "${EXTERNAL_DIR}/imgui"
     "${EXTERNAL_DIR}/glfw/include"
+    "${EXTERNAL_DIR}/stb"
 )
 
 # Линкуем библиотеки

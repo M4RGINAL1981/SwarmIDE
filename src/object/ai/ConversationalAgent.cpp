@@ -26,7 +26,7 @@ namespace SwarmIDE::Object::AI {
             if (ImGui::Button("Отправить запрос")) {
                 // Логика агента
             }
-        });
+        }, std::nullopt);
 
         // Забираем обратно изменённую позицию (если пользователь перетащил окно мышкой)
         this->worldPos = shape->GetPosition();

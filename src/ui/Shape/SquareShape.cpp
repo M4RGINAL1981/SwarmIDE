@@ -26,7 +26,7 @@ namespace SwarmIDE::UI::Shape {
         count++;
     }
 
-    void SquareShape::Draw(const std::string& title, Camera& camera, Fonts& fonts, glm::vec2 windowSize, std::function<void()> renderContent) {
+    void SquareShape::Draw(const std::string& title, Camera& camera, Fonts& fonts, glm::vec2 windowSize, std::function<void()> renderContent, std::optional<std::string> iconKey) {
         auto config = SwarmIDE::UI::Theme::GetAgentConfig();          // Берём параметры из Theme
 
         glm::vec2 screenPos = camera.worldToScreen(this->position, windowSize); 

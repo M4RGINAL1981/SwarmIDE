@@ -18,11 +18,14 @@ namespace SwarmIDE::Core {
         // Глобальная точка доступа к единственному экземпляру
         static ConnectionManager& getInstance();
 
+        // Создание связи
         void connect(int sObjectID, int tObjectID, SwarmIDE::UI::AnchorPin sPin, SwarmIDE::UI::AnchorPin tPin);
-        void disconnect(Connection connect);
+        void disconnect(Connection connect);                             // Разрыв связи
 
-        std::vector<Connection> getConnection() { return connection; }
-        std::vector<int> getConnectedOutputs(int ObjectID);
+        std::vector<Connection> getConnection() { return connection; }   // Получить связи
+        std::vector<int> getConnectedOutputs(int ObjectID);              // Получить все объкты, что связаны с текущем объектом
+
+        void removeConnectionsForObject(int objectID);                   // Удалить все связи с данным объктом
 
         ConnectionManager(const ConnectionManager&) = delete;
         ConnectionManager& operator=(const ConnectionManager&) = delete;

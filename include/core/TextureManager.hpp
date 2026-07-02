@@ -1,6 +1,6 @@
 #pragma once
 #include "SwarmIDE.hpp"
-#include "stb/stb_image.h"
+#include "stb_image.h"
 #include <unordered_map>
 #include <string>
 #include <optional>

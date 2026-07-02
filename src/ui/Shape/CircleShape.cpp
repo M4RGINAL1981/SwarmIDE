@@ -1,4 +1,5 @@
 #include "ui/Shape/CircleShape.hpp"
+#include "core/TextureManager.hpp"
 #include <iostream>
 #include <vector>
 #include <string>
@@ -12,7 +13,7 @@ namespace SwarmIDE::UI::Shape {
         this->size = glm::vec2(200.0f, 200.0f);
 
         this->localPins = {
-            {"0", SwarmIDE::UI::PinType::Universal, glm::vec2(0.5f, 0.0f), glm::vec2(0.0f, 1.0f)} 
+            {"Out", SwarmIDE::UI::PinType::Universal, glm::vec2(0.5f, 0.0f), glm::vec2(0.0f, -1.0f)} 
         };
 
         count++;
@@ -22,37 +23,63 @@ namespace SwarmIDE::UI::Shape {
         this->size = glm::vec2(200.0f, 200.0f);
 
         this->localPins = {
-            {"0", SwarmIDE::UI::PinType::Universal, glm::vec2(0.5f, 0.0f), glm::vec2(0.0f, 1.0f)}
+            {"Out", SwarmIDE::UI::PinType::Universal, glm::vec2(0.5f, 0.0f), glm::vec2(0.0f, -1.0f)}
         };
 
         count++;
     }
 
-    void CircleShape::Draw(const std::string& title, Camera& camera, Fonts& fonts, glm::vec2 windowSize, std::function<void()> renderContent) {
-        auto config = SwarmIDE::UI::Theme::GetAgentConfig();          // Берём параметры из Theme
+    int CircleShape::count = 0;
 
-        ConnectionDrawer& instance = getInstance();
-        ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+    void CircleShape::Draw(const std::string& title, Camera& camera, Fonts& fonts, glm::vec2 windowSize, std::function<void()> renderContent, std::optional<std::string> iconKey) {
+        float zoom = camera.zoomFactor;
+        
+        auto config = SwarmIDE::UI::Theme::GetAgentConfig();                      // Берём параметры из Theme      
 
-        glm::vec2 screenPos = camera.worldToScreen(this->position, windowSize); 
+        glm::vec2 screenPos = camera.worldToScreen(this->position, windowSize);   // Находим координаты окна на экране
 
-        if(!ImGui::IsMouseDragging(0)){
+        if(!ImGui::IsMouseDragging(0)){  // Передвигаем наше окно 
             ImGui::SetNextWindowPos(ImVec2(screenPos.x, screenPos.y), ImGuiCond_Always);
         }
     
         ImGui::SetNextWindowSize(ImVec2(size.x * camera.zoomFactor, size.y * camera.zoomFactor));
 
-        
-                drawList->AddCircleFilled(center, radius, pinColor);
-                drawList->AddCircle(center, radius, borderColor, 0, borderThickness);
-
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, config.bgColor);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, config.rounding * camera.zoomFactor);
+        //ImGui::PushStyleColor(ImGuiCol_WindowBg, config.bgColor);
+        //ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, config.rounding * camera.zoomFactor);
 
         if(ImGui::Begin((title).c_str(), nullptr, config.flags | ImGuiWindowFlags_NoBackground)) {
 
             int index = camera.GetCurrentZoomIndex();
             float baseScale =  2.0f * index + 14.0f;
+
+            ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+            ImVec2 scaledSize = ImVec2(size.x * camera.zoomFactor, size.y * camera.zoomFactor);
+            ImVec2 winPos = ImGui::GetWindowPos();
+            ImVec2 screenPosCenter = ImVec2(winPos.x + scaledSize.x / 2.0f, winPos.y + scaledSize.y / 2.0f);
+
+            ImU32 pinColor = ImGui::GetColorU32(ImVec4(0.0f, 1.0f, 0.8f, 1.0f));
+            ImU32 borderColor = ImGui::GetColorU32(ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+
+            float borderThickness = 1.5f * camera.zoomFactor;
+
+            drawList->AddCircleFilled(screenPosCenter, scaledSize.x / 2.0, pinColor);
+            drawList->AddCircle(screenPosCenter, scaledSize.x / 2.0, borderColor, 0, borderThickness);
+
+            if(iconKey != std::nullopt) {
+                auto textura = SwarmIDE::Core::TextureManager::getInstance().getTexture(*iconKey);
+
+                if (textura.has_value()) {
+                    float iconHalfSize = (size.x * 0.25f) * camera.zoomFactor; 
+                    
+                    ImVec2 pMin = ImVec2(screenPosCenter.x - iconHalfSize, screenPosCenter.y - iconHalfSize);
+                    ImVec2 pMax = ImVec2(screenPosCenter.x + iconHalfSize, screenPosCenter.y + iconHalfSize);
+                    
+                    ImTextureID texID = (ImTextureID)(uintptr_t)textura->id;
+                    
+                    drawList->AddImage(texID, pMin, pMax);
+                }
+            }
 
             float targetPixelSize = 18.0f * camera.zoomFactor; // 18px — базовый размер при зуме 1.0
             float currentFontBaseSize = 2.0f * index + 16.0f;  // Размер шрифта в текущем дефолтном индексе атласа
@@ -83,9 +110,8 @@ namespace SwarmIDE::UI::Shape {
 
         ImGui::End();
 
-        ImGui::PopStyleVar();
-        ImGui::PopStyleColor();
+        //ImGui::PopStyleVar();
+        //ImGui::PopStyleColor();
     }
 
-    int CircleShape::count = 0;
 }

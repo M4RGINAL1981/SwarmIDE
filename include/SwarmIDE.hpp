@@ -1,67 +1,79 @@
 #pragma once
 
+/**
+ * @brief Глобальное пространство имен SwarmIDE.
+ * Проект представляет собой высокопроизводительную C++ среду для визуального 
+ * проектирования и оркестрации мультиагентных систем (нативный аналог n8n).
+ */
 namespace SwarmIDE {
 
+    // =========================================================================
+    // 1. КОГНИТИВНЫЙ И ПРЕДМЕТНЫЙ СЛОЙ (Business Logic & Entities)
+    // =========================================================================
     namespace Object {
-        class BaseObject;
+        class BaseObject;                  // Базовый класс для всех сущностей графа
 
-            // Агенты
         namespace AI {      
-            class BaseAgent;           // Базовый класс агентов
-            class ConversationAgent;   //
-            class ToolsAgent;          //
-            class PlanExecuteAgent;    // 
+            class BaseAgent;               // Базовый абстрактный класс ИИ-агента
+            class ConversationalAgent;     // Диалоговый агент (стандартная обработка контекста)
+            class ToolsAgent;              // Агент, наделенный правом вызова внешних функций (Tools)
+            class PlanExecuteAgent;        // Агент-оркестратор (декомпозиция сложных задач)
         }
 
         namespace Tool {
-            class BaseTool;
+            class BaseTool;                // Абстракция внешнего инструмента (API, скрипты)
         }
 
         namespace Memory {
-            class BaseMemory;
+            class BaseMemory;              // Абстракция хранилища (RAG, SQL, Векторные БД)
         }
 
         namespace Model {
-            class BaseModel;
+            class BaseModel;               // Абстракция языковой модели (LLM 엔진)
         }
-
     }
 
-    
-    // Отрисовка окон и меню через ImGui, а также связи через OpenGl
+    // =========================================================================
+    // 2. СЛОЙ ВИЗУАЛИЗАЦИИ И UI (OpenGL 4.5 + Dear ImGui)
+    // =========================================================================
     namespace UI {
-        class Menu;                // Меню, кнопки, создание связей, объектов, настройки и т.д.
-        class Theme;               // Темы, окон. Закругление, цвета и т.д.
-        class Topology;            // Описывает фундаментальные структуры для связей холста.
-        class ConnectionDrawer;    // Рисует связи между агентами (Кривые Безье)
+        class Menu;                        // Панели управления, интерфейс создания объектов
+        class Theme;                       // Глобальные стили (цвета, шрифты, параметры окон)
+        class Topology;                    // Математика графа на экране (Якоря, Пины, Векторы)
+        class ConnectionDrawer;            // Рендерер связей (отрисовка кривых Безье между нодами)
 
+        // Семейство геометрических форм для визуального представления нод
         namespace Shape {
-            class BaseShape;
-            class SquareShape;
-            class RectangleShape;
-            class CircleShape;
-            class TriangleShape;
+            class BaseShape;               // Базовая абстракция окна/фигуры
+            class SquareShape;             // Квадратная форма
+            class RectangleShape;          // Прямоугольная форма (стандарт для ИИ-агентов)
+            class CircleShape;             // Круглая форма (используется для Models, Memory, Tools)
+            class TriangleShape;           // Треугольная форма (логические ветвления/условия)
         }
     }   
 
-    // Cuda, вызов всей логики агентов и иницилизация приложения.
+    // =========================================================================
+    // 3. ВЫЧИСЛИТЕЛЬНОЕ ЯДРО (C++ Core Dispatcher)
+    // =========================================================================
     namespace Core {
-        class AppController;        // Сердце приложения. Иницилизирует все библиотеки, создаёт объекты и т.д
-        class ObjectManager;        // Хранит все объекты, запускает обход по ним.
-        class ConnectionManager;    // Хранит все связи между объектам
-        class TextureManger;        // Хранит текстуры(иконки) для объектов
+        class AppController;               // Точка сборки приложения. Инициализация GLFW и Game Loop
+        class ObjectManager;               // Диспетчер жизненного цикла нод/объектов (Update, Draw, Delete)
+        class ConnectionManager;           // Диспетчер связей (управляет логикой топологии графа)
+        class TextureManager;              // Кэш-менеджер ресурсов (загрузка иконок в VRAM OpenGL)
     } 
 
-    // Подключение стороних приложений Telegram, Gmail и т.д.
+    // =========================================================================
+    // 4. СЛОЙ ВНЕШНИХ ИНТЕГРАЦИЙ (Open Interfaces)
+    // =========================================================================
     namespace OI {
-        class BaseApp;             // Класс базового прилжения
-        class Telegram;            // Телеграмм
-        class GMail;               // Почта gmail.com
-        class Mail;                // Почта mail.ru
-        class VK;                  // Вк
-        class Word;                // Word документ
-        class Excel;               // Excel документ
-        class PowerPoint;
-        class TextDocument;        // Текстовый документ
+        class BaseApp;                     // Базовый класс интерфейса подключения
+        class Telegram;                    // Интеграция с Telegram API
+        class GMail;                       // Интеграция с протоколами Google Mail
+        class Mail;                        // Интеграция с протоколами Mail.ru
+        class VK;                          // Интеграция с ВКонтакте API
+        class Word;                        // Обработчик документов .docx
+        class Excel;                       // Обработчик таблиц .xlsx
+        class PowerPoint;                  // Обработчик презентаций .pptx
+        class TextDocument;                // Обработчик сырых текстовых файлов
     }   
 }
