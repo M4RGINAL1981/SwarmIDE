@@ -31,7 +31,7 @@ namespace SwarmIDE::UI::Shape {
 
     int CircleShape::count = 0;
 
-    void CircleShape::Draw(const std::string& title, Camera& camera, Fonts& fonts, glm::vec2 windowSize, std::function<void()> renderContent, std::optional<std::string> iconKey) {
+    bool CircleShape::Draw(const std::string& title, Camera& camera, Fonts& fonts, glm::vec2 windowSize, std::function<void()> renderContent, std::optional<std::string> iconKey) {
         float zoom = camera.zoomFactor;
         
         auto config = SwarmIDE::UI::Theme::GetAgentConfig();                      // Берём параметры из Theme      
@@ -88,15 +88,18 @@ namespace SwarmIDE::UI::Shape {
             ImGui::PushFont(fonts.regularFont[index]);
             ImGui::SetWindowFontScale(fontScale); // Вот эта херня дотянет размер текста до пиксель-перфект соответствия окну
 
-            std::string titleStr = "===" + title + "===";
-            float windowWidth = ImGui::GetWindowSize().x;
-            float textWidth = ImGui::CalcTextSize(titleStr.c_str()).x;
+            /*   Заголовок окна
+            // std::string titleStr = "===" + title + "===";
+            // float windowWidth = ImGui::GetWindowSize().x;
+            // float textWidth = ImGui::CalcTextSize(titleStr.c_str()).x;
 
-            float posX = (windowWidth - textWidth) * 0.5f;
-            if(posX > 0.0f) ImGui::SetCursorPosX(posX);
+            //float posX = (windowWidth - textWidth) * 0.5f;
+            //if(posX > 0.0f) ImGui::SetCursorPosX(posX);
 
-            ImGui::TextColored(ImVec4(0.0f, 0.8f, 1.0f, 1.0f), "%s", titleStr.c_str());
+            //ImGui::TextColored(ImVec4(0.0f, 0.8f, 1.0f, 1.0f), "%s", titleStr.c_str());
+            
             ImGui::Separator();
+            */
 
             renderContent();
 
@@ -108,8 +111,13 @@ namespace SwarmIDE::UI::Shape {
             this->position = camera.screenToWorld(glm::vec2(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y), windowSize);
         }
 
+        bool shouldDelete = false;
+
+        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Delete)) { shouldDelete = true; } // Это условие нужно, чтобы я мог удалить объект
+
         ImGui::End();
 
+        return shouldDelete;
         //ImGui::PopStyleVar();
         //ImGui::PopStyleColor();
     }

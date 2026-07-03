@@ -11,11 +11,14 @@ namespace SwarmIDE::Core{
     void ObjectManager::drawUIAllObject(Camera& cam, glm::vec2 winSize){
         for(auto& object : objects){
 
-            object->drawUI(cam, winSize);
+            std::optional<bool> ifDelete = object->drawUI(cam, winSize);
 
-            if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Delete)) {
-                int idToDelete = object->GetID();
-                removeObject(idToDelete); 
+            if (ifDelete != std::nullopt) {
+                if(*ifDelete){
+                    std::cout << "Delete" << std::endl;
+                    int idToDelete = object->GetID();
+                    removeObject(idToDelete); 
+                }
             }
         }
     }
@@ -28,6 +31,7 @@ namespace SwarmIDE::Core{
 
     void ObjectManager::addObject(std::unique_ptr<SwarmIDE::Object::BaseObject> object) { 
         objects.push_back(std::move(object));
+        std::cout << "Object is add" << std::endl;
     }
 
     void ObjectManager::removeObject(int objectID) {

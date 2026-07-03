@@ -42,7 +42,7 @@ namespace SwarmIDE::UI::Shape {
         count++;
     }
 
-    void RectangleShape::Draw(const std::string& title, Camera& camera, Fonts& fonts, glm::vec2 windowSize, std::function<void()> renderContent, std::optional<std::string> iconKey) {
+    bool RectangleShape::Draw(const std::string& title, Camera& camera, Fonts& fonts, glm::vec2 windowSize, std::function<void()> renderContent, std::optional<std::string> iconKey) {
         auto config = SwarmIDE::UI::Theme::GetAgentConfig();          // Берём параметры из Theme
 
         glm::vec2 screenPos = camera.worldToScreen(this->position, windowSize); 
@@ -88,10 +88,16 @@ namespace SwarmIDE::UI::Shape {
             this->position = camera.screenToWorld(glm::vec2(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y), windowSize);
         }
 
+        bool shouldDelete = false;
+
+        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Delete)) { shouldDelete = true; } // Это условие нужно, чтобы я мог удалить объект
+
         ImGui::End();
 
         ImGui::PopStyleVar();
         ImGui::PopStyleColor();
+
+        return shouldDelete;
     }
 
     int RectangleShape::count = 0;

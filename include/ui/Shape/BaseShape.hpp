@@ -38,7 +38,7 @@ namespace SwarmIDE::UI::Shape {
 
         // Чистый виртуальный метод отрисовки формы окна
         // renderContent — это лямбда, внутри которой Агент будет рисовать свои кнопки/текст
-        virtual void Draw(const std::string& title, Camera& camera, Fonts& fonts, glm::vec2 windowSize, std::function<void()> renderContent, std::optional<std::string> iconKey = std::nullopt) = 0;
+        virtual bool Draw(const std::string& title, Camera& camera, Fonts& fonts, glm::vec2 windowSize, std::function<void()> renderContent, std::optional<std::string> iconKey = std::nullopt) = 0;
 
     protected:
         glm::vec2 position {0.0f, 0.0f};  // Позиция окна на холсте

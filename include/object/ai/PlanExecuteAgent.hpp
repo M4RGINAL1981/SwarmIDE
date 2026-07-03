@@ -9,7 +9,7 @@ namespace SwarmIDE::Object::AI {
         PlanExecuteAgent(std::string name, glm::vec2 worldPos);
 
         void update() override;
-        void drawUI(Camera& camera, glm::vec2 windowSize) override;
+        std::optional<bool> drawUI(Camera& camera, glm::vec2 windowSize) override;
         void render() override;
 
     };

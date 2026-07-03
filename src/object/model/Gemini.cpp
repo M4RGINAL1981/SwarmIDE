@@ -15,14 +15,14 @@ namespace SwarmIDE::Object::Model {
         //std::cout << "Gemini " << count << std::endl;
     }
 
-    void Gemini::drawUI(Camera& camera, glm::vec2 windowSize) {
-        if (!shape) return;
+    std::optional<bool> Gemini::drawUI(Camera& camera, glm::vec2 windowSize) {
+        if (!shape) return std::nullopt;
 
         // Синхронизируем позицию (если она изменилась в логике агента)
         shape->SetPosition(this->worldPos); 
 
         // Вызываем отрисовку фигуры, передавая контекст и лямбду с начинкой агента
-        shape->Draw(name, camera, fonts, windowSize, [this]() {
+        bool ifDelete = shape->Draw(name, camera, fonts, windowSize, [this]() {
             /*
             // Вот ТУТ пишется то, что специфично ТОЛЬКО для Gemini
             ImGui::Text("Память: %s", name.c_str());
@@ -34,6 +34,8 @@ namespace SwarmIDE::Object::Model {
 
         // Забираем обратно изменённую позицию (если пользователь перетащил окно мышкой)
         this->worldPos = shape->GetPosition();
+        
+        return &ifDelete;
     }
 
 }

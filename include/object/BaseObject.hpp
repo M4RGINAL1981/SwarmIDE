@@ -12,7 +12,7 @@ namespace SwarmIDE::Object {
         virtual ~BaseObject() = 0; 
     
         virtual void update() = 0;                                       // Логика (что делает объект)
-        virtual void drawUI(Camera& camera, glm::vec2 windowSize) = 0;   // Визуализация объекта
+        virtual std::optional<bool> drawUI(Camera& camera, glm::vec2 windowSize) = 0;   // Визуализация объекта
 
         std::unique_ptr<SwarmIDE::UI::Shape::BaseShape>& GetShape() { return shape; }
         void GetFonts(SwarmIDE::UI::Fonts fonts) { this->fonts = fonts;}

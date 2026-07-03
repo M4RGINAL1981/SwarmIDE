@@ -15,14 +15,14 @@ namespace SwarmIDE::Object::Tool {
         //std::cout << "JiraSoftware" << count << std::endl;
     }
 
-    void JiraSoftware::drawUI(Camera& camera, glm::vec2 windowSize) {
-        if (!shape) return;
+    std::optional<bool> JiraSoftware::drawUI(Camera& camera, glm::vec2 windowSize) {
+        if (!shape) return std::nullopt;
 
         // Синхронизируем позицию (если она изменилась в логике агента)
         shape->SetPosition(this->worldPos); 
 
         // Вызываем отрисовку фигуры, передавая контекст и лямбду с начинкой агента
-        shape->Draw(name, camera, fonts, windowSize, [this]() {
+        bool ifDelete = shape->Draw(name, camera, fonts, windowSize, [this]() {
             /*
             // Вот ТУТ пишется то, что специфично ТОЛЬКО для JiraSoftware
             ImGui::Text("Память: %s", name.c_str());
@@ -34,6 +34,8 @@ namespace SwarmIDE::Object::Tool {
 
         // Забираем обратно изменённую позицию (если пользователь перетащил окно мышкой)
         this->worldPos = shape->GetPosition();
+
+        return &ifDelete;
     }
 
 }

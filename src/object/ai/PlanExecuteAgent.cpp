@@ -18,14 +18,14 @@ namespace SwarmIDE::Object::AI {
         //std::cout << "ConversationalAgent " << count << std::endl;
     }
 
-    void PlanExecuteAgent::drawUI(Camera& camera, glm::vec2 windowSize) {
-        if (!shape) return;
+    std::optional<bool> PlanExecuteAgent::drawUI(Camera& camera, glm::vec2 windowSize) {
+        if (!shape) return std::nullopt;
 
         // Синхронизируем позицию (если она изменилась в логике агента)
         shape->SetPosition(this->worldPos); 
 
         // Вызываем отрисовку фигуры, передавая контекст и лямбду с начинкой агента
-        shape->Draw(name, camera, fonts, windowSize, [this]() {
+        bool ifDelete = shape->Draw(name, camera, fonts, windowSize, [this]() {
             // Вот ТУТ пишется то, что специфично ТОЛЬКО для PlanExecuteAgent
             ImGui::Text("Агент: %s", name.c_str());
             if (ImGui::Button("Отправить запрос")) {
@@ -35,6 +35,8 @@ namespace SwarmIDE::Object::AI {
 
         // Забираем обратно изменённую позицию (если пользователь перетащил окно мышкой)
         this->worldPos = shape->GetPosition();
+        
+        return &ifDelete;
     }
 
 }

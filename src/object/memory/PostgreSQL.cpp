@@ -15,14 +15,14 @@ namespace SwarmIDE::Object::Memory {
         //std::cout << "PostgreSQL " << count << std::endl;
     }
 
-    void PostgreSQL::drawUI(Camera& camera, glm::vec2 windowSize) {
-        if (!shape) return;
+    std::optional<bool> PostgreSQL::drawUI(Camera& camera, glm::vec2 windowSize) {
+        if (!shape) return std::nullopt;
 
         // Синхронизируем позицию (если она изменилась в логике агента)
         shape->SetPosition(this->worldPos); 
 
         // Вызываем отрисовку фигуры, передавая контекст и лямбду с начинкой агента
-        shape->Draw(name, camera, fonts, windowSize, [this]() {
+        bool ifDelete = shape->Draw(name, camera, fonts, windowSize, [this]() {
             /*
             // Вот ТУТ пишется то, что специфично ТОЛЬКО для PostgreSQL
             ImGui::Text("Память: %s", name.c_str());
@@ -34,6 +34,8 @@ namespace SwarmIDE::Object::Memory {
 
         // Забираем обратно изменённую позицию (если пользователь перетащил окно мышкой)
         this->worldPos = shape->GetPosition();
+        
+        return &ifDelete;
     }
 
 }
