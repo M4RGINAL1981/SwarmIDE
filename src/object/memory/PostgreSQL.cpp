@@ -7,6 +7,13 @@ namespace SwarmIDE::Object::Memory {
     PostgreSQL::PostgreSQL(std::string name, glm::vec2 worldPos) 
     : BaseMemory(name + std::to_string(count), worldPos) { 
         shape = std::make_unique<SwarmIDE::UI::Shape::CircleShape>(worldPos);
+
+        std::vector<SwarmIDE::UI::AnchorPin> pins = {
+            {"Out PostgreSQL", SwarmIDE::UI::PinType::MemoryOutput, glm::vec2(0.5f, 0.0f), glm::vec2(0.0f, -1.0f)}
+        };
+
+        shape->SetLocalPins(pins);
+
         SwarmIDE::Core::TextureManager::getInstance().loadTexture("postgres_icon", "resources/icons/postgres.png");
         this->iconKey = "postgres_icon";
     }
@@ -35,7 +42,7 @@ namespace SwarmIDE::Object::Memory {
         // Забираем обратно изменённую позицию (если пользователь перетащил окно мышкой)
         this->worldPos = shape->GetPosition();
         
-        return &ifDelete;
+        return ifDelete;
     }
 
 }

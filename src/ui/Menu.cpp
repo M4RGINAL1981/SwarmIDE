@@ -37,7 +37,7 @@ namespace SwarmIDE::UI {
                                         ImGuiWindowFlags_NoCollapse;
 
         // Позиционируем панель управления, например, в левом верхнем углу экрана
-        ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Always);
+        ImGui::SetNextWindowPos(ImVec2(10, 60), ImGuiCond_Always);
         ImGui::SetNextWindowSize(ImVec2(700, 2160), ImGuiCond_Always);
 
         ImGui::Begin("SwarmIDE Spawn Panel", nullptr, window_flags);
@@ -124,4 +124,39 @@ namespace SwarmIDE::UI {
         ImGui::End();
         ImGui::PopStyleColor();
     }
+
+    void Menu::DrawTopBar(GLFWwindow* window, Camera& camera) {
+        // Отрисовка верхнего главного меню
+        if (ImGui::BeginMainMenuBar()) {
+            if (ImGui::BeginMenu("File")) {
+                if (ImGui::MenuItem("New Canvas")) { /* Логика очистки */ }
+                if (ImGui::MenuItem("Open...", "Ctrl+O")) { /* Загрузка JSON */ }
+                if (ImGui::MenuItem("Save", "Ctrl+S")) { /* Сохранение JSON */ }
+                ImGui::Separator();
+                if (ImGui::MenuItem("Settings")) { /* Настройки Ollama/API */ }
+                if (ImGui::MenuItem("Exit", "Alt+F4")) { glfwSetWindowShouldClose(window, true); }
+                ImGui::EndMenu();
+            }
+            
+            if (ImGui::BeginMenu("Edit")) {
+                if (ImGui::MenuItem("Clear Connections")) { /* Очистить связи */ }
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Simulation")) {
+                if (ImGui::MenuItem("Run Swarm", "F5")) { /* Запуск ядра CUDA */ }
+                if (ImGui::MenuItem("Stop", "Shift+F5")) { /* Остановка */ }
+                ImGui::EndMenu();
+            }
+
+            // Индикатор справа
+            float fps = ImGui::GetIO().Framerate;
+            std::string fpsText = "FPS: " + std::to_string((int)fps);
+            ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::CalcTextSize(fpsText.c_str()).x - 20);
+            ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "%s", fpsText.c_str());
+
+            ImGui::EndMainMenuBar();
+        }
+    }
+
 }

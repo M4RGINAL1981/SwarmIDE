@@ -14,7 +14,10 @@ namespace SwarmIDE::UI {
 
         void Push(std::unique_ptr<SwarmIDE::Object::BaseObject> object);                    // Передать объект менеджеру объектов
         void SetManager(SwarmIDE::Core::ObjectManager* mgr) { manager = mgr; }              // Объявить менеджера-объектов
+
         void DrawMenu(Camera& camera);                                                      // Отрисовка меню
+        void DrawTopBar(GLFWwindow* window, Camera& camera);                                // Отрисовка функциональных клавиш
+
         void GetWinSize(glm::vec2 otherWinSize) { winSize = otherWinSize; }                 // Установка размера окна
         void SetFonts(const SwarmIDE::UI::Fonts& fontsAtlas) { this->fonts = fontsAtlas; }  // Установка шрифтов
 

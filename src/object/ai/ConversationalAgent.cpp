@@ -1,12 +1,21 @@
 #include "object/ai/ConversationalAgent.hpp"
-#include "ui/Shape/SquareShape.hpp"
+#include "ui/Shape/RectangleShape.hpp"
 #include "imgui.h" 
 
 namespace SwarmIDE::Object::AI {
 
     ConversationalAgent::ConversationalAgent(std::string name, glm::vec2 worldPos) 
     : BaseAgent(name + std::to_string(count), worldPos) { 
-        shape = std::make_unique<SwarmIDE::UI::Shape::SquareShape>(worldPos);
+        shape = std::make_unique<SwarmIDE::UI::Shape::RectangleShape>(worldPos);
+
+        std::vector<SwarmIDE::UI::AnchorPin> pins = {
+            {"0", SwarmIDE::UI::PinType::ModelInput,  glm::vec2(0.25f, 1.0f), glm::vec2(-1.0f, 1.0f)}, 
+            {"1", SwarmIDE::UI::PinType::MemoryInput, glm::vec2(0.75f, 1.0f), glm::vec2( 1.0f, 1.0f)}, 
+            {"2", SwarmIDE::UI::PinType::Output,      glm::vec2( 1.0f, 0.5f), glm::vec2( 1.0f, 0.0f)},  
+            {"3", SwarmIDE::UI::PinType::Input,       glm::vec2( 0.0f, 0.5f), glm::vec2(-1.0f, 0.0f)}
+        };
+
+        shape->SetLocalPins(pins);
     }
 
     void ConversationalAgent::update() {

@@ -125,48 +125,6 @@ namespace SwarmIDE::Core {
     }
 
     void AppController::run() {
-
-        // Базовое создание объектов и их связей
-        std::unique_ptr<SwarmIDE::Object::AI::BaseAgent> newAgent1 = nullptr; 
-        std::unique_ptr<SwarmIDE::Object::AI::BaseAgent> newAgent2 = nullptr;
-
-        const glm::vec2 WorldPos1(0.0f, 0.0f);
-        const glm::vec2 WorldPos2(200.0f, 350.0f);
-
-        newAgent1 = std::make_unique<SwarmIDE::Object::AI::ConversationalAgent>("New Conversational", WorldPos1);
-        newAgent2 = std::make_unique<SwarmIDE::Object::AI::ConversationalAgent>("New Conversational", WorldPos2);
-
-        newAgent1->GetFonts(this->fonts);
-        newAgent2->GetFonts(this->fonts);
-
-        object_manager.addObject(std::move(newAgent1));
-        object_manager.addObject(std::move(newAgent2));
-
-        int Agent1ID = object_manager.objects[0]->GetID();
-        int Agent2ID = object_manager.objects[1]->GetID();
-
-        // Проверяем, сколько пинов создалось внутри фигур
-        auto pins1 = object_manager.objects[0]->GetShape()->GetLocalPins();
-        auto pins2 = object_manager.objects[1]->GetShape()->GetLocalPins();
-
-        std::cout << "[DEBUG] Agent 1 pins count: " << pins1.size() << std::endl;
-        std::cout << "[DEBUG] Agent 2 pins count: " << pins2.size() << std::endl;
-
-        if (pins1.empty() || pins2.size() < 2) {
-            std::cerr << "[ERROR] Недостаточно пинов для создания связи! Падение предотвращено." << std::endl;
-            // Временно закомментируем коннект, чтобы программа запустилась и открылось окно
-            // SwarmIDE::UI::AnchorPin pin1 = pins1[0];
-            // SwarmIDE::UI::AnchorPin pin2 = pins2[1];
-            // ConnectionManager::getInstance().connect(Agent1ID, Agent2ID, pin1, pin2);
-        } 
-        else {
-            SwarmIDE::UI::AnchorPin pin1 = pins1[0];
-            SwarmIDE::UI::AnchorPin pin2 = pins2[1]; // Убедись, что тебе нужен именно второй пин (индекс 1)
-            ConnectionManager::getInstance().connect(Agent1ID, Agent2ID, pin1, pin2);
-        }
-
-
-
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
 
@@ -177,30 +135,30 @@ namespace SwarmIDE::Core {
             lastFrame = currentFrame;
             
             //camera.update(deltaTime);
-            object_manager.updateAllObject(); // <-- Перенесли сюда! Логика обновляется до закрытия кадра UI
+            object_manager.updateAllObject(); 
 
             // 2. Подготовка кадров ImGui
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
 
-            // 3. Отрисовка всей UI-логики (ВНУТРИ FRAME SCOPE)
-            SwarmIDE::UI::Menu::getInstance().DrawMenu(camera); 
-            
+            // 3. Отрисовка всей UI-логики
+
             object_manager.drawUIAllObject(camera, winSize2); 
 
-            // РИСУЕМ СВЯЗИ ТУТ (они уйдут на задний план под окна):
             SwarmIDE::UI::ConnectionDrawer::DrawLink(camera, winSize2); 
             SwarmIDE::UI::ConnectionDrawer::DrawPins(camera, winSize2); 
 
-            ImGui::Render(); // <--- Теперь закрываем кадр со спокойной душой!
+            SwarmIDE::UI::Menu::getInstance().DrawMenu(camera); 
+            SwarmIDE::UI::Menu::getInstance().DrawTopBar(window, camera);
+
+            ImGui::Render();
 
             // 4. Отрисовка графической сцены (Очистка экрана и сетка)
             glClearColor(Colors::BACKGROUND.r, Colors::BACKGROUND.g, Colors::BACKGROUND.b, 1.0F);
             glClear(GL_COLOR_BUFFER_BIT);
 
             grid.draw(camera);
-            // SwarmIDE::UI::ConnectionDrawer::DrawLink(...) <- ОТСЮДА СТРОЧКУ УДАЛИЛИ
 
             // 5. Вывод ImGui поверх OpenGL сцены
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

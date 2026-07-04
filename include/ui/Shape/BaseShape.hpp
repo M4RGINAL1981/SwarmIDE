@@ -29,6 +29,7 @@ namespace SwarmIDE::UI::Shape {
         const std::vector<SwarmIDE::UI::AnchorPin>& GetLocalPins() const { return localPins; }
 
         std::vector<AnchorPin> GetLocalPins () { return localPins; }
+        void SetLocalPins(const std::vector<AnchorPin>& pins) { localPins = pins; }
 
         // Главный метод: пересчет локальных пинов в глобальные экранные координаты
         std::vector<TransformedPin> GetWorldPins(float zoomFactor) const;

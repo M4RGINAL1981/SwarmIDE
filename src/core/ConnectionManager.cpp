@@ -15,8 +15,16 @@ namespace SwarmIDE::Core {
 
     void ConnectionManager::connect (int sObjectID, int tObjectID, SwarmIDE::UI::AnchorPin sPin, SwarmIDE::UI::AnchorPin tPin) {
         if(sPin.id == tPin.id && sObjectID == tObjectID) return; 
-        if(sPin.type == SwarmIDE::UI::PinType::Input && tPin.type == SwarmIDE::UI::PinType::Input) return;
-        if(sPin.type == SwarmIDE::UI::PinType::Output && tPin.type == SwarmIDE::UI::PinType::Output) return;
+
+        if(!(sPin.type == SwarmIDE::UI::PinType::Input    && tPin.type == SwarmIDE::UI::PinType::Output)       &&
+        !(sPin.type == SwarmIDE::UI::PinType::ModelInput  && tPin.type == SwarmIDE::UI::PinType::ModelOutput)  &&
+        !(sPin.type == SwarmIDE::UI::PinType::MemoryInput && tPin.type == SwarmIDE::UI::PinType::MemoryOutput) &&
+        !(sPin.type == SwarmIDE::UI::PinType::ToolInput   && tPin.type == SwarmIDE::UI::PinType::ToolOutput)   &&
+        !(tPin.type == SwarmIDE::UI::PinType::Input       && sPin.type == SwarmIDE::UI::PinType::Output)       &&
+        !(tPin.type == SwarmIDE::UI::PinType::ModelInput  && sPin.type == SwarmIDE::UI::PinType::ModelOutput)  &&
+        !(tPin.type == SwarmIDE::UI::PinType::MemoryInput && sPin.type == SwarmIDE::UI::PinType::MemoryOutput) &&
+        !(tPin.type == SwarmIDE::UI::PinType::ToolInput   && sPin.type == SwarmIDE::UI::PinType::ToolOutput)   &&
+        !(sPin.type == SwarmIDE::UI::PinType::Universal   || tPin.type == SwarmIDE::UI::PinType::Universal)) return;
 
         Connection connect = {sObjectID, tObjectID, sPin.id, tPin.id};
         auto it = std::find(connection.begin(), connection.end(), connect);

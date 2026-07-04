@@ -7,24 +7,9 @@
 
 namespace SwarmIDE::UI::Shape {
     
-    SquareShape::SquareShape() {
+    SquareShape::SquareShape() { count++;}
 
-        std::vector<SwarmIDE::UI::AnchorPin> lP = { {"0", SwarmIDE::UI::PinType::Universal, glm::vec2(0.5f, 0.0f), glm::vec2( 0.0f, -1.0f)},
-                                                    {"1", SwarmIDE::UI::PinType::Universal, glm::vec2(1.0f, 0.5f), glm::vec2( 1.0f,  0.0f)},
-                                                    {"2", SwarmIDE::UI::PinType::Universal, glm::vec2(0.5f, 1.0f), glm::vec2( 0.0f,  1.0f)},
-                                                    {"3", SwarmIDE::UI::PinType::Universal, glm::vec2(0.0f, 0.5f), glm::vec2(-1.0f,  0.0f)}};
-        this->localPins = lP;
-        count++;
-    }
-
-    SquareShape::SquareShape(glm::vec2 pos) : BaseShape(pos) {
-        std::vector<SwarmIDE::UI::AnchorPin> lP = { {"0", SwarmIDE::UI::PinType::Universal, glm::vec2(0.5f, 0.0f), glm::vec2( 0.0f, -1.0f)},
-                                                    {"1", SwarmIDE::UI::PinType::Universal, glm::vec2(1.0f, 0.5f), glm::vec2( 1.0f,  0.0f)},
-                                                    {"2", SwarmIDE::UI::PinType::Universal, glm::vec2(0.5f, 1.0f), glm::vec2( 0.0f,  1.0f)},
-                                                    {"3", SwarmIDE::UI::PinType::Universal, glm::vec2(0.0f, 0.5f), glm::vec2(-1.0f,  0.0f)}};
-        this->localPins = lP;
-        count++;
-    }
+    SquareShape::SquareShape(glm::vec2 pos) : BaseShape(pos) { count++; }
 
     bool SquareShape::Draw(const std::string& title, Camera& camera, Fonts& fonts, glm::vec2 windowSize, std::function<void()> renderContent, std::optional<std::string> iconKey) {
         auto config = SwarmIDE::UI::Theme::GetAgentConfig();          // Берём параметры из Theme

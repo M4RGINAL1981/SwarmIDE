@@ -18,7 +18,8 @@ namespace SwarmIDE::UI {
             std::optional<SwarmIDE::UI::TransformedPin> start_opt = instance.object_manager->GetTransformedPinForObject(connect.sourceObjectID, connect.sourcePinID, 1.0f);
             std::optional<SwarmIDE::UI::TransformedPin> end_opt = instance.object_manager->GetTransformedPinForObject(connect.targetObjectID, connect.targetPinID, 1.0f);
 
-            if(start_opt == std::nullopt || end_opt == std::nullopt) continue;
+
+            if(!start_opt.has_value() || !end_opt.has_value() ) continue;
 
             SwarmIDE::UI::TransformedPin start = *start_opt;
             SwarmIDE::UI::TransformedPin end = *end_opt;

@@ -9,23 +9,12 @@
 namespace SwarmIDE::UI::Shape {
     
     CircleShape::CircleShape() {
-
         this->size = glm::vec2(200.0f, 200.0f);
-
-        this->localPins = {
-            {"Out", SwarmIDE::UI::PinType::Universal, glm::vec2(0.5f, 0.0f), glm::vec2(0.0f, -1.0f)} 
-        };
-
         count++;
     }
 
     CircleShape::CircleShape(glm::vec2 pos) : BaseShape(pos) {
         this->size = glm::vec2(200.0f, 200.0f);
-
-        this->localPins = {
-            {"Out", SwarmIDE::UI::PinType::Universal, glm::vec2(0.5f, 0.0f), glm::vec2(0.0f, -1.0f)}
-        };
-
         count++;
     }
 

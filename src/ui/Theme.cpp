@@ -12,7 +12,7 @@ namespace SwarmIDE::UI {
     AgentWindowConfig Theme::GetAgentConfig() {
         return {
             ImVec4(0.12f, 0.12f, 0.12f, 1.0f),                       // Цвет фона (тёмно-серый)
-            ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar, // Флаги
+            ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus, // Флаги
             30.0f                                                    // Закругление
         };
     }

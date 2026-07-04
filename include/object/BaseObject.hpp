@@ -1,5 +1,6 @@
 #pragma once
 #include "ui/Shape/BaseShape.hpp"
+#include "ui/Topology.hpp"
 #include <memory>
 #include <optional>
 

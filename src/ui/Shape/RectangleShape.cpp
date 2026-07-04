@@ -7,40 +7,9 @@
 
 namespace SwarmIDE::UI::Shape {
     
-    RectangleShape::RectangleShape() {
+    RectangleShape::RectangleShape() { this->size = glm::vec2(800.0f, 400.0f); count++; }
 
-        this->size = glm::vec2(800.0f, 400.0f);
-
-        this->localPins = {
-            {"0", SwarmIDE::UI::PinType::Universal, glm::vec2(0.25f, 0.0f), glm::vec2(-1.0f, -1.0f)}, 
-            {"1", SwarmIDE::UI::PinType::Universal, glm::vec2( 0.5f, 0.0f), glm::vec2( 0.0f, -1.0f)}, 
-            {"2", SwarmIDE::UI::PinType::Universal, glm::vec2(0.75f, 0.0f), glm::vec2( 1.0f, -1.0f)}, 
-            {"3", SwarmIDE::UI::PinType::Universal, glm::vec2( 1.0f, 0.5f), glm::vec2( 1.0f,  0.0f)}, 
-            {"4", SwarmIDE::UI::PinType::Universal, glm::vec2(0.75f, 1.0f), glm::vec2( 1.0f,  1.0f)}, 
-            {"5", SwarmIDE::UI::PinType::Universal, glm::vec2( 0.5f, 1.0f), glm::vec2( 0.0f,  1.0f)}, 
-            {"6", SwarmIDE::UI::PinType::Universal, glm::vec2(0.25f, 1.0f), glm::vec2(-1.0f,  1.0f)}, 
-            {"7", SwarmIDE::UI::PinType::Universal, glm::vec2( 0.0f, 0.5f), glm::vec2(-1.0f,  0.0f)}  
-        };
-
-        count++;
-    }
-
-    RectangleShape::RectangleShape(glm::vec2 pos) : BaseShape(pos) {
-        this->size = glm::vec2(800.0f, 400.0f);
-
-        this->localPins = {
-            {"0", SwarmIDE::UI::PinType::Universal, glm::vec2(0.25f, 0.0f), glm::vec2(-1.0f, -1.0f)}, 
-            {"1", SwarmIDE::UI::PinType::Universal, glm::vec2( 0.5f, 0.0f), glm::vec2( 0.0f, -1.0f)}, 
-            {"2", SwarmIDE::UI::PinType::Universal, glm::vec2(0.75f, 0.0f), glm::vec2( 1.0f, -1.0f)}, 
-            {"3", SwarmIDE::UI::PinType::Universal, glm::vec2( 1.0f, 0.5f), glm::vec2( 1.0f,  0.0f)}, 
-            {"4", SwarmIDE::UI::PinType::Universal, glm::vec2(0.75f, 1.0f), glm::vec2( 1.0f,  1.0f)}, 
-            {"5", SwarmIDE::UI::PinType::Universal, glm::vec2( 0.5f, 1.0f), glm::vec2( 0.0f,  1.0f)}, 
-            {"6", SwarmIDE::UI::PinType::Universal, glm::vec2(0.25f, 1.0f), glm::vec2(-1.0f,  1.0f)}, 
-            {"7", SwarmIDE::UI::PinType::Universal, glm::vec2( 0.0f, 0.5f), glm::vec2(-1.0f,  0.0f)}
-        };
-
-        count++;
-    }
+    RectangleShape::RectangleShape(glm::vec2 pos) : BaseShape(pos) { this->size = glm::vec2(800.0f, 400.0f); count++; }
 
     bool RectangleShape::Draw(const std::string& title, Camera& camera, Fonts& fonts, glm::vec2 windowSize, std::function<void()> renderContent, std::optional<std::string> iconKey) {
         auto config = SwarmIDE::UI::Theme::GetAgentConfig();          // Берём параметры из Theme
