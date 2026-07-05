@@ -118,6 +118,7 @@ namespace SwarmIDE::Core {
         // 5. Связи
         SwarmIDE::UI::Menu::getInstance().SetObjectManager(&object_manager);
         SwarmIDE::UI::Menu::getInstance().SetSerializationManager(&serialization_manager);
+        SwarmIDE::UI::Menu::getInstance().SetConnectionManager(&connect_manager);
 
         SwarmIDE::UI::Menu::getInstance().SetFonts(fonts);
         SwarmIDE::Core::SerializationManager::getInstance().SetFonts(fonts);

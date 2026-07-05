@@ -33,6 +33,7 @@ namespace SwarmIDE {
         namespace Model {
             class BaseModel;               // Абстракция языковой модели (LLM)
             class Gemini;
+            class DeepSeek;
         }
     }
 

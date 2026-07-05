@@ -44,6 +44,8 @@ target_include_directories(SwarmIDE PRIVATE
     "${EXTERNAL_DIR}/glfw/include"
     "${EXTERNAL_DIR}/stb"
     "${EXTERNAL_DIR}/json"
+    "${EXTERNAL_DIR}/pfd"
+    "${EXTERNAL_DIR}"
 )
 
 # Линкуем библиотеки

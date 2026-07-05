@@ -9,6 +9,7 @@
 #include "object/ai/ToolsAgent.hpp"
 #include "object/memory/PostgreSQL.hpp"
 #include "object/model/Gemini.hpp"
+#include "object/model/DeepSeek.hpp"
 #include "object/tool/JiraSoftware.hpp"
 
 using namespace SwarmIDE::Core;
@@ -25,6 +26,19 @@ namespace SwarmIDE::Core {
         static SerializationManager instance;
         return instance;
     }
+
+    std::string SerializationManager::GetNextAvailableFileName(const std::string& baseName) {
+        int counter = 1;
+        std::string defaultName = baseName + std::to_string(counter) + ".json";
+
+        while(fs::exists(defaultName)) {
+            counter++;
+            defaultName = baseName + std::to_string(counter) + ".json";
+        }
+
+        return defaultName;
+    }
+   
 
     void SerializationManager::SaveGraph(const std::string& filepath) {
 
@@ -95,6 +109,7 @@ namespace SwarmIDE::Core {
                 else if (type == "PlanExecuteAgent")  newObj.reset(new SwarmIDE::Object::AI::PlanExecuteAgent(name, pos));
                 else if (type == "ToolsAgent")        newObj.reset(new SwarmIDE::Object::AI::ToolsAgent(name, pos));
                 else if (type == "Gemini")            newObj.reset(new SwarmIDE::Object::Model::Gemini(name, pos));
+                else if (type == "DeepSeek")          newObj.reset(new SwarmIDE::Object::Model::DeepSeek(name, pos));
                 else if (type == "PostgreSQL")        newObj.reset(new SwarmIDE::Object::Memory::PostgreSQL(name, pos));
                 else if (type == "JiraSoftware")      newObj.reset(new SwarmIDE::Object::Tool::JiraSoftware(name, pos));
 

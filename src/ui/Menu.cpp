@@ -2,6 +2,8 @@
 #include "core/ObjectManager.hpp"
 #include "imgui.h"
 #include "graphics/Camera.hpp"
+#undef APIENTRY
+#include <pfd/portable-file-dialogs.h>
 
 // Подключаем все типы объектов для инстанцирования
 #include "object/ai/ConversationalAgent.hpp"
@@ -9,6 +11,7 @@
 #include "object/ai/PlanExecuteAgent.hpp"
 #include "object/memory/PostgreSQL.hpp"
 #include "object/model/Gemini.hpp"
+#include "object/model/DeepSeek.hpp"
 #include "object/tool/JiraSoftware.hpp"
 
 using namespace SwarmIDE::Object::AI;
@@ -69,12 +72,13 @@ namespace SwarmIDE::UI {
         // --- КАТЕГОРИЯ 2: MODELS ---
         if (ImGui::CollapsingHeader("Cognitive Models", ImGuiTreeNodeFlags_DefaultOpen)) {
             static int selectedModel = 0;
-            const char* models[] = { "GeminiLLM" };
+            const char* models[] = { "GeminiLLM", "DeepSeekLLM"};
             ImGui::Combo("Type##Model", &selectedModel, models, IM_ARRAYSIZE(models));
             
             if (ImGui::Button("Spawn Model")) {
                 std::unique_ptr<SwarmIDE::Object::BaseObject> newObj = nullptr;
                 if (selectedModel == 0) newObj = std::make_unique<Gemini>("Gemini", spawnWorldPos);
+                if (selectedModel == 1) newObj = std::make_unique<DeepSeek>("DeepSeek", spawnWorldPos);
                 
                 if (newObj) {
                     newObj->SetFonts(this->fonts);
@@ -126,12 +130,48 @@ namespace SwarmIDE::UI {
     }
 
     void Menu::DrawTopBar(GLFWwindow* window, Camera& camera) {
+
+        bool isFpsCounterVisible = false;
+
         // Отрисовка верхнего главного меню
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("New Canvas"))        { serialization_manager->getInstance().ClearGraph(); }
-                if (ImGui::MenuItem("Open...", "Ctrl+O")) { serialization_manager->getInstance().LoadGraph("scene_data.json"); }
-                if (ImGui::MenuItem("Save", "Ctrl+S"))    { serialization_manager->getInstance().SaveGraph("scene_data.json"); }
+
+
+                if (ImGui::MenuItem("Open...", "Ctrl+O")) { 
+                    auto openDialog = pfd::open_file(
+                        "Open SwarmIDE Scene",
+                        "", // Начальный путь пусток (откроется текущая папка)
+                        { "SwarmIDE Project (*.json)", "*.json" }
+                    );
+
+                    auto selectedFiles = openDialog.result();
+                    if(!selectedFiles.empty()) {
+                        std::string selectedPath = selectedFiles[0];
+                        serialization_manager->getInstance().LoadGraph(selectedPath);
+                    }
+                }
+
+
+                if (ImGui::MenuItem("Save", "Ctrl+S"))    { 
+
+                    // 1. Получаем следующее свободное имя, например, "newSceneData1.json"
+                    std::string defaultFileName = serialization_manager->getInstance().GetNextAvailableFileName("newSceneData");
+
+                    // 2. Открываем нативное окно "Сохранить файл"
+                    auto saveDialog = pfd::save_file(
+                        "Save SwarmIDE Scene",                    // Заголовок окна
+                        defaultFileName,                          // Имя файла по умолчанию
+                        { "SwarmIDE Project (*.json)", "*.json"}  // Фильтр расширений файлов
+                    );
+
+                    // 3. Если пользователь выбрал путь и нажал "Сохранить"
+                    std::string selectedPath = saveDialog.result();
+                    if(!selectedPath.empty()) serialization_manager->getInstance().SaveGraph(selectedPath);
+                }
+
+
                 ImGui::Separator();
                 if (ImGui::MenuItem("Settings")) { /* Настройки Ollama/API */ } 
                 if (ImGui::MenuItem("Exit", "Alt+F4")) { glfwSetWindowShouldClose(window, true); }
@@ -139,7 +179,8 @@ namespace SwarmIDE::UI {
             }
             
             if (ImGui::BeginMenu("Edit")) {
-                if (ImGui::MenuItem("Clear Connections")) { /* Очистить связи */ }
+                if (ImGui::MenuItem("Clear Connections")) { connect_manager->removeAllConnections(); }
+                if (ImGui::MenuItem("FPS Counter")) { isFpsCounterVisible = !isFpsCounterVisible; }
                 ImGui::EndMenu();
             }
 
@@ -149,11 +190,14 @@ namespace SwarmIDE::UI {
                 ImGui::EndMenu();
             }
 
-            // Индикатор справа
-            float fps = ImGui::GetIO().Framerate;
-            std::string fpsText = "FPS: " + std::to_string((int)fps);
-            ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::CalcTextSize(fpsText.c_str()).x - 20);
-            ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "%s", fpsText.c_str());
+            // Индикатор FPS
+            if (isFpsCounterVisible) {
+                float fps = ImGui::GetIO().Framerate;
+                std::string fpsText = "FPS: " + std::to_string((int)fps);
+                ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::CalcTextSize(fpsText.c_str()).x - 20);
+                ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "%s", fpsText.c_str());
+            }
+
 
             ImGui::EndMainMenuBar();
         }

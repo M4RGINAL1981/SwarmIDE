@@ -3,7 +3,10 @@
 #include "core/ObjectManager.hpp"
 #include "core/ConnectionManager.hpp"
 #include "ui/Theme.hpp"
+#include <filesystem>
 #include <string>
+
+namespace fs = std::filesystem;
 
 namespace SwarmIDE::Core {
     class SerializationManager {
@@ -14,6 +17,8 @@ namespace SwarmIDE::Core {
         void SaveGraph(const std::string& filepath);          // Собирает данные из менеджеров и пишет JSON
         void LoadGraph(const std::string& filepath);          // Парсит JSON, чистит сцену и воссоздаёт граф
         void ClearGraph();                                    // Чистка сцены
+
+        std::string GetNextAvailableFileName(const std::string& baseName);                  // Автогенератор файла 
 
         void SetFonts(const SwarmIDE::UI::Fonts& fontsAtlas) { this->fonts = fontsAtlas; }  // Установка шрифтов
         SwarmIDE::UI::Fonts& GetFonts() { return fonts; }                                   // Передача шрифтов
