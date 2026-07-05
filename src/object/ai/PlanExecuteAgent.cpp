@@ -10,11 +10,11 @@ namespace SwarmIDE::Object::AI {
         shape = std::make_unique<SwarmIDE::UI::Shape::RectangleShape>(worldPos);
 
         std::vector<SwarmIDE::UI::AnchorPin> pins = {
-            {"0", SwarmIDE::UI::PinType::ModelInput,  glm::vec2(0.25f, 1.0f), glm::vec2(-1.0f, 1.0f)}, 
-            {"1", SwarmIDE::UI::PinType::MemoryInput, glm::vec2( 0.5f, 1.0f), glm::vec2( 0.0f, 1.0f)},
-            {"2", SwarmIDE::UI::PinType::ToolInput,   glm::vec2(0.75f, 1.0f), glm::vec2( 1.0f, 1.0f)}, 
-            {"3", SwarmIDE::UI::PinType::Output,      glm::vec2( 1.0f, 0.5f), glm::vec2( 1.0f, 0.0f)},  
-            {"4", SwarmIDE::UI::PinType::Input,       glm::vec2( 0.0f, 0.5f), glm::vec2(-1.0f, 0.0f)}
+            {"0", SwarmIDE::UI::PinType::ModelInput,  glm::vec2(0.25f, 1.0f), glm::vec2(-1.0f, 1.0f), 1}, 
+            {"1", SwarmIDE::UI::PinType::MemoryInput, glm::vec2( 0.5f, 1.0f), glm::vec2( 0.0f, 1.0f), 1},
+            {"2", SwarmIDE::UI::PinType::ToolInput,   glm::vec2(0.75f, 1.0f), glm::vec2( 1.0f, 1.0f), 1}, 
+            {"3", SwarmIDE::UI::PinType::Output,      glm::vec2( 1.0f, 0.5f), glm::vec2( 1.0f, 0.0f), 1},  
+            {"4", SwarmIDE::UI::PinType::Input,       glm::vec2( 0.0f, 0.5f), glm::vec2(-1.0f, 0.0f), 1}
         };
 
         shape->SetLocalPins(pins);

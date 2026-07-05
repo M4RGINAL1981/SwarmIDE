@@ -24,8 +24,8 @@ namespace SwarmIDE::UI {
     }
 
     void Menu::Push(std::unique_ptr<SwarmIDE::Object::BaseObject> object) {
-        if (manager) { 
-            manager->addObject(std::move(object));
+        if (object_manager) { 
+            object_manager->addObject(std::move(object));
         }
     }
 
@@ -58,7 +58,7 @@ namespace SwarmIDE::UI {
                 if (selectedAgent == 2) newObj = std::make_unique<PlanExecuteAgent>("PlanExecuteAgent", spawnWorldPos);
                 
                 if (newObj) {
-                    newObj->GetFonts(this->fonts);
+                    newObj->SetFonts(this->fonts);
                     Push(std::move(newObj));
                 }
             }
@@ -77,7 +77,7 @@ namespace SwarmIDE::UI {
                 if (selectedModel == 0) newObj = std::make_unique<Gemini>("Gemini", spawnWorldPos);
                 
                 if (newObj) {
-                    newObj->GetFonts(this->fonts);
+                    newObj->SetFonts(this->fonts);
                     Push(std::move(newObj));
                 }
             }
@@ -96,7 +96,7 @@ namespace SwarmIDE::UI {
                 if (selectedMemory == 0) newObj = std::make_unique<PostgreSQL>("PostgreSQL", spawnWorldPos);
                 
                 if (newObj) {
-                    newObj->GetFonts(this->fonts);
+                    newObj->SetFonts(this->fonts);
                     Push(std::move(newObj));
                 }
             }
@@ -115,7 +115,7 @@ namespace SwarmIDE::UI {
                 if (selectedTool == 0) newObj = std::make_unique<JiraSoftware>("JiraSoftware", spawnWorldPos);
                 
                 if (newObj) {
-                    newObj->GetFonts(this->fonts);
+                    newObj->SetFonts(this->fonts);
                     Push(std::move(newObj));
                 }
             }
@@ -129,11 +129,11 @@ namespace SwarmIDE::UI {
         // Отрисовка верхнего главного меню
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("File")) {
-                if (ImGui::MenuItem("New Canvas")) { /* Логика очистки */ }
-                if (ImGui::MenuItem("Open...", "Ctrl+O")) { /* Загрузка JSON */ }
-                if (ImGui::MenuItem("Save", "Ctrl+S")) { /* Сохранение JSON */ }
+                if (ImGui::MenuItem("New Canvas"))        { serialization_manager->getInstance().ClearGraph(); }
+                if (ImGui::MenuItem("Open...", "Ctrl+O")) { serialization_manager->getInstance().LoadGraph("scene_data.json"); }
+                if (ImGui::MenuItem("Save", "Ctrl+S"))    { serialization_manager->getInstance().SaveGraph("scene_data.json"); }
                 ImGui::Separator();
-                if (ImGui::MenuItem("Settings")) { /* Настройки Ollama/API */ }
+                if (ImGui::MenuItem("Settings")) { /* Настройки Ollama/API */ } 
                 if (ImGui::MenuItem("Exit", "Alt+F4")) { glfwSetWindowShouldClose(window, true); }
                 ImGui::EndMenu();
             }

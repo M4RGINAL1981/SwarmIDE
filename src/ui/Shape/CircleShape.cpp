@@ -10,11 +10,13 @@ namespace SwarmIDE::UI::Shape {
     
     CircleShape::CircleShape() {
         this->size = glm::vec2(200.0f, 200.0f);
+        color = Colors::ToImU32(Colors::GRANITE);
         count++;
     }
 
     CircleShape::CircleShape(glm::vec2 pos) : BaseShape(pos) {
         this->size = glm::vec2(200.0f, 200.0f);
+        color = Colors::ToImU32(Colors::GRANITE);
         count++;
     }
 
@@ -52,7 +54,7 @@ namespace SwarmIDE::UI::Shape {
 
             float borderThickness = 1.5f * camera.zoomFactor;
 
-            drawList->AddCircleFilled(screenPosCenter, scaledSize.x / 2.0, pinColor);
+            drawList->AddCircleFilled(screenPosCenter, scaledSize.x / 2.0, color);
             drawList->AddCircle(screenPosCenter, scaledSize.x / 2.0, borderColor, 0, borderThickness);
 
             if(iconKey != std::nullopt) {

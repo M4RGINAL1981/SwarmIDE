@@ -43,6 +43,7 @@ target_include_directories(SwarmIDE PRIVATE
     "${EXTERNAL_DIR}/imgui"
     "${EXTERNAL_DIR}/glfw/include"
     "${EXTERNAL_DIR}/stb"
+    "${EXTERNAL_DIR}/json"
 )
 
 # Линкуем библиотеки
@@ -52,3 +53,8 @@ target_link_libraries(SwarmIDE PRIVATE
     imgui_lib
     opengl32.lib # Нужно для Windows
 )
+
+# Принудительно отключаем конфликтную Release-библиотеку MSVCRT в режиме отладки Debug
+if(MSVC)
+    target_link_options(SwarmIDE PRIVATE "$<$<CONFIG:Debug>:/NODEFAULTLIB:MSVCRT>")
+endif()

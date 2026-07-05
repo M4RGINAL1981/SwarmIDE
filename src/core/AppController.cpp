@@ -18,7 +18,7 @@ glm::vec2 winSize2((float)SCR_WIDTH, (float)SCR_HEIGHT);
 
 namespace SwarmIDE::Core {
     
-    AppController::AppController() : window(nullptr), camera(), grid(), object_manager(ObjectManager::getInstance()), connect_manager(ConnectionManager::getInstance()) {
+    AppController::AppController() : window(nullptr), camera(), grid(), object_manager(ObjectManager::getInstance()), connect_manager(ConnectionManager::getInstance()), serialization_manager(SerializationManager::getInstance()) {
 
         // 1. GLFW и создание окна
         if (!glfwInit()) {
@@ -116,12 +116,14 @@ namespace SwarmIDE::Core {
         glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
         // 5. Связи
-        SwarmIDE::UI::Menu::getInstance().SetManager(&object_manager);
+        SwarmIDE::UI::Menu::getInstance().SetObjectManager(&object_manager);
+        SwarmIDE::UI::Menu::getInstance().SetSerializationManager(&serialization_manager);
+
         SwarmIDE::UI::Menu::getInstance().SetFonts(fonts);
+        SwarmIDE::Core::SerializationManager::getInstance().SetFonts(fonts);
 
         SwarmIDE::UI::ConnectionDrawer::getInstance().SetObjectManager(&object_manager);
         SwarmIDE::UI::ConnectionDrawer::getInstance().SetConnectionManager(&connect_manager);
-
     }
 
     void AppController::run() {

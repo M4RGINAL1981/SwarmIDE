@@ -10,10 +10,11 @@ namespace SwarmIDE::Object::Model {
         shape = std::make_unique<SwarmIDE::UI::Shape::CircleShape>(worldPos);
 
         std::vector<SwarmIDE::UI::AnchorPin> pins = {
-            {"Out Gemini", SwarmIDE::UI::PinType::ModelOutput, glm::vec2(0.5f, 0.0f), glm::vec2(0.0f, -1.0f)}
+            {"Out Gemini", SwarmIDE::UI::PinType::ModelOutput, glm::vec2(0.5f, 0.0f), glm::vec2(0.0f, -1.0f), 1}
         };
 
         shape->SetLocalPins(pins);
+        //shape->SetColor(Colors::ToImU32(Colors::BLACK));
 
         SwarmIDE::Core::TextureManager::getInstance().loadTexture("gemini-512", "resources/icons/gemini-512.png");
         this->iconKey = "gemini-512";

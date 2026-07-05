@@ -1,5 +1,6 @@
 #include "core/ObjectManager.hpp"
 #include "core/ConnectionManager.hpp"
+#include "core/SerializationManager.hpp"
 #include "graphics/Camera.hpp"
 #include "graphics/Grid.hpp"
 #include "SwarmIDE.hpp"
@@ -17,6 +18,7 @@ namespace SwarmIDE::Core {
         Grid grid;
         ObjectManager& object_manager;
         ConnectionManager& connect_manager;
+        SerializationManager& serialization_manager;
         
         SwarmIDE::UI::Fonts fonts;
 

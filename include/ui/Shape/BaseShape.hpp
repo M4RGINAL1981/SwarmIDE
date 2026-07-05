@@ -2,6 +2,7 @@
 #include "SwarmIDE.hpp"
 #include "ui/Topology.hpp"
 #include "graphics/Camera.hpp"
+#include "graphics/Colors.hpp"
 #include "ui/Theme.hpp"
 #include <vector>
 #include <string>
@@ -23,12 +24,14 @@ namespace SwarmIDE::UI::Shape {
         void SetSize(glm::vec2 s) { size = s; }
         glm::vec2 GetSize() const { return size; }
 
+        void SetColor(ImU32 c) { color = c; }
+        ImU32 GetColor() const { return color; }
+
         void SetRotation(float rot) { rotation = rot; }
         float GetRotation() { return rotation; }
 
         const std::vector<SwarmIDE::UI::AnchorPin>& GetLocalPins() const { return localPins; }
-
-        std::vector<AnchorPin> GetLocalPins () { return localPins; }
+        std::vector<AnchorPin>& GetLocalPins () { return localPins; }
         void SetLocalPins(const std::vector<AnchorPin>& pins) { localPins = pins; }
 
         // Главный метод: пересчет локальных пинов в глобальные экранные координаты
@@ -45,6 +48,7 @@ namespace SwarmIDE::UI::Shape {
         glm::vec2 position {0.0f, 0.0f};  // Позиция окна на холсте
         glm::vec2 size{400.0f, 400.0f};   // Размер окна 
         float rotation{0.0f};             // Угол поворота в радианах
+        ImU32 color;                      // Цвет
 
         std::vector<AnchorPin> localPins; // Локальные пины фигуры
     };

@@ -1,4 +1,5 @@
 #include "core/ObjectManager.hpp"
+#include <iostream>
 #include "core/ConnectionManager.hpp"
 
 namespace SwarmIDE::Core{
@@ -9,17 +10,21 @@ namespace SwarmIDE::Core{
     }
 
     void ObjectManager::drawUIAllObject(Camera& cam, glm::vec2 winSize){
+
+        std::vector<int> idsToRemove;
+
         for(auto& object : objects){
 
             std::optional<bool> ifDelete = object->drawUI(cam, winSize);
 
-            if (ifDelete != std::nullopt) {
-                if(*ifDelete){
-                    std::cout << "Delete" << std::endl;
-                    int idToDelete = object->GetID();
-                    removeObject(idToDelete); 
-                }
+            if (ifDelete != std::nullopt && *ifDelete) {
+                std::cout << "Deletion request for ID:" << object->GetID() << std::endl;
+                idsToRemove.push_back(object->GetID());
             }
+        }
+
+        for(int id : idsToRemove) {
+            removeObject(id);
         }
     }
 
@@ -45,6 +50,19 @@ namespace SwarmIDE::Core{
             objects.end()
         );
     }
+
+    void ObjectManager::removeAllObjects() {
+        SwarmIDE::Core::ConnectionManager::getInstance().removeAllConnections();
+        objects.clear();
+    }
+
+    SwarmIDE::Object::BaseObject* ObjectManager::findObjectByID(int id) {
+        for(auto& object : objects){
+            if(id == object->GetID()) return object.get();
+        }
+        return nullptr;
+    }
+
 
     std::optional<SwarmIDE::UI::TransformedPin> ObjectManager::GetTransformedPinForObject(int objectID, std::string PinID, float zoomFactor) const {
         

@@ -9,10 +9,11 @@ namespace SwarmIDE::Object::Tool {
         shape = std::make_unique<SwarmIDE::UI::Shape::CircleShape>(worldPos);
 
         std::vector<SwarmIDE::UI::AnchorPin> pins = {
-            {"Out JiraSoftware", SwarmIDE::UI::PinType::ToolOutput, glm::vec2(0.5f, 0.0f), glm::vec2(0.0f, -1.0f)}
+            {"Out JiraSoftware", SwarmIDE::UI::PinType::ToolOutput, glm::vec2(0.5f, 0.0f), glm::vec2(0.0f, -1.0f), 1}
         };
 
         shape->SetLocalPins(pins);
+        //shape->SetColor(Colors::ToImU32(Colors::WHITE));
 
         SwarmIDE::Core::TextureManager::getInstance().loadTexture("openai", "resources/icons/openai.png");
         this->iconKey = "openai"; // Тестовая иконка

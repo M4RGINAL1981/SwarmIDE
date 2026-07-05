@@ -22,14 +22,17 @@ namespace SwarmIDE {
 
         namespace Tool {
             class BaseTool;                // Абстракция внешнего инструмента (API, скрипты)
+            class JiraSoftware;
         }
 
         namespace Memory {
             class BaseMemory;              // Абстракция хранилища (RAG, SQL, Векторные БД)
+            class PostgreSQL;
         }
 
         namespace Model {
-            class BaseModel;               // Абстракция языковой модели (LLM 엔진)
+            class BaseModel;               // Абстракция языковой модели (LLM)
+            class Gemini;
         }
     }
 
@@ -60,7 +63,9 @@ namespace SwarmIDE {
         class ObjectManager;               // Диспетчер жизненного цикла нод/объектов (Update, Draw, Delete)
         class ConnectionManager;           // Диспетчер связей (управляет логикой топологии графа)
         class TextureManager;              // Кэш-менеджер ресурсов (загрузка иконок в VRAM OpenGL)
-    } 
+        class SerializationManager;        // Менеджер сохранения и загрузки всего графа проекта (JSON)
+    }
+
 
     // =========================================================================
     // 4. СЛОЙ ВНЕШНИХ ИНТЕГРАЦИЙ (Open Interfaces)

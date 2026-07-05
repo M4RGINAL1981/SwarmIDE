@@ -1,6 +1,7 @@
 #pragma once
 #include "ui/Shape/BaseShape.hpp"
 #include "ui/Topology.hpp"
+#include "graphics/Colors.hpp"
 #include <memory>
 #include <optional>
 
@@ -16,9 +17,17 @@ namespace SwarmIDE::Object {
         virtual std::optional<bool> drawUI(Camera& camera, glm::vec2 windowSize) = 0;   // Визуализация объекта
 
         std::unique_ptr<SwarmIDE::UI::Shape::BaseShape>& GetShape() { return shape; }
-        void GetFonts(SwarmIDE::UI::Fonts fonts) { this->fonts = fonts;}
+        void SetFonts(SwarmIDE::UI::Fonts fonts) { this->fonts = fonts;}
+        glm::vec2 GetWorldPos() { return worldPos; }
+
+        virtual std::string GetTypeName() = 0;
 
         int GetID() { return id; }
+        void SetID(int new_id ) { id = new_id; }
+
+        std::string GetName() { return name; }
+        void SetName(std::string n) { name = n; }
+
         std::string GetIconKey() { if(iconKey != std::nullopt) { return *iconKey; }}
     
     protected:
