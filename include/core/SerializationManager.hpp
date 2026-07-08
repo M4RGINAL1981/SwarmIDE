@@ -2,6 +2,7 @@
 #include "SwarmIDE.hpp"
 #include "core/ObjectManager.hpp"
 #include "core/ConnectionManager.hpp"
+#include "core/ModelManager.hpp"
 #include "ui/Theme.hpp"
 #include <filesystem>
 #include <string>
@@ -31,6 +32,7 @@ namespace SwarmIDE::Core {
     private:
         friend SwarmIDE::Core::ObjectManager;
         friend SwarmIDE::Core::ConnectionManager;
+        friend SwarmIDE::Core::ModelManager;
 
         SwarmIDE::UI::Fonts fonts;                                       // Шрифты объектов
 

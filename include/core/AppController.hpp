@@ -1,6 +1,8 @@
+#pragma once
 #include "core/ObjectManager.hpp"
 #include "core/ConnectionManager.hpp"
 #include "core/SerializationManager.hpp"
+#include "core/ModelManager.hpp"
 #include "graphics/Camera.hpp"
 #include "graphics/Grid.hpp"
 #include "SwarmIDE.hpp"
@@ -9,20 +11,24 @@ namespace SwarmIDE::Core {
 
     class AppController {
     public:
-        AppController();
-
-        void run();
-    private:
-        GLFWwindow* window;
-        Camera camera;
-        Grid grid;
-        ObjectManager& object_manager;
-        ConnectionManager& connect_manager;
-        SerializationManager& serialization_manager;
+        AppController();                                 // Инициализация библиотек, установка связи между менеджерами и модулями
         
-        SwarmIDE::UI::Fonts fonts;
+        void run();                                      // Запуск игрового цикла и отрисовка приложения
 
-        glm::vec2 lastMousePos = glm::vec2(0.0f);
-        bool isPanning = false;
+    private:
+        GLFWwindow* window;                              // Окно программы 
+        Camera camera;                                   // Камера
+        Grid grid;                                       // Сетка
+
+        // Менеджеры
+        ObjectManager& object_manager;                   // Менеджер объектов
+        ConnectionManager& connect_manager;              // Менеджер соединений
+        SerializationManager& serialization_manager;     // Менеджер сохранения и загруки
+        ModelManager& model_manager;                     // Менеджер загрузки моделей для агентов
+        
+        SwarmIDE::UI::Fonts fonts;                       // Шрифты
+
+        glm::vec2 lastMousePos = glm::vec2(0.0f);        // Последнее положение мыши в пространстве
+        bool isPanning = false;                          
     };
 }

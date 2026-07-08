@@ -8,15 +8,14 @@
 #include "object/ai/PlanExecuteAgent.hpp"
 #include "object/ai/ToolsAgent.hpp"
 #include "object/memory/PostgreSQL.hpp"
-#include "object/model/Gemini.hpp"
-#include "object/model/DeepSeek.hpp"
+#include "object/BaseModel.hpp"
 #include "object/tool/JiraSoftware.hpp"
 
 using namespace SwarmIDE::Core;
 using namespace SwarmIDE::Object;
 using namespace SwarmIDE::Object::Tool;
 using namespace SwarmIDE::Object::Memory;
-using namespace SwarmIDE::Object::Model;
+
 
 using json = nlohmann::json;
 
@@ -54,13 +53,20 @@ namespace SwarmIDE::Core {
             json objJson;
             objJson["id"] = object->GetID();
             objJson["name"] = object->GetName();
-            objJson["type"] = object->GetTypeName();
+            
+            // В качестве типа всегда пишем "BaseModel", чтобы фабрика загрузки знала, какой класс создавать
+            objJson["type"] = object->GetTypeName(); 
+            
             objJson["posX"] = object->GetWorldPos().x;
             objJson["posY"] = object->GetWorldPos().y;
 
+            if (object->GetTypeName() == "Model") {
+                auto* modelNode = dynamic_cast<SwarmIDE::Object::BaseModel*>(object.get());
+                if (modelNode) objJson["modelId"] = modelNode->GetModelID();
+            }
+
             root["objects"].push_back(objJson);            
         }
-
         auto& connection = SwarmIDE::Core::ConnectionManager::getInstance().getConnection();
         for(auto& connect : connection) {
             json connJson;
@@ -108,10 +114,19 @@ namespace SwarmIDE::Core {
                 if (type == "ConversationalAgent")    newObj.reset(new SwarmIDE::Object::AI::ConversationalAgent(name, pos));
                 else if (type == "PlanExecuteAgent")  newObj.reset(new SwarmIDE::Object::AI::PlanExecuteAgent(name, pos));
                 else if (type == "ToolsAgent")        newObj.reset(new SwarmIDE::Object::AI::ToolsAgent(name, pos));
-                else if (type == "Gemini")            newObj.reset(new SwarmIDE::Object::Model::Gemini(name, pos));
-                else if (type == "DeepSeek")          newObj.reset(new SwarmIDE::Object::Model::DeepSeek(name, pos));
                 else if (type == "PostgreSQL")        newObj.reset(new SwarmIDE::Object::Memory::PostgreSQL(name, pos));
                 else if (type == "JiraSoftware")      newObj.reset(new SwarmIDE::Object::Tool::JiraSoftware(name, pos));
+                else if (type == "Model") {
+                    std::string modelId = objJson.value("modelId", ""); 
+                    auto* modelPtr = SwarmIDE::Core::ModelManager::getInstance().GetModelForID(modelId);
+                    
+                    if (modelPtr) {
+                        newObj.reset(new SwarmIDE::Object::BaseModel(name, pos, modelPtr));
+                    } 
+                    else {
+                        std::cerr << "Warning: Model with ID '" << modelId << "' not found in ModelManager!" << std::endl;
+                    }
+                }
 
                 if(newObj) {
                     newObj->SetID(id);

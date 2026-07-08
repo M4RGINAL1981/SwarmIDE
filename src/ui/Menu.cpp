@@ -1,22 +1,21 @@
 #include "ui/Menu.hpp"
-#include "core/ObjectManager.hpp"
 #include "imgui.h"
-#include "graphics/Camera.hpp"
 #undef APIENTRY
 #include <pfd/portable-file-dialogs.h>
+#include <filesystem>
+#include <windows.h>
+#pragma comment(lib, "urlmon.lib")
 
 // Подключаем все типы объектов для инстанцирования
 #include "object/ai/ConversationalAgent.hpp"
 #include "object/ai/ToolsAgent.hpp"
 #include "object/ai/PlanExecuteAgent.hpp"
+#include "object/BaseModel.hpp"
 #include "object/memory/PostgreSQL.hpp"
-#include "object/model/Gemini.hpp"
-#include "object/model/DeepSeek.hpp"
 #include "object/tool/JiraSoftware.hpp"
 
 using namespace SwarmIDE::Object::AI;
 using namespace SwarmIDE::Object::Memory;
-using namespace SwarmIDE::Object::Model;
 using namespace SwarmIDE::Object::Tool;
 
 namespace SwarmIDE::UI {
@@ -72,15 +71,20 @@ namespace SwarmIDE::UI {
         // --- КАТЕГОРИЯ 2: MODELS ---
         if (ImGui::CollapsingHeader("Cognitive Models", ImGuiTreeNodeFlags_DefaultOpen)) {
             static int selectedModel = 0;
-            const char* models[] = { "GeminiLLM", "DeepSeekLLM"};
-            ImGui::Combo("Type##Model", &selectedModel, models, IM_ARRAYSIZE(models));
+
+            auto& allModels = model_manager->getInstance().GetModels(); 
+
+            ImGui::Combo("Type##Model", &selectedModel, [](void* data, int idx) {
+                auto* vector = static_cast<std::vector<SwarmIDE::Core::Model>*>(data);
+                return (*vector)[idx].name.c_str(); 
+            }, (void*)&allModels, static_cast<int>(allModels.size()));
             
             if (ImGui::Button("Spawn Model")) {
-                std::unique_ptr<SwarmIDE::Object::BaseObject> newObj = nullptr;
-                if (selectedModel == 0) newObj = std::make_unique<Gemini>("Gemini", spawnWorldPos);
-                if (selectedModel == 1) newObj = std::make_unique<DeepSeek>("DeepSeek", spawnWorldPos);
-                
-                if (newObj) {
+                if (selectedModel >= 0 && selectedModel < allModels.size()) {
+                    auto& modelData = allModels[selectedModel];
+                    
+                    auto newObj = std::make_unique<SwarmIDE::Object::BaseModel>(modelData.name, spawnWorldPos, &modelData);
+                    
                     newObj->SetFonts(this->fonts);
                     Push(std::move(newObj));
                 }
@@ -173,10 +177,49 @@ namespace SwarmIDE::UI {
 
 
                 ImGui::Separator();
-                if (ImGui::MenuItem("Settings")) { /* Настройки Ollama/API */ } 
+                if (ImGui::BeginMenu("Settings")) {
+                    if (ImGui::BeginMenu("Models")) {
+                        
+                        auto& allModels = model_manager->GetModels(); 
+                        
+                        for (auto& modelData : allModels) {
+                            modelData.isDownloaded = std::filesystem::exists(modelData.path);
+                            
+                            if (!modelData.isDownloaded) {
+                                std::string menuLabel = "Download " + modelData.name;
+                                if (ImGui::MenuItem(menuLabel.c_str())) {
+                                    
+                                    std::filesystem::create_directories("models");
+                                    
+                                    pfd::message("Download", "Starting download for " + modelData.name + "\nThis may take a while...", pfd::choice::ok);
+                                    
+                                    HRESULT hr = URLDownloadToFileA(NULL, modelData.downloadUrl.c_str(), modelData.path.c_str(), 0, NULL);
+                                    
+                                    if (SUCCEEDED(hr)) {
+                                        modelData.isDownloaded = true;
+                                        pfd::message("Success", modelData.name + " downloaded successfully!", pfd::choice::ok);
+                                    } else {
+                                        pfd::message("Error", "Failed to download " + modelData.name, pfd::choice::ok);
+                                    }
+                                }
+                            } else {
+                                std::string statusLabel = modelData.name + " (Ready)";
+                                ImGui::TextDisabled("%s", statusLabel.c_str());
+                            }
+                        }
+
+                        ImGui::EndMenu();
+                    }
+                    ImGui::EndMenu();
+                }
+
+                ImGui::Separator();
+
                 if (ImGui::MenuItem("Exit", "Alt+F4")) { glfwSetWindowShouldClose(window, true); }
                 ImGui::EndMenu();
             }
+
+            
             
             if (ImGui::BeginMenu("Edit")) {
                 if (ImGui::MenuItem("Clear Connections")) { connect_manager->removeAllConnections(); }

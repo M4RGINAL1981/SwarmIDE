@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.22)
 project(SwarmIDE LANGUAGES CXX C)
 
+# Принудительно заставляем генератор Visual Studio переключиться на x64
+if(MSVC)
+    set(CMAKE_GENERATOR_PLATFORM x64 CACHE STRING "Architecture" FORCE)
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 
 # Ищем все .cpp файлы в папках src и include
@@ -46,7 +51,22 @@ target_include_directories(SwarmIDE PRIVATE
     "${EXTERNAL_DIR}/json"
     "${EXTERNAL_DIR}/pfd"
     "${EXTERNAL_DIR}"
+    "${EXTERNAL_DIR}/llama/include"
 )
+
+# --- Интеграция библиотеки llama.cpp ---
+# Отключаем сборку встроенных примеров, тестов и серверов llama.cpp, чтобы сэкономить время и вес
+set(LLAMA_BUILD_EXAMPLES OFF CACHE BOOL "Build llama.cpp examples" FORCE)
+set(LLAMA_BUILD_TESTS OFF CACHE BOOL "Build llama.cpp tests" FORCE)
+set(LLAMA_BUILD_SERVER OFF CACHE BOOL "Build llama.cpp server" FORCE)
+
+# Добавляем поддиректорию external/llama в дерево сборки CMake
+add_subdirectory("${EXTERNAL_DIR}/llama")
+
+# Специфичный хак для MSVC + C++20: заставляем u8"строки" вести себя как const char* # для исправления ошибок компиляции в файле llama-chat.cpp
+if(MSVC)
+    target_compile_options(llama PRIVATE /Zc:char8_t-)
+endif()
 
 # Линкуем библиотеки
 target_link_libraries(SwarmIDE PRIVATE 
@@ -54,6 +74,8 @@ target_link_libraries(SwarmIDE PRIVATE
     glad 
     imgui_lib
     opengl32.lib # Нужно для Windows
+    urlmon.lib
+    llama        # Библиотека для инференса моделей
 )
 
 # Принудительно отключаем конфликтную Release-библиотеку MSVCRT в режиме отладки Debug

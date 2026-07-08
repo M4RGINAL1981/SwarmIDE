@@ -3,10 +3,7 @@
 #include "core/ObjectManager.hpp" 
 #include "core/ConnectionManager.hpp"
 #include "core/SerializationManager.hpp"
-
-#include "object/ai/ConversationalAgent.hpp"
-#include "object/ai/PlanExecuteAgent.hpp"
-#include "object/ai/ToolsAgent.hpp"
+#include "core/ModelManager.hpp"
 #include "graphics/Camera.hpp"
 
 namespace SwarmIDE::UI {
@@ -21,6 +18,7 @@ namespace SwarmIDE::UI {
         void SetObjectManager(SwarmIDE::Core::ObjectManager* obj_mgr) { object_manager = obj_mgr; }              
         void SetSerializationManager(SwarmIDE::Core::SerializationManager* ser_mgr) { serialization_manager = ser_mgr; }
         void SetConnectionManager(SwarmIDE::Core::ConnectionManager* conn_mgr) { connect_manager = conn_mgr; }
+        void SetModelManager(SwarmIDE::Core::ModelManager* mdl_mgr) { model_manager = mdl_mgr; }
 
         void DrawMenu(Camera& camera);                                                      // Отрисовка меню
         void DrawTopBar(GLFWwindow* window, Camera& camera);                                // Отрисовка функциональных клавиш
@@ -34,6 +32,7 @@ namespace SwarmIDE::UI {
         SwarmIDE::Core::ObjectManager* object_manager = nullptr;
         SwarmIDE::Core::SerializationManager* serialization_manager = nullptr;
         SwarmIDE::Core::ConnectionManager* connect_manager = nullptr;
+        SwarmIDE::Core::ModelManager* model_manager = nullptr;
 
         glm::vec2 winSize;
         SwarmIDE::UI::Fonts fonts;

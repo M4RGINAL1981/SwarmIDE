@@ -1,0 +1,27 @@
+{
+    "connections": [
+        {
+            "sourceObjectID": 1,
+            "sourcePinID": "Out Model",
+            "targetObjectID": 2,
+            "targetPinID": "Model Input"
+        }
+    ],
+    "objects": [
+        {
+            "id": 1,
+            "modelId": "deepseek-7b",
+            "name": "DeepSeek 7B0",
+            "posX": 0.0,
+            "posY": 0.0,
+            "type": "Model"
+        },
+        {
+            "id": 2,
+            "name": "ConversationalAgent1",
+            "posX": -464.0,
+            "posY": -848.0,
+            "type": "ConversationalAgent"
+        }
+    ]
+}

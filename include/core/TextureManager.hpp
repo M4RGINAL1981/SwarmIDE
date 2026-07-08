@@ -8,12 +8,12 @@
 namespace SwarmIDE::Core {
 
     struct Texture {
-        unsigned char* data;
-        int id;       
-        int width;         // ширина иконки/текстуры
-        int height;        // высота 
-        int channels;      // Кол-во каналов
-        std::string path;  // Строковой путь до иконки
+        unsigned char* data;   // Сама Иконки/Текстура
+        int id;                // id Иконки/Текстуры
+        int width;             // Ширина Иконки/Текстуры
+        int height;            // Высота Иконки/Текстуры
+        int channels;          // Кол-во каналов Иконки/Текстуры
+        std::string path;      // Строковой путь до Иконки/Текстуры
     };
 
     class TextureManager {
@@ -22,8 +22,8 @@ namespace SwarmIDE::Core {
         static TextureManager& getInstance();
 
         // Принимает название текстуры и путь до неё
-        void loadTexture(const std::string& name, const std::string& filePath);
-        std::optional<Texture> getTexture(const std::string& name) const;
+        void loadTexture(const std::string& name, const std::string& filePath);     // Загрузка текстуры
+        std::optional<Texture> getTexture(const std::string& name) const;           // Выдаёт текстуру
 
         TextureManager(const TextureManager&) = delete;
         TextureManager& operator=(const TextureManager&) = delete;

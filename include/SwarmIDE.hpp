@@ -11,7 +11,9 @@ namespace SwarmIDE {
     // 1. КОГНИТИВНЫЙ И ПРЕДМЕТНЫЙ СЛОЙ (Business Logic & Entities)
     // =========================================================================
     namespace Object {
+
         class BaseObject;                  // Базовый класс для всех сущностей графа
+        class BaseModel;                   // Абстракция языковой модели (LLM)
 
         namespace AI {      
             class BaseAgent;               // Базовый абстрактный класс ИИ-агента
@@ -28,12 +30,6 @@ namespace SwarmIDE {
         namespace Memory {
             class BaseMemory;              // Абстракция хранилища (RAG, SQL, Векторные БД)
             class PostgreSQL;
-        }
-
-        namespace Model {
-            class BaseModel;               // Абстракция языковой модели (LLM)
-            class Gemini;
-            class DeepSeek;
         }
     }
 
@@ -65,6 +61,7 @@ namespace SwarmIDE {
         class ConnectionManager;           // Диспетчер связей (управляет логикой топологии графа)
         class TextureManager;              // Кэш-менеджер ресурсов (загрузка иконок в VRAM OpenGL)
         class SerializationManager;        // Менеджер сохранения и загрузки всего графа проекта (JSON)
+        class ModelManager;                // Менеджер по загрузки моделей и управлению ими
     }
 
 
