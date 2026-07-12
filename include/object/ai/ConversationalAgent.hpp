@@ -1,17 +1,14 @@
 #pragma once
 #include "object/ai/BaseAgent.hpp"
 
-
 namespace SwarmIDE::Object::AI {
     
-    class ConversationalAgent :  public SwarmIDE::Object::AI::BaseAgent {
+    class ConversationalAgent : public BaseAgent {
     public:
-        ConversationalAgent(std::string name, glm::vec2 worldPos);
+        ConversationalAgent(const std::string& name);
 
-        void update() override;
-        std::optional<bool> drawUI(Camera& camera, glm::vec2 windowSize) override;
-        void render() override;
+        void Execute() override;
 
-        std::string GetTypeName() override { return "ConversationalAgent"; };
+        std::string getTypeName() override { return "ConversationalAgent"; }
     };
 }

@@ -1,4 +1,4 @@
-#pragma once 
+/*#pragma once 
 #include "ui/Shape/BaseShape.hpp"
 
 namespace SwarmIDE::UI::Shape {
@@ -13,3 +13,5 @@ namespace SwarmIDE::UI::Shape {
         static int count;
     };
 }
+
+*/

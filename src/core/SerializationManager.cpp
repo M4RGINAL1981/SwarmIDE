@@ -21,6 +21,7 @@ using json = nlohmann::json;
 
 namespace SwarmIDE::Core {
 
+    /*
     SerializationManager& SerializationManager::getInstance() {
         static SerializationManager instance;
         return instance;
@@ -70,10 +71,10 @@ namespace SwarmIDE::Core {
         auto& connection = SwarmIDE::Core::ConnectionManager::getInstance().getConnection();
         for(auto& connect : connection) {
             json connJson;
-            connJson["sourceObjectID"] = connect.sourceObjectID;
-            connJson["targetObjectID"] = connect.targetObjectID;
-            connJson["sourcePinID"] = connect.sourcePinID;
-            connJson["targetPinID"] = connect.targetPinID;
+            connJson["fromNodeID"] = connect.fromNodeID;
+            connJson["toNodeID"] = connect.toNodeID;
+            connJson["fromPinID"] = connect.fromPinID;
+            connJson["toPinID"] = connect.toPinID;
 
             root["connections"].push_back(connJson);
         }
@@ -164,5 +165,6 @@ namespace SwarmIDE::Core {
         SwarmIDE::Core::ConnectionManager::getInstance().removeAllConnections();
         SwarmIDE::Core::ObjectManager::getInstance().removeAllObjects();
     }
+    */
 
 }

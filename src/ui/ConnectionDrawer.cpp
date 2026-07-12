@@ -1,4 +1,4 @@
-#include "ui/ConnectionDrawer.hpp"
+/*#include "ui/ConnectionDrawer.hpp"
 
 namespace SwarmIDE::UI {
 
@@ -166,3 +166,4 @@ namespace SwarmIDE::UI {
         }
     }
 }
+*/

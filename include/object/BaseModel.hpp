@@ -1,17 +1,16 @@
 #pragma once 
-#include "object/BaseObject.hpp"
+#include "core/graph/LogicNode.hpp"
 #include "core/ModelManager.hpp"
 #include "llama.h"
 
 namespace SwarmIDE::Object {
 
-    class BaseModel : public SwarmIDE::Object::BaseObject {
+    class BaseModel : public SwarmIDE::Core::Graph::LogicNode {
     public:
-        BaseModel(std::string name, glm::vec2 worldPos, SwarmIDE::Core::Model* model = nullptr);
+        BaseModel(std::string name) : LogicNode(name) {};
 
-        void update() override;
-        std::optional<bool> drawUI(Camera& camera, glm::vec2 windowSize) override;   
-        std::string GetTypeName() override { return "Model"; };                      // Вернуть тип объекта
+           
+        std::string getTypeName() override { return "Model"; };                      // Вернуть тип объекта
         std::string GetModelID() const { return model ? model->id : ""; }            // Вернуть ID модели
         
     private:

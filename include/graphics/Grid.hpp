@@ -112,6 +112,9 @@ public:
     }
 
    void draw(Camera& camera) {
+
+        if(!isVisible) return;
+
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -147,16 +150,20 @@ public:
     void SetWindowSize(int width, int height)  { windowWidth = width; windowHeight = height; }
     void SetLineThicknessa(float lineT) { if(lineT <= 0.0f) return; lineThickness = lineT; }
 
-private:
+    void toggleVisibility() { isVisible = !isVisible; }        // Меняет переменную видимости на противоположную
+    void setVisibility(bool visible) { isVisible = visible; }  // Устанавливает переменную видимости в заданное значение
 
+private:
+ 
     unsigned int shaderProgram = 0;
 
     // Переменные состояния сестки
-    float step = 100.0f;        // Шаг сетки
-    glm::vec3 color;            // Цвет сетки
-    int windowWidth = 3840;     // Ширина окна
-    int windowHeight = 2160;    // Высота окна
+    float step = 100.0f;            // Шаг сетки
+    glm::vec3 color;                // Цвет сетки
+    int windowWidth = 3840;         // Ширина окна
+    int windowHeight = 2160;        // Высота окна
     float lineThickness = 5.0;      // Толшина сетки
+    bool isVisible = true;          // Видимость сетки
 
     // ID объектов OpenGL
     unsigned int VAO = 0;

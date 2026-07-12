@@ -1,4 +1,4 @@
-#pragma once 
+/*#pragma once 
 #include "SwarmIDE.hpp"
 #include "ui/Topology.hpp"
 #include "graphics/Camera.hpp"
@@ -30,9 +30,9 @@ namespace SwarmIDE::UI::Shape {
         void SetRotation(float rot) { rotation = rot; }
         float GetRotation() { return rotation; }
 
-        const std::vector<SwarmIDE::UI::AnchorPin>& GetLocalPins() const { return localPins; }
-        std::vector<AnchorPin>& GetLocalPins () { return localPins; }
-        void SetLocalPins(const std::vector<AnchorPin>& pins) { localPins = pins; }
+        // const std::vector<SwarmIDE::UI::AnchorPin>& GetLocalPins() const { return localPins; }
+        // std::vector<AnchorPin>& GetLocalPins () { return localPins; }
+        // void SetLocalPins(const std::vector<AnchorPin>& pins) { localPins = pins; }
 
         // Главный метод: пересчет локальных пинов в глобальные экранные координаты
         std::vector<TransformedPin> GetWorldPins(float zoomFactor) const;
@@ -49,7 +49,6 @@ namespace SwarmIDE::UI::Shape {
         glm::vec2 size{400.0f, 400.0f};   // Размер окна 
         float rotation{0.0f};             // Угол поворота в радианах
         ImU32 color;                      // Цвет
-
-        std::vector<AnchorPin> localPins; // Локальные пины фигуры
     };
 }
+    */

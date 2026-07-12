@@ -5,13 +5,10 @@ namespace SwarmIDE::Object::Memory {
 
     class PostgreSQL : public BaseMemory {
     public:
-        PostgreSQL(std::string name, glm::vec2 worldPos);
+        PostgreSQL(std::string name);
 
-        void update() override;
-        std::optional<bool> drawUI(Camera& camera, glm::vec2 windowSize) override;
-
-        std::string GetTypeName() override { return "PostgreSQL"; };
-    
+        void Execute() override;
+        std::string getTypeName() override { return "PostgreSQL"; };
     private:
     };
 }

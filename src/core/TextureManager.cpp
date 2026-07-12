@@ -7,12 +7,11 @@
 
 namespace SwarmIDE::Core {
 
+    /*
     TextureManager& TextureManager::getInstance() {
         static TextureManager instance;
         return instance;
     }
-
-    int TextureManager::count = 0;
 
     void TextureManager::loadTexture(const std::string& name, const std::string& filePath) {
 
@@ -72,6 +71,7 @@ namespace SwarmIDE::Core {
             }
         }
     }
+    */
 }
 
 

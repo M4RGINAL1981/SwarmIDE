@@ -1,8 +1,10 @@
+/*
 #include "ui/Menu.hpp"
 #include "imgui.h"
 #undef APIENTRY
 #include <pfd/portable-file-dialogs.h>
 #include <filesystem>
+#include <thread>
 #include <windows.h>
 #pragma comment(lib, "urlmon.lib")
 
@@ -139,6 +141,8 @@ namespace SwarmIDE::UI {
 
         // Отрисовка верхнего главного меню
         if (ImGui::BeginMainMenuBar()) {
+
+            // FILE
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("New Canvas"))        { serialization_manager->getInstance().ClearGraph(); }
 
@@ -146,7 +150,7 @@ namespace SwarmIDE::UI {
                 if (ImGui::MenuItem("Open...", "Ctrl+O")) { 
                     auto openDialog = pfd::open_file(
                         "Open SwarmIDE Scene",
-                        "", // Начальный путь пусток (откроется текущая папка)
+                        "", // Начальный путь пуст (откроется текущая папка)
                         { "SwarmIDE Project (*.json)", "*.json" }
                     );
 
@@ -178,36 +182,29 @@ namespace SwarmIDE::UI {
 
                 ImGui::Separator();
                 if (ImGui::BeginMenu("Settings")) {
-                    if (ImGui::BeginMenu("Models")) {
+                    if (ImGui::BeginMenu("Models")) {  // Данный раздел позволяет узнать название и статус всех моделей и загрузить модели 
                         
-                        auto& allModels = model_manager->GetModels(); 
+                        auto& allModels = model_manager->GetModels();                   // Получаем все модели
                         
-                        for (auto& modelData : allModels) {
-                            modelData.isDownloaded = std::filesystem::exists(modelData.path);
+                        for (auto& modelData : allModels) {                             // Проходимся по всем моделям
+                            modelData.isDownloaded = model_manager->isDownloadedModelForID(modelData.id); 
                             
-                            if (!modelData.isDownloaded) {
-                                std::string menuLabel = "Download " + modelData.name;
-                                if (ImGui::MenuItem(menuLabel.c_str())) {
-                                    
-                                    std::filesystem::create_directories("models");
-                                    
-                                    pfd::message("Download", "Starting download for " + modelData.name + "\nThis may take a while...", pfd::choice::ok);
-                                    
-                                    HRESULT hr = URLDownloadToFileA(NULL, modelData.downloadUrl.c_str(), modelData.path.c_str(), 0, NULL);
-                                    
-                                    if (SUCCEEDED(hr)) {
-                                        modelData.isDownloaded = true;
-                                        pfd::message("Success", modelData.name + " downloaded successfully!", pfd::choice::ok);
-                                    } else {
-                                        pfd::message("Error", "Failed to download " + modelData.name, pfd::choice::ok);
-                                    }
+                            if (!modelData.isDownloaded) {                              // Проверяем скачана ли модель
+                                std::string menuLabel = "Download " + modelData.name;   
+                                ImGui::TextDisabled("%s", menuLabel.c_str());           // Указываем на кнопке название модели
+
+
+                                if (ImGui::MenuItem(menuLabel.c_str())) {               // Скачиваем модель, если кнопка нажата
+                                    std::thread downloadThread([this, id = modelData.id]() { model_manager->downloadModelForID(id); });
+                                    downloadThread.detach();
                                 }
-                            } else {
-                                std::string statusLabel = modelData.name + " (Ready)";
+                            } 
+                            else {
+                                std::string statusLabel = modelData.name + " (Ready)"; // Если модель скачана, выводим соответсвующую кнопку
                                 ImGui::TextDisabled("%s", statusLabel.c_str());
                             }
                         }
-
+                        DrawDownloadModel();                                           // Отображаем загрузку моделей.
                         ImGui::EndMenu();
                     }
                     ImGui::EndMenu();
@@ -219,17 +216,23 @@ namespace SwarmIDE::UI {
                 ImGui::EndMenu();
             }
 
-            
+            if (ImGui::BeginMenu("View")) {
+                if (ImGui::MenuItem("Reset Camera", "Ctrl+R")) { camera.reset(); }
+                if (ImGui::MenuItem("Toggle Grid", "Ctrl+G")) { grid->toggleVisibility(); }
+                ImGui::EndMenu();
+            }
             
             if (ImGui::BeginMenu("Edit")) {
                 if (ImGui::MenuItem("Clear Connections")) { connect_manager->removeAllConnections(); }
+                if (ImGui::MenuItem("Clear Objects")) { serialization_manager->getInstance().ClearGraph(); }
+                if (ImGui::MenuItem("Clear All")) { connect_manager->removeAllConnections(); serialization_manager->getInstance().ClearGraph(); }
                 if (ImGui::MenuItem("FPS Counter")) { isFpsCounterVisible = !isFpsCounterVisible; }
                 ImGui::EndMenu();
             }
 
             if (ImGui::BeginMenu("Simulation")) {
-                if (ImGui::MenuItem("Run Swarm", "F5")) { /* Запуск ядра CUDA */ }
-                if (ImGui::MenuItem("Stop", "Shift+F5")) { /* Остановка */ }
+                if (ImGui::MenuItem("Run Swarm", "F5")) { Запуск ядра CUDA  }
+                if (ImGui::MenuItem("Stop", "Shift+F5")) { Остановка  }
                 ImGui::EndMenu();
             }
 
@@ -246,4 +249,104 @@ namespace SwarmIDE::UI {
         }
     }
 
+    void Menu::DrawDownloadModel() {
+        auto models = model_manager->GetModels();
+
+        // Размеры и позиция окна полосы загрузки
+        ImVec2 windowSize = ImVec2(500.0f, 120.0f); // Уменьшил высоту, 200 много для одной полосы
+        ImVec2 windowPos  = ImVec2(1000.0f, 800.0f);
+
+        ImGuiWindowFlags flags = 
+                    ImGuiWindowFlags_NoResize   |               
+                    ImGuiWindowFlags_NoMove     |               
+                    ImGuiWindowFlags_NoInputs   |               
+                    ImGuiWindowFlags_NoCollapse |                      
+                    ImGuiWindowFlags_NoTitleBar |               
+                    ImGuiWindowFlags_NoBringToFrontOnFocus |    
+                    ImGuiWindowFlags_NoFocusOnAppearing;        
+
+        for (size_t i = 0; i < models.size(); ++i) {
+            auto& model = models[i];
+
+            if (model.isDownloading) {
+                // Создаем уникальное имя окна для ImGui на основе индекса, чтобы избежать конфликтов ID
+                std::string window_id = model.name + "##download_win_" + std::to_string(i);
+
+                ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
+                ImGui::SetNextWindowPos(windowPos, ImGuiCond_Always); 
+
+                if (ImGui::Begin(window_id.c_str(), nullptr, flags)) {
+                    // Рассчитываем размер самой полосы: во всю ширину окна минус отступы по 20px по бокам
+                    // Высоту полосы сделаем фиксированной 30px
+
+                    ImGui::Text(model.name.c_str());
+                    ImVec2 progressBarSize = ImVec2(windowSize.x - 40.0f, 30.0f);
+                    
+                    // Отрисовываем полосу загрузки
+                    DrawProgressBar(model.progress, progressBarSize);  
+                }
+                ImGui::End();
+
+                // Если окон должно быть несколько, смещаем координату Y для следующего окна вниз
+                windowPos.y += windowSize.y + 10.0f; 
+            }
+        }
+    }
+
+    void Menu::DrawProgressBar(float progress, ImVec2 size) {
+        // 1. Нормализуем прогресс (ожидаем диапазон от 0.0f до 1.0f)
+        if (progress < 0.0f) progress = 0.0f;
+        if (progress > 1.0f) progress = 1.0f;
+
+        // 2. Получаем текущую экранную позицию курсора внутри окна ImGui
+        // Это гарантирует, что даже если окно сдвинется, рисунок сдвинется вместе с ним
+        ImVec2 start_pos = ImGui::GetCursorScreenPos();
+
+        // Смещаем курсор немного вниз и вправо для красоты (внутренний отступ от краев окна)
+        start_pos.x += 20.0f;
+        start_pos.y += 20.0f;
+
+        // Резервируем место в окне под элемент (с учетом смещения)
+        ImGui::Dummy(ImVec2(size.x + 20.0f, size.y + 20.0f));  
+
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+
+        // 3. Вычисляем крайние точки рамки полосы
+        ImVec2 min_p = start_pos;
+        ImVec2 max_p = ImVec2(start_pos.x + size.x, start_pos.y + size.y);
+
+        ImU32 color_white  = IM_COL32(255, 255, 255, 255);
+        ImU32 color_black  = IM_COL32(0, 0, 0, 255);
+        ImU32 color_purple = IM_COL32(140, 20, 250, 255);
+
+        // 4. Рисуем белый фон полосы
+        draw_list->AddRectFilled(min_p, max_p, color_white);
+        
+        // 5. Рисуем фиолетовое заполнение (с учетом внутренних отступов)
+        if (progress > 0.0f) {
+            float padding = 3.0f; // Внутренний отступ фиолетовой полосы от черной рамки
+
+            // Левый верхний угол заполнения
+            ImVec2 fill_min = ImVec2(min_p.x + padding, min_p.y + padding);
+            
+            // Максимально доступная ширина для заполнения
+            float max_fill_width = size.x - (padding * 2.0f);
+            // Текущая ширина в зависимости от прогресса
+            float current_fill_width = max_fill_width * progress;
+
+            // Правый нижний угол заполнения
+            ImVec2 fill_max = ImVec2(fill_min.x + current_fill_width, max_p.y - padding);
+
+            // Рисуем фиолетовый прямоугольник только если ширина больше нуля
+            if (current_fill_width > 0.0f) {
+                draw_list->AddRectFilled(fill_min, fill_max, color_purple);
+            }
+        }
+
+        // 6. Рисуем черную окантовку поверх всего (0.0f — без скругления углов)
+        draw_list->AddRect(min_p, max_p, color_black, 0.0f, 0, 1.5f);
+    }
+
+
 }
+*/

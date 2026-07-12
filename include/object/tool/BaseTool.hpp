@@ -1,11 +1,14 @@
 #pragma once 
-#include "object/BaseObject.hpp"
+#include "core/graph/LogicNode.hpp"
 
 namespace SwarmIDE::Object::Tool {
 
-    class BaseTool : public SwarmIDE::Object::BaseObject {
+    class BaseTool : public Core::Graph::LogicNode  {
     public:
-        BaseTool(std::string name, glm::vec2 worldPos) : BaseObject(name, worldPos) {};
+        BaseTool(std::string name) : LogicNode(name) {};
+        virtual ~BaseTool() = default;
+
+
     protected:
 
     };

@@ -1,5 +1,6 @@
 #pragma once
-#include "core/ObjectManager.hpp"
+#include "core/graph/GraphManager.hpp"
+#include "core/graph/GraphRegistry.hpp"
 #include "core/ConnectionManager.hpp"
 #include "core/SerializationManager.hpp"
 #include "core/ModelManager.hpp"
@@ -21,10 +22,12 @@ namespace SwarmIDE::Core {
         Grid grid;                                       // Сетка
 
         // Менеджеры
-        ObjectManager& object_manager;                   // Менеджер объектов
+        Graph::GraphManager& graph_manager;                     // Менеджер нод
         ConnectionManager& connect_manager;              // Менеджер соединений
         SerializationManager& serialization_manager;     // Менеджер сохранения и загруки
         ModelManager& model_manager;                     // Менеджер загрузки моделей для агентов
+        GenerateIDManager& generate_id_manager;          // Менеджер по генерации уникальных id
+        Graph::GraphRegistry& graph_registry;                   // Регистрация реализаций нод в графе
         
         SwarmIDE::UI::Fonts fonts;                       // Шрифты
 

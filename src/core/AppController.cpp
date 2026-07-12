@@ -1,6 +1,10 @@
-#include "core/AppController.hpp"
+/*#include "core/AppController.hpp"
 #include "ui/Menu.hpp"
 #include "ui/ConnectionDrawer.hpp"
+
+#include "core/graph/GraphManager.hpp"
+#include "core/graph/GraphRegistry.hpp"
+
 #include <iostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -18,7 +22,14 @@ glm::vec2 winSize2((float)SCR_WIDTH, (float)SCR_HEIGHT);
 
 namespace SwarmIDE::Core {
     
-    AppController::AppController() : window(nullptr), camera(), grid(), object_manager(ObjectManager::getInstance()), connect_manager(ConnectionManager::getInstance()), serialization_manager(SerializationManager::getInstance()), model_manager(ModelManager::getInstance()) {
+    AppController::AppController() : window(nullptr), camera(), grid(),
+        graph_manager(Graph::GraphManager::getInstance()), 
+        connect_manager(ConnectionManager::getInstance()),
+        //serialization_manager(SerializationManager::getInstance()),
+        model_manager(ModelManager::getInstance()),
+        generate_id_manager(GenerateIDManager::getInstance()),
+        graph_registry(Graph::GraphRegistry::getInstance())
+    {
 
         // 1. GLFW и создание окна
         if (!glfwInit()) {
@@ -37,7 +48,7 @@ namespace SwarmIDE::Core {
         }
         glfwMakeContextCurrent(window);
 
-        // 2. СНАЧАЛА СТАВИМ НАШИ КОЛБЭКИ ВВОДА
+        // 2. СТАВИМ НАШИ КОЛБЭКИ ВВОДА
         glfwSetWindowUserPointer(window, this);
 
         glfwSetMouseButtonCallback(window, [](GLFWwindow* w, int button, int action, int mods) {
@@ -57,6 +68,13 @@ namespace SwarmIDE::Core {
                 app->camera.pan(currentPos - app->lastMousePos);
             }
             app->lastMousePos = currentPos;
+        });
+        glfwSetKeyCallback(window, [](GLFWwindow* w, int key, int scancode, int action, int mods) {
+            auto* app = static_cast<AppController*>(glfwGetWindowUserPointer(w));
+            if (key == GLFW_KEY_UP    && action == GLFW_PRESS) app->camera.pan(glm::vec2(0.0f, -1.0f));
+            if (key == GLFW_KEY_DOWN  && action == GLFW_PRESS) app->camera.pan(glm::vec2(0.0f, 1.0f));
+            if (key == GLFW_KEY_LEFT  && action == GLFW_PRESS) app->camera.pan(glm::vec2(1.0f, 0.0f));
+            if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) app->camera.pan(glm::vec2(-1.0f, 0.0f)); 
         });
         glfwSetKeyCallback(window, [](GLFWwindow *window, int key, int scancode, int action, int mods) {
             auto* app = static_cast<AppController*>(glfwGetWindowUserPointer(window));
@@ -116,19 +134,26 @@ namespace SwarmIDE::Core {
         glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
         // 5. Связи
-        SwarmIDE::UI::Menu::getInstance().SetObjectManager(&object_manager);
-        SwarmIDE::UI::Menu::getInstance().SetSerializationManager(&serialization_manager);
-        SwarmIDE::UI::Menu::getInstance().SetConnectionManager(&connect_manager);
-        SwarmIDE::UI::Menu::getInstance().SetModelManager(&model_manager);
+        //SwarmIDE::UI::Menu::getInstance().SetGraphManager(&graph_manager);
+        //SwarmIDE::UI::Menu::getInstance().SetSerializationManager(&serialization_manager);
+        //SwarmIDE::UI::Menu::getInstance().SetConnectionManager(&connect_manager);
+        //SwarmIDE::UI::Menu::getInstance().SetModelManager(&model_manager);
 
-        SwarmIDE::UI::Menu::getInstance().SetFonts(fonts);
-        SwarmIDE::Core::SerializationManager::getInstance().SetFonts(fonts);
+        //SwarmIDE::UI::Menu::getInstance().SetGrid(&grid);
+        //SwarmIDE::UI::Menu::getInstance().SetCamera(&camera);
 
-        SwarmIDE::UI::ConnectionDrawer::getInstance().SetObjectManager(&object_manager);
-        SwarmIDE::UI::ConnectionDrawer::getInstance().SetConnectionManager(&connect_manager);
+        //SwarmIDE::UI::Menu::getInstance().SetFonts(fonts);
+        //SwarmIDE::Core::SerializationManager::getInstance().SetFonts(fonts);
+
+        //SwarmIDE::UI::ConnectionDrawer::getInstance().SetGraphManager(&graph_manager);
+        //SwarmIDE::UI::ConnectionDrawer::getInstance().SetConnectionManager(&connect_manager);
+
+        //SwarmIDE::Core::ConnectionManager::getInstance().SetGraphManager(&graph_manager);
     }
-
+    */
+    /*
     void AppController::run() {
+
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
 
@@ -139,7 +164,7 @@ namespace SwarmIDE::Core {
             lastFrame = currentFrame;
             
             //camera.update(deltaTime);
-            object_manager.updateAllObject(); 
+            //object_manager.updateAllObject(); 
 
             // 2. Подготовка кадров ImGui
             ImGui_ImplOpenGL3_NewFrame();
@@ -173,4 +198,5 @@ namespace SwarmIDE::Core {
         std::cout << "All created Agents: ";
         std::cout << object_manager.getCountObject() << std::endl;
     }
-}
+    */
+//}

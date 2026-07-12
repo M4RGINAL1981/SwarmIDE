@@ -1,13 +1,19 @@
 #pragma once
-#include "object/BaseObject.hpp"
-
+#include "core/graph/LogicNode.hpp"
+#include <string>
 
 namespace SwarmIDE::Object::AI {
     
-    class BaseAgent : public BaseObject {
+    class BaseAgent : public Core::Graph::LogicNode{
     public:
-        BaseAgent(std::string name, glm::vec2 worldPos): BaseObject(name, worldPos) {};
+        BaseAgent(const std::string& name) : LogicNode(name) {};
         virtual ~BaseAgent() = default;
-        virtual void render() = 0;   // Запуск
+
+        // Установить и Получить инструкции агента
+        std::string getSystemInstruction() { return systemInstruction; }
+        void setSystemInstruction(std::string system_instruction) { systemInstruction = system_instruction; }
+
+    private:
+        std::string systemInstruction;
     };
 }

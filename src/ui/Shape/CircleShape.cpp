@@ -1,4 +1,4 @@
-#include "ui/Shape/CircleShape.hpp"
+/*#include "ui/Shape/CircleShape.hpp"
 #include "core/TextureManager.hpp"
 #include <iostream>
 #include <vector>
@@ -90,7 +90,7 @@ namespace SwarmIDE::UI::Shape {
             //ImGui::TextColored(ImVec4(0.0f, 0.8f, 1.0f, 1.0f), "%s", titleStr.c_str());
             
             ImGui::Separator();
-            */
+            
 
             renderContent();
 
@@ -114,3 +114,4 @@ namespace SwarmIDE::UI::Shape {
     }
 
 }
+*/

@@ -1,17 +1,18 @@
 #pragma once
-#include "object/BaseObject.hpp" 
+#include "core/graph/LogicNode.hpp" 
 #include "core/SerializationManager.hpp"
+#include "core/graph/GraphManager.hpp"
 
 namespace SwarmIDE::Core {
 
     struct Connection {
-        int sourceObjectID;  // ID Объекта-Источника
-        int targetObjectID;  // ID Объекта-Цели
+        UUIDv4::UUID fromNodeID;               // ID Ноды-Источника
+        UUIDv4::UUID toNodeID;                 // ID Ноды-Цели
 
-        std::string sourcePinID;     // ID Пина-Источника
-        std::string targetPinID;     // ID Пина-Цели
+        std::string fromPinID;        // ID Пина-Источника
+        std::string toPinID;          // ID Пина-Цели
 
-        bool operator==(const Connection& other) const;
+        bool operator==(Connection other);
     };
 
     class ConnectionManager{
@@ -20,14 +21,22 @@ namespace SwarmIDE::Core {
         static ConnectionManager& getInstance();
 
         // Создание связи
-        void connect(int sObjectID, int tObjectID, SwarmIDE::UI::AnchorPin& sPin, SwarmIDE::UI::AnchorPin& tPin);
-        void disconnect(Connection connect);                              // Разрыв связи
+        void connect(UUIDv4::UUID fromNodeID, UUIDv4::UUID toNodeID, std::string fromPinID, std::string toPinID);
+       
+        // Разрыв связи
+        void disconnect(Connection connect);
 
-        std::vector<Connection>& getConnection() { return connection; }   // Получить связи
-        std::vector<int> getConnectedOutputs(int ObjectID) { return outputCache[ObjectID]; }              // Получить все объкты, что связаны с текущем объектом
+        std::vector<Connection*> getOutgoingConnectionsForNode(UUIDv4::UUID nodeID);    // Вернуть все связи, где объект-источник
+        std::vector<Connection*> getIncomingConnectionsForNode(UUIDv4::UUID nodeID);    // Вернуть все связи, где объект-цель
+        std::vector<Connection*> getAllConnectionsForNode(UUIDv4::UUID nodeID);         // Вернуть все связи с объектом
 
-        void removeConnectionsForObject(int objectID);                    // Удалить все связи с данным объктом
-        void removeAllConnections() { connection.clear(); pinCounters.clear(); outputCache.clear(); }     // Удалить вообще все связи
+        std::vector<Connection>& getAllConnections() { return connection; }             // Получить все связи           
+        
+        void removeConnectionsForNode(UUIDv4::UUID nodeID);                             // Удалить все связи с данным объктом
+        void removeAllConnections() { connection.clear(); }                             // Удалить все связи
+
+        // Подключаем Менеджера графа
+        void SetGraphManager(Graph::GraphManager* grph_manager) { graph_manager = grph_manager; }
 
         ConnectionManager(const ConnectionManager&) = delete;
         ConnectionManager& operator=(const ConnectionManager&) = delete;
@@ -35,16 +44,13 @@ namespace SwarmIDE::Core {
         ConnectionManager& operator=(ConnectionManager&&) = delete;
 
     private:
-        friend SwarmIDE::Core::SerializationManager;
+        friend SerializationManager;
 
         ConnectionManager() = default;
         ~ConnectionManager() = default;
-        
-        bool isPinOverloaded(const std::string& pinID, int maxConnectoins);
-        std::string makeGlobalKey(int objectID, const std::string localPinID) { return std::to_string(objectID) + "_" + localPinID; }
 
+        Graph::GraphManager* graph_manager = nullptr;
+     
         std::vector<Connection> connection;                  // Список связей
-        std::unordered_map<std::string, int> pinCounters;    // Кол-во связей у пинов
-        std::unordered_map<int, std::vector<int>> outputCache;
     };
 }

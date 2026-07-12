@@ -1,6 +1,6 @@
 #pragma once
 #include "SwarmIDE.hpp"
-#include "core/ObjectManager.hpp"
+/*#include "core/graph/GraphManager.hpp"
 #include "core/ConnectionManager.hpp"
 #include "core/ModelManager.hpp"
 #include "ui/Theme.hpp"
@@ -30,7 +30,7 @@ namespace SwarmIDE::Core {
         SerializationManager& operator=(SerializationManager&&) = delete;
         
     private:
-        friend SwarmIDE::Core::ObjectManager;
+        friend SwarmIDE::Core::Graph::GraphManager;
         friend SwarmIDE::Core::ConnectionManager;
         friend SwarmIDE::Core::ModelManager;
 
@@ -40,3 +40,4 @@ namespace SwarmIDE::Core {
         ~SerializationManager() = default;
     };
 }
+*/

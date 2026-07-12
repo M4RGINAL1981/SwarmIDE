@@ -1,6 +1,7 @@
 #pragma once
 #include "SwarmIDE.hpp"
 #include "stb_image.h"
+#include "core/GenerateIDManager.hpp"
 #include <unordered_map>
 #include <string>
 #include <optional>
@@ -9,7 +10,7 @@ namespace SwarmIDE::Core {
 
     struct Texture {
         unsigned char* data;   // Сама Иконки/Текстура
-        int id;                // id Иконки/Текстуры
+        UUIDv4::UUID id;       // id Иконки/Текстуры
         int width;             // Ширина Иконки/Текстуры
         int height;            // Высота Иконки/Текстуры
         int channels;          // Кол-во каналов Иконки/Текстуры
@@ -39,6 +40,5 @@ namespace SwarmIDE::Core {
         ~TextureManager();
 
         std::unordered_map<std::string, Texture> textures;
-        static int count;
     };
 }

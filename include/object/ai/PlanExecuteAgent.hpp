@@ -1,17 +1,15 @@
 #pragma once
 #include "object/ai/BaseAgent.hpp"
 
-
 namespace SwarmIDE::Object::AI {
 
-    class PlanExecuteAgent : public SwarmIDE::Object::AI::BaseAgent {
+    class PlanExecuteAgent : public BaseAgent {
     public:
-        PlanExecuteAgent(std::string name, glm::vec2 worldPos);
-
-        void update() override;
-        std::optional<bool> drawUI(Camera& camera, glm::vec2 windowSize) override;
-        void render() override;
+        PlanExecuteAgent(const std::string& name);
         
-        std::string GetTypeName() override { return "PlanExecuteAgent"; };
+        void Execute() override;
+
+        std::string getTypeName() override { return "ToolsAgent"; };
     };
+
 }

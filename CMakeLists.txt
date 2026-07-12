@@ -52,6 +52,7 @@ target_include_directories(SwarmIDE PRIVATE
     "${EXTERNAL_DIR}/pfd"
     "${EXTERNAL_DIR}"
     "${EXTERNAL_DIR}/llama/include"
+    "${EXTERNAL_DIR}/uuid_v4"
 )
 
 # --- Интеграция библиотеки llama.cpp ---
@@ -76,6 +77,8 @@ target_link_libraries(SwarmIDE PRIVATE
     opengl32.lib # Нужно для Windows
     urlmon.lib
     llama        # Библиотека для инференса моделей
+    $<$<PLATFORM_ID:Windows>:opengl32.lib>
+    $<$<PLATFORM_ID:Windows>:urlmon.lib>
 )
 
 # Принудительно отключаем конфликтную Release-библиотеку MSVCRT в режиме отладки Debug
