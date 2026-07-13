@@ -11,6 +11,7 @@ namespace SwarmIDE::Core::Graph {
     }
 
     void GraphManager::StartExecution(UUIDv4::UUID triggerNodeID) {
+        /* С многопоточностью (Пока рано)
         // Очишаем очередь
         while(executionQueue.size() != 0) {
             LogicNode* node = findNodeByID(executionQueue.front());
@@ -24,23 +25,47 @@ namespace SwarmIDE::Core::Graph {
         // Запускаем цикл обработки очереди
         std::thread processQueue(&GraphManager::ProcessQueue, this);
         processQueue.detach();
+        */
+
+        // Очищаем очередь (лучше делать это через swap, у queue нет метода clear)
+        std::queue<UUIDv4::UUID> empty;
+        std::swap(executionQueue, empty);
+
+        executionQueue.push(triggerNodeID);
+        
+        // Пока запускаем синхронно, прямо здесь
+        ProcessQueue();
     }
 
     void GraphManager::ProcessQueue() {
-        while(executionQueue.size() != 0){
-            LogicNode* node = findNodeByID(executionQueue.front());
+        while(!executionQueue.empty()) {
+            // 1. Извлекаем ID из очереди правильно
+            UUIDv4::UUID currentID = executionQueue.front();
+            executionQueue.pop(); 
 
+            LogicNode* node = findNodeByID(currentID);
+            if(!node) continue;
+
+            // 2. Выполняем логику
             node->Execute();
+            std::cout << "NODE ID: " << node->GetID() << std::endl;
 
-            /*
-            После успешного завершения ноды движок смотрит в `ConnectionManager`: _«К каким входам подключены выходы этой завершенной ноды?»_.
-            
-            Для каждой найденной связи менеджер **физически копирует** `DataVariant` из выходного порта отработавшей ноды во входной порт целевой ноды.
-            
-            Проверяет целевую ноду: если все её обязательные входы получили данные, её ID добавляется в `executionQueue`.
-            */
+            // 3. Передаем результаты дальше
+            std::vector<Connection*> connections = ConnectionManager::getInstance().getOutgoingConnectionsForNode(node->GetID());
 
-            executionQueue.pop();
+            for(auto* conn : connections) {
+                if(conn != nullptr) {
+                    LogicNode* secondNode = findNodeByID(conn->toNodeID);
+                    if(secondNode != nullptr) {
+                        std::cout << "Second Node ID: " << secondNode->GetID() << std::endl;
+                        secondNode->setInputPinValue(conn->toPinID, node->getOutputPinValue(conn->fromPinID));
+
+                        if(secondNode->isFullInputPin()) { 
+                            executionQueue.push(secondNode->GetID()); 
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -49,8 +74,6 @@ namespace SwarmIDE::Core::Graph {
         nodes.push_back(std::move(node));
         std::cout << "Node is add" << std::endl;
     }
-
-    
 
     void GraphManager::removeNode(UUIDv4::UUID nodeID) {
         SwarmIDE::Core::ConnectionManager::getInstance().removeConnectionsForNode(nodeID);

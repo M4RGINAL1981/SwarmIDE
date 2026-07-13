@@ -50,6 +50,16 @@ namespace SwarmIDE::Core::Graph {
             return true;
         }
 
+        // Проверка на заполненость логического контейнера. Возвращает true - если тип std::monostate, иначе - false
+        bool isEmpty() { 
+            if(!std::holds_alternative<std::monostate>(data)) return false;
+            return true;
+        }
+
+        // Очишает текущий логический контейнер
+        void clear() {
+            data = std::monostate{};
+        }
 
     private:
         VariantType data;

@@ -29,7 +29,7 @@ namespace SwarmIDE::Core {
         GenerateIDManager& generate_id_manager;          // Менеджер по генерации уникальных id
         Graph::GraphRegistry& graph_registry;                   // Регистрация реализаций нод в графе
         
-        SwarmIDE::UI::Fonts fonts;                       // Шрифты
+        //SwarmIDE::UI::Fonts fonts;                       // Шрифты
 
         glm::vec2 lastMousePos = glm::vec2(0.0f);        // Последнее положение мыши в пространстве
         bool isPanning = false;                          

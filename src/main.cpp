@@ -54,9 +54,9 @@ int main() {
     alpha->getInputPinValue("input_text") = SwarmIDE::Core::Graph::DataVariant(std::string("Hello from Human!")); // Записываем данные
     
     // 5. Вызываем логику первой ноды вручную для теста
-    alpha->Execute();
+    //alpha->Execute();
 
-    // (Здесь в будущем GraphManager должен сам перенести данные по связи и вызвать Execute у второго)
+    graph.StartExecution(alpha->GetID());
 
     std::cout << "--- END BACKEND TEST ---" << std::endl;
     return 0;
