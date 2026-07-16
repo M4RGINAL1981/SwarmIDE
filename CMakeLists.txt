@@ -8,8 +8,15 @@ endif()
 
 set(CMAKE_CXX_STANDARD 20)
 
-# Ищем все .cpp файлы в папках src и include
-file(GLOB_RECURSE SOURCE_FILES "src/*.cpp" "src/*.c" "include/*.cpp")
+# =====================================================================
+# ВАЖНОЕ ИСПРАВЛЕНИЕ: Собираем все EXE и DLL в одном месте (Решает ошибку -1073741515)
+# =====================================================================
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+# =====================================================================
+
+file(GLOB_RECURSE SOURCE_FILES "src/*.cpp" "src/*.c")
 file(GLOB_RECURSE HEADER_FILES "include/*.hpp")
 
 set(EXTERNAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external")
@@ -18,7 +25,7 @@ set(EXTERNAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external")
 add_library(glad STATIC src/glad.c)
 target_include_directories(glad PUBLIC "${EXTERNAL_DIR}/glad")
 
-# 2. Либа ImGui (добавляем все файлы из бекендов для надежности)
+# 2. Либа ImGui
 add_library(imgui_lib STATIC 
     "${EXTERNAL_DIR}/imgui/imgui.cpp"
     "${EXTERNAL_DIR}/imgui/imgui_draw.cpp"
@@ -53,18 +60,25 @@ target_include_directories(SwarmIDE PRIVATE
     "${EXTERNAL_DIR}"
     "${EXTERNAL_DIR}/llama/include"
     "${EXTERNAL_DIR}/uuid_v4"
+    "${EXTERNAL_DIR}/cpr"
 )
 
 # --- Интеграция библиотеки llama.cpp ---
-# Отключаем сборку встроенных примеров, тестов и серверов llama.cpp, чтобы сэкономить время и вес
 set(LLAMA_BUILD_EXAMPLES OFF CACHE BOOL "Build llama.cpp examples" FORCE)
 set(LLAMA_BUILD_TESTS OFF CACHE BOOL "Build llama.cpp tests" FORCE)
 set(LLAMA_BUILD_SERVER OFF CACHE BOOL "Build llama.cpp server" FORCE)
 
-# Добавляем поддиректорию external/llama в дерево сборки CMake
+# --- Настройки для CPR и встроенного curl ---
+set(CPR_BUILD_TESTS OFF CACHE INTERNAL "")
+set(CPR_BUILD_TESTS_WITH_WEBSOCKETS OFF CACHE INTERNAL "")
+set(CPR_CURL_USE_LIBPSL OFF CACHE BOOL "Disable libpsl in CPR" FORCE)
+set(CURL_USE_LIBPSL OFF CACHE BOOL "Disable libpsl in built-in curl" FORCE)
+
+# Подключаем поддиректории зависимостей в дерево сборки
+add_subdirectory("${EXTERNAL_DIR}/cpr")
 add_subdirectory("${EXTERNAL_DIR}/llama")
 
-# Специфичный хак для MSVC + C++20: заставляем u8"строки" вести себя как const char* # для исправления ошибок компиляции в файле llama-chat.cpp
+# Специфичный хак для MSVC + C++20: фикс u8"" строк в llama-chat.cpp
 if(MSVC)
     target_compile_options(llama PRIVATE /Zc:char8_t-)
 endif()
@@ -72,10 +86,9 @@ endif()
 # Линкуем библиотеки
 target_link_libraries(SwarmIDE PRIVATE 
     "${EXTERNAL_DIR}/glfw/lib/glfw3.lib"
+    cpr::cpr
     glad 
     imgui_lib
-    opengl32.lib # Нужно для Windows
-    urlmon.lib
     llama        # Библиотека для инференса моделей
     $<$<PLATFORM_ID:Windows>:opengl32.lib>
     $<$<PLATFORM_ID:Windows>:urlmon.lib>

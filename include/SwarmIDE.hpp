@@ -13,7 +13,6 @@ namespace SwarmIDE {
     namespace Object {
 
         class BaseObject;                  // Базовый класс для всех сущностей графа
-        class BaseModel;                   // Абстракция языковой модели (LLM)
 
         namespace AI {      
             class BaseAgent;               // Базовый абстрактный класс ИИ-агента
@@ -61,6 +60,7 @@ namespace SwarmIDE {
             class DataVariant;             // Умный контейнер, который хранит различную информацию
             class GraphRegistry;           // Знает как создавать объекты
             class LogicNode;               // Умная логическая не визуальная нода
+            class ModelNode;               // Нода, которая просто имеет id модели
             class LogicPin;                // Умный логический не визуальный пин
         }
 

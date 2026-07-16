@@ -54,26 +54,24 @@ namespace SwarmIDE::Core {
 
     // Вернуть все связи, где нода-источник
     std::vector<Connection*> ConnectionManager::getOutgoingConnectionsForNode(UUIDv4::UUID nodeID) {
-        std::vector<Connection*> result;
-        
+        std::vector<Connection*> outgoing;
         for(auto& conn : connection) {
             if(conn.fromNodeID == nodeID) {
-                result.push_back(&conn);
+                outgoing.push_back(&conn);
             }
         }
-        return result;
+        return outgoing;
     }
 
     // Вернуть все связи, где нода-цель
     std::vector<Connection*> ConnectionManager::getIncomingConnectionsForNode(UUIDv4::UUID nodeID) {
-        std::vector<Connection*> result;
-        
+        std::vector<Connection*> incoming;
         for(auto& conn : connection) {
             if(conn.toNodeID == nodeID) {
-                result.push_back(&conn);
+               incoming.push_back(&conn);
             }
         }
-        return result;
+        return incoming;
     }
 
     // Вернуть все связи с нодой

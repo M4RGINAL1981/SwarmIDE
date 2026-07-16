@@ -15,6 +15,7 @@ namespace SwarmIDE::Core::Graph {
         static GraphManager& getInstance();
 
         void StartExecution(UUIDv4::UUID triggerNodeID);
+        void StartExecutionAll();
         void ProcessQueue();
 
         void addNode(std::unique_ptr<LogicNode> node);
@@ -39,6 +40,9 @@ namespace SwarmIDE::Core::Graph {
 
         GraphManager() {};
         ~GraphManager() = default;
+
+        // Рекурсивно собирает все родительские ноды
+        void ResolveDependencies(UUIDv4::UUID nodeID, std::vector<UUIDv4::UUID>& executionOrder, std::vector<UUIDv4::UUID>& visited);
 
         std::vector<std::unique_ptr<LogicNode>> nodes; // Хранилище всех нод сцены
         std::queue<UUIDv4::UUID> executionQueue;       // Очередь ID нод, готовых к выполнению прямо сейчас

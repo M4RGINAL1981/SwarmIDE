@@ -1,5 +1,6 @@
 #include "object/ai/ConversationalAgent.hpp"
 #include "core/graph/GraphRegistry.hpp"
+#include "core/ModelManager.hpp"
 #include <iostream>
 
 namespace SwarmIDE::Object::AI {
@@ -8,49 +9,43 @@ namespace SwarmIDE::Object::AI {
         
         // Подключаем входные пины
         addInputPin("input_text", "string");
-        addInputPin("model_core", "model");
-        addInputPin("memory_db",  "memory");
+        addInputPin("model_core", "string");
+        //addInputPin("memory_db",  "memory");
 
         // Подключаем выходные пины
         addOutputPin("output_text", "string");    
     }
 
     void ConversationalAgent::Execute() {
-
         SetState(Core::Graph::Executing);
 
-        // 1. Читаем данные из входного пина
-        Core::Graph::DataVariant inputData = getInputPinValue("input_text");
+        // 1. Читаем промпт и ID модели
+        std::string prompt = getInputPinValue("input_text").getValue<std::string>();
+        std::string targetModelID = getInputPinValue("model_core").getValue<std::string>();
 
-        std::string incomingText = "";
-        if (inputData.isType<std::string>()) {
-            incomingText = inputData.getValue<std::string>();
+        if(getSystemInstruction().size() == 0) setSystemInstruction("Always answer in Russian language. Всегда отвечай на русском языке. Передай привет");
+
+        std::cout << "[Agent " << GetName() << "]: Начинаю генерацию текста..." << std::endl;
+
+        // 2. Делаем логику
+        try {
+        std::string result = Core::ModelManager::getInstance().generateResponse(targetModelID, prompt, getSystemInstruction());
+
+            // --- ВОТ ЭТОТ ВЫВОД МЫ ДОБАВЛЯЕМ ---
+            std::cout << "\n=========================================" << std::endl;
+            std::cout << "  Ответ от Агента [" << GetName() << "]:" << std::endl;
+            std::cout << "-----------------------------------------" << std::endl;
+            std::cout << result << std::endl;
+            std::cout << "=========================================\n" << std::endl;
+            // ------------------------------------
+
+            // 3. Отдаем результат дальше по графу
+            setOutputPinValue("output_text", Core::Graph::DataVariant(result));
+            SetState(Core::Graph::Success);
+        } catch (const std::exception& e) {
+            std::cerr << "Agent Generation Error: " << e.what() << std::endl;
+            SetState(Core::Graph::Failed);
         }
-
-        // 2. Делаем логику (здесь будет вызов LLM, но пока просто тест)
-        std::string resultText = "Agent " + GetName() + " says: I received -> " + incomingText;
-        std::cout << resultText << std::endl;
-
-        // 3. Записываем результат в ВЫХОДНОЙ пин
-        setOutputPinValue("output_text", Core::Graph::DataVariant(resultText));
-
-        SetState(Core::Graph::Success);
-
-        /*
-        1. Берет `DataVariant` из пина `"model_core"`. Извлекает оттуда указатель на модель (`BaseModel*` или `llama_model*`).
-        
-        2. Берет строку из пина `"input_text"` (запрос пользователя).
-            
-        3. Берет историю чата из пина `"memory_db"` (если подключена база данных).
-            
-        4. Соединяет всё это с приватной переменной `systemInstruction`.
-            
-        5. Вызывает инференс (генерацию текста).
-            
-        6. Полученный текстовый ответ записывает в свой выходной пин `"output_text"`.
-            
-        7. Меняет свой статус на `Success`.
-        */
     }
 
     // РЕГИСТРАЦИЯ НОДЫ В ФАБРИКЕ

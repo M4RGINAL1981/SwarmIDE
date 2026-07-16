@@ -8,7 +8,6 @@
 #include "object/ai/PlanExecuteAgent.hpp"
 #include "object/ai/ToolsAgent.hpp"
 #include "object/memory/PostgreSQL.hpp"
-#include "object/BaseModel.hpp"
 #include "object/tool/JiraSoftware.hpp"
 
 using namespace SwarmIDE::Core;
