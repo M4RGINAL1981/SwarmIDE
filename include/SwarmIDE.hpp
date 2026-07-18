@@ -59,14 +59,19 @@ namespace SwarmIDE {
             class GraphManager;            // Управляет жизнью уже созданными объектами
             class DataVariant;             // Умный контейнер, который хранит различную информацию
             class GraphRegistry;           // Знает как создавать объекты
+
             class LogicNode;               // Умная логическая не визуальная нода
             class ModelNode;               // Нода, которая просто имеет id модели
+            class TextNode;                // Нода, которая просто имеет текст, для агента
+
             class LogicPin;                // Умный логический не визуальный пин
         }
 
         class AppController;               // Точка сборки приложения. Инициализация GLFW и Game Loop
-        class ConnectionManager;           // Диспетчер связей (управляет логикой топологии графа)
-        class TextureManager;              // Кэш-менеджер ресурсов (загрузка иконок в VRAM OpenGL)
+
+        class LoggingManager;              // Менеджер журналирования. Делает, так чтобы логи в консоли не путались
+        class ConnectionManager;           // Менеджер связей (управляет логикой топологии графа)
+        class TextureManager;              // Менеджер ресурсов (загрузка иконок в VRAM OpenGL)
         class SerializationManager;        // Менеджер сохранения и загрузки всего графа проекта (JSON)
         class ModelManager;                // Менеджер по загрузки моделей и управлению ими
         class GenerateIDManager;           // Менеджер по генерации уникальныйх id

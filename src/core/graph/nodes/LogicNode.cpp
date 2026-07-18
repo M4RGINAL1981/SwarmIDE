@@ -1,4 +1,4 @@
-#include "core/graph/LogicNode.hpp"
+#include "core/graph/nodes/LogicNode.hpp"
 #include "core/graph/LogicPin.hpp"
 #include "core/graph/DataVariant.hpp"
 

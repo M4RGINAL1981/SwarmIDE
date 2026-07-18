@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <mutex>
 #include <functional>
 
 // Предварительное объявление типов llama.cpp
@@ -38,8 +39,13 @@ namespace SwarmIDE::Core {
         int tokens_past = 0;                                                                         // Счетчик использованных токенов (для истории)
         
         GenerationConfig config;                                                                     // Конфиг начальных настроек
+        mutable std::unique_ptr<std::mutex> execution_mutex;                                         // Для паралельного вычисления
+
+        ActiveModel() = default;                                                                     // Конструктор
+        ~ActiveModel();                                                                              // Деструктор
 
         bool isValid() const;                                                                        // Безопасна ли модель для использования
+        void reset();                                                                                // Сбрасывает состояние
     };
 
     class ModelManager {
@@ -74,9 +80,11 @@ namespace SwarmIDE::Core {
         ModelManager();
         ~ModelManager();
 
-        std::string modelsPath = "resources/models/models.json";                            // Путь до всех модлей
+        std::string modelsPath = "resources/models/models.json";                                     // Путь до всех модлей
 
         std::vector<std::unique_ptr<ModelAsset>> registry;                                           // Список всех зарегистрированных моделей
-        std::unordered_map<std::string, ActiveModel> activeModels;                                   // Активные в данный момент модели
+        std::unordered_map<std::string, std::shared_ptr<ActiveModel>> activeModels;                  // Активные в данный момент модели
+
+        std::mutex manager_mutex;                                                                    // Защита от одновременнйо загрузки одной и той же модели
     };
 }

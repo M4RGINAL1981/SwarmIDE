@@ -1,5 +1,5 @@
 #pragma once
-#include "core/graph/LogicNode.hpp" 
+#include "core/graph/nodes/LogicNode.hpp" 
 #include "core/SerializationManager.hpp"
 #include "core/graph/GraphManager.hpp"
 

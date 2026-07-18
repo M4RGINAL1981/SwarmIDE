@@ -10,6 +10,7 @@
 #include <cerrno>
 #include <cstring>
 #include <thread>
+#include <mutex>
 #include <llama.h>
 #include <cpr/cpr.h>
 
@@ -19,6 +20,11 @@ using json = nlohmann::json;
 void null_llama_log_callback(ggml_log_level level, const char* text, void* user_data) {}
 
 namespace SwarmIDE::Core {
+
+// ======================================================================================================
+//                                                  INFO
+// ======================================================================================================
+
     /*
     // Структура Ассета модели
     struct ModelAsset {
@@ -59,9 +65,37 @@ namespace SwarmIDE::Core {
     };
     */
 
+// ======================================================================================================
+//                                              ACTIVE MODEL
+// ======================================================================================================
+
+    ActiveModel::~ActiveModel() noexcept {
+        if(ctx != nullptr) llama_free(ctx);
+        if(model != nullptr) llama_free_model(model);
+    }
+
     bool ActiveModel::isValid() const {
         return model != nullptr && ctx != nullptr && vocab != nullptr;
     }
+
+    void ActiveModel::reset() {
+        // 1. Сбросить счётчики
+        ctx_size = 0;
+        tokens_past = 0;
+
+        // 2. Очистить KV cache полностью (чтобы история не накапливалась)
+        if(ctx != nullptr) {
+            llama_memory_t mem = llama_get_memory(ctx);
+            llama_memory_clear(mem, true);
+        }
+
+        // 3. Сбросить конфиг к дефолту 
+        // config = GenerationConfig(); 
+    }
+
+// ======================================================================================================
+//                                              MODEL MANAGER
+// ======================================================================================================
 
     ModelManager& ModelManager::getInstance() {
         static ModelManager instance;
@@ -73,7 +107,7 @@ namespace SwarmIDE::Core {
         Регистрация ассетов моделей в регистор
     */
                         
-        std::cout << "fulling registry model" << std::endl;
+        std::cout << "\n[BEGIN]: loading models\n" << std::endl;
 
         llama_log_set(null_llama_log_callback, nullptr);    // Отключение логов
 
@@ -111,6 +145,8 @@ namespace SwarmIDE::Core {
                 registry.push_back(std::move(newModelAssetPtr));
             }
         }
+
+        std::cout << "\n[END]: loading models\n" << std::endl;
     }
 
     ModelManager::~ModelManager() {
@@ -272,6 +308,8 @@ namespace SwarmIDE::Core {
         Иницилизация модели и контекста 
         Добавление в регистр активных моделей (ActiveModels)
     */
+        std::lock_guard<std::mutex> lock(manager_mutex);        // Защита от потоков
+
         auto* asset = getAssetByID(id);
         if (!asset) {
             throw std::invalid_argument("This id is not found in registry: " + id);
@@ -284,18 +322,18 @@ namespace SwarmIDE::Core {
         
         if(activeModels.find(id) != activeModels.end()) return true;
            
-        ActiveModel active_model;
+        auto active_model = std::make_shared<ActiveModel>();
 
         std::cout << "Active Model is add. ID: " << id << std::endl;
 
         llama_model_params model_params = llama_model_default_params();
         llama_context_params cnt_params = llama_context_default_params();
 
-        cnt_params.n_ctx = active_model.config.n_ctx;
-
-        active_model.model = llama_load_model_from_file(getAssetByID(id)->filepath.c_str(), model_params);
-        active_model.ctx = llama_new_context_with_model(active_model.model, cnt_params);
-        active_model.vocab = llama_model_get_vocab(active_model.model);
+        cnt_params.n_ctx = active_model->config.n_ctx;
+        active_model->model = llama_load_model_from_file(getAssetByID(id)->filepath.c_str(), model_params);
+        active_model->ctx = llama_new_context_with_model(active_model->model, cnt_params);
+        active_model->vocab = llama_model_get_vocab(active_model->model);
+        active_model->execution_mutex = std::make_unique<std::mutex>();
 
         activeModels[id] = active_model;
         return true;
@@ -305,17 +343,12 @@ namespace SwarmIDE::Core {
     /*
         Выгрузка модели из памяти по ID
     */
+        std::lock_guard<std::mutex> lock(manager_mutex);        // Защита от потоков
+        
         auto it = activeModels.find(id);
 
         // Проверка, что активная модель существует
         if(it == activeModels.end()) throw std::invalid_argument("This id is not found");
-
-        // Модель что нужно выгрузить из памяти
-        ActiveModel active_model = activeModels[id];    
-
-        // Выгружаем данные из памяти
-        if(active_model.ctx != nullptr) llama_free(active_model.ctx);
-        if(active_model.model != nullptr) llama_free_model(active_model.model);
         
         // Удаляем модель из карты
         activeModels.erase(it);
@@ -325,12 +358,7 @@ namespace SwarmIDE::Core {
     /*
         Выгрузка всех модлей из памяти
     */
-        for(auto& [id, aM] : activeModels) {
-
-            // Выгружаем данные из памяти
-            if(aM.ctx != nullptr) llama_free(aM.ctx);
-            if(aM.model != nullptr) llama_free_model(aM.model);
-        }
+        std::lock_guard<std::mutex> lock(manager_mutex);        // Защита от потоков
 
         // Удаляем карту с моделями
         activeModels.clear();
@@ -339,24 +367,26 @@ namespace SwarmIDE::Core {
     std::string ModelManager::generateResponse(const std::string& modelId, 
                                            const std::string& prompt, 
                                            const std::string& systemInstruction) {
+
         // 1. Валидация и Извлечение модели
-        auto it = activeModels.find(modelId);
-        if (it == activeModels.end()) throw std::invalid_argument("This model id is not found");
-    
-        ActiveModel active_model = it->second;
-
-        if (!active_model.isValid()) throw std::runtime_error("Model is loaded but internal pointers are invalid!"); 
-
-        // Очистить KV кэш ДО начала генерации
-        if (active_model.ctx != nullptr) {
-            llama_memory_t mem = llama_get_memory(active_model.ctx);
-            // Удаляем всю последовательность 0 из памяти
-            llama_memory_seq_rm(mem, 0, -1, -1);
+        std::shared_ptr<ActiveModel> active_model;
+        {
+            std::lock_guard<std::mutex> lock(manager_mutex);                         // Защита от потоков (словарь)
+            auto it = activeModels.find(modelId);
+            if (it == activeModels.end()) throw std::invalid_argument("This model id is not found");
+            active_model = it->second;
         }
+
+        std::lock_guard<std::mutex> lock(*active_model->execution_mutex);            // Защита от потоков
+
+        if (!active_model->isValid()) throw std::runtime_error("Model is loaded but internal pointers are invalid!"); 
+
+        // Очистить предыдушие состояние перед новой генерацией
+        active_model->reset();
 
         // Применяем настройки многопоточности для вычислений
         // (В актуальном API за это отвечает llama_set_n_threads)
-        llama_set_n_threads(active_model.ctx, active_model.config.n_threads, active_model.config.n_threads);
+        llama_set_n_threads(active_model->ctx, active_model->config.n_threads, active_model->config.n_threads);
 
         // 2. Токенизация входных данных (Формируем итоговый текст)
         std::string text;
@@ -367,19 +397,19 @@ namespace SwarmIDE::Core {
         }
 
         std::vector<llama_token> tokens(text.size() + 4);
-        int n_tokens = llama_tokenize(active_model.vocab, text.c_str(), text.size(), tokens.data(), tokens.size(), true, true);
+        int n_tokens = llama_tokenize(active_model->vocab, text.c_str(), text.size(), tokens.data(), tokens.size(), true, true);
         if (n_tokens < 0) {
             return "Error: tokenization failed";
         }
         tokens.resize(n_tokens);
 
         // Проверяем, не вылезем ли мы за рамки контекста модели сразу на старте
-        if (n_tokens + active_model.config.n_predict > active_model.config.n_ctx) {
+        if (n_tokens + active_model->config.n_predict > active_model->config.n_ctx) {
             return "Error: context length exceeded configuration limits";
         }
 
         // 3. Инициализация ресурсов генерации
-        int max_batch_size = (std::max)(n_tokens, active_model.config.n_predict);
+        int max_batch_size = (std::max)(n_tokens, active_model->config.n_predict);
         llama_batch batch = llama_batch_init(max_batch_size, 0, 1);
 
         // Копируем весь промпт в батч для первого просчета
@@ -395,10 +425,10 @@ namespace SwarmIDE::Core {
         // Настройка цепочки сэмплеров
         llama_sampler* chain = llama_sampler_chain_init(llama_sampler_chain_default_params());
         
-        if (active_model.config.temperature > 0.0f) {
-            llama_sampler_chain_add(chain, llama_sampler_init_temp(active_model.config.temperature));
-            llama_sampler_chain_add(chain, llama_sampler_init_top_p(active_model.config.top_p, 1));
-            llama_sampler_chain_add(chain, llama_sampler_init_dist(active_model.config.seed)); 
+        if (active_model->config.temperature > 0.0f) {
+            llama_sampler_chain_add(chain, llama_sampler_init_temp(active_model->config.temperature));
+            llama_sampler_chain_add(chain, llama_sampler_init_top_p(active_model->config.top_p, 1));
+            llama_sampler_chain_add(chain, llama_sampler_init_dist(active_model->config.seed)); 
         } else {
             llama_sampler_chain_add(chain, llama_sampler_init_greedy());
         }
@@ -407,26 +437,26 @@ namespace SwarmIDE::Core {
         int n_cur = n_tokens; // Текущая позиция в контексте
 
         // 4. Цикл генерации (Предикт)
-        for (int i = 0; i < active_model.config.n_predict; i++) {
+        for (int i = 0; i < active_model->config.n_predict; i++) {
             // Защита от переполнения физического контекста (чтобы не упасть в сигу)
-            if (n_cur >= active_model.config.n_ctx) {
+            if (n_cur >= active_model->config.n_ctx) {
                 break;
             }
 
-            if (llama_decode(active_model.ctx, batch) != 0) {
+            if (llama_decode(active_model->ctx, batch) != 0) {
                 llama_sampler_free(chain);
                 llama_batch_free(batch);
                 return "Error: llama_decode failed";
             }
 
-            llama_token id = llama_sampler_sample(chain, active_model.ctx, batch.n_tokens - 1);
+            llama_token id = llama_sampler_sample(chain, active_model->ctx, batch.n_tokens - 1);
 
-            if (id == llama_token_eos(active_model.vocab)) {
+            if (id == llama_token_eos(active_model->vocab)) {
                 break;
             }
 
             char buffer[256];
-            int n_chars = llama_token_to_piece(active_model.vocab, id, buffer, sizeof(buffer), 0, false);
+            int n_chars = llama_token_to_piece(active_model->vocab, id, buffer, sizeof(buffer), 0, false);
 
             if (n_chars > 0) {
                 std::string piece(buffer, n_chars);
@@ -435,17 +465,18 @@ namespace SwarmIDE::Core {
 
             // Проверки стоп-слов
             bool should_stop = false;
-            for (const std::string& stop_word : active_model.config.anti_prompts) {
+            for (const std::string& stop_word : active_model->config.anti_prompts) {
                 if (answer.size() >= stop_word.size()) {
                     // Извлекаем из самого конца строки кусок размером со стоп-слово
                     std::string end_of_answer = answer.substr(answer.size() - stop_word.size());
                     if (end_of_answer == stop_word) {
+                        answer.resize(answer.size() - stop_word.size()); 
                         should_stop = true;
                         break;
                     }
                 }
             }
-            
+
             if (should_stop) {
                 goto end_generation;
             }

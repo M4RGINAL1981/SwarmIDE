@@ -17,8 +17,7 @@ namespace SwarmIDE::Object::AI {
     }
 
     void PlanExecuteAgent::Execute() {
-    
-        SetState(Core::Graph::Executing);
+        SetState(Core::Graph::Executing); // Устанавливаем ноде статус Executing (Выполнение)
 
         // 1. Читаем данные из входного пина
         Core::Graph::DataVariant inputData = getInputPinValue("input_text");
