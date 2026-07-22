@@ -53,7 +53,18 @@ namespace SwarmIDE::Nodes {
          */
         virtual std::string getTypeName() override { return "ModelNode"; }     
         
-        
+        /**
+         * @brief Выгрузка ноды в json
+         * @return json 
+         */
+        virtual json serializeNode() override;
+
+        /**
+         * @brief Загрузка ноды из json
+         * @param[in] jsonNode 
+         */
+        virtual void deserializeNode(json jsonNode) override;
+
         /**
          * @brief Возвращает текущеe id модели.
          * @return std::string Строка c id модели.

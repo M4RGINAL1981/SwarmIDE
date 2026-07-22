@@ -7,11 +7,11 @@ namespace SwarmIDE::Nodes {
 
     MergeNode::MergeNode(const std::string& nodeName) : LogicNode(nodeName) {
         // Установка входных пинов
-        addInputPin("input_text1", "string");
-        addInputPin("input_text2", "string");
+        addPin(Core::PinID::DataStream, Core::Direction::Input, Core::DataType::STRING, 0);
+        addPin(Core::PinID::DataStream, Core::Direction::Input, Core::DataType::STRING, 1);
 
         // Установка выходных пинов
-        addOutputPin("output_text", "string");
+        addPin(Core::PinID::DataStream, Core::Direction::Output, Core::DataType::STRING, 0);
     }
 
     void MergeNode::Execute() {
@@ -19,20 +19,40 @@ namespace SwarmIDE::Nodes {
         SetState(Executing);                         
 
         // Логирование
-        Core::LoggingManager::Print("\n[EXECUTING] MergeNode ID: ", GetID(), "\n"); 
+        Core::LoggingManager::ExecutingNode("MergeNode", GetID()); 
 
         try {
-            std::string answer1 = getInputPinValue("input_text1").getValue<std::string>();
-            std::string answer2 = getInputPinValue("input_text2").getValue<std::string>();
-            setOutputPinValue("output_text", Core::DataVariant(answer1 + answer2));
+            std::string answer1 = getPinValue(Core::PinID::DataStream, Core::Direction::Input, 0).getValue<std::string>();
+            std::string answer2 = getPinValue(Core::PinID::DataStream, Core::Direction::Input, 1).getValue<std::string>();
+            setPinValue(Core::DataVariant(answer1 + answer2), Core::PinID::DataStream, Core::Direction::Output);
 
             SetState(Success);
-            Core::LoggingManager::Print("\n[EXECUTION COMPLETED]: State: SUCCESS; MergeNode ID: ", GetID(), "\n"); 
+            Core::LoggingManager::SuccessNode("MergeNode", GetID()); 
         }
         catch (...) {
             SetState(Failed);
-            Core::LoggingManager::Print("\n[EXECUTION COMPLETED]: State: Failed; MergeNode ID: ", GetID(), "\n"); 
+            Core::LoggingManager::FailedNode("MergeNode", GetID()); 
         }
+    }
+
+    json MergeNode::serializeNode() {
+
+        json nodeJson;
+
+        nodeJson["id"] = GetID().str();
+        nodeJson["name"] = GetName();
+            
+        nodeJson["type"] = getTypeName(); 
+        nodeJson["state"] = GetState();
+        
+        return nodeJson;
+    }
+
+    void MergeNode::deserializeNode(json nodeJson) {
+        
+        SetID(UUIDv4::UUID(nodeJson["id"].get<std::string>()));
+        SetName(nodeJson["name"]);
+        SetState(nodeJson["state"]);
     }
 
     // РЕГИСТРАЦИЯ НОДЫ В ФАБРИКЕ

@@ -11,7 +11,7 @@ namespace SwarmIDE::Core {
         return false;
     }
 
-    void ConnectionManager::connect(UUIDv4::UUID fromNodeID, UUIDv4::UUID toNodeID, std::string fromPinID, std::string toPinID) {
+    void ConnectionManager::connect(UUIDv4::UUID fromNodeID, PinID fromPinID, int fromIndex, UUIDv4::UUID toNodeID, PinID toPinID, int toIndex) {
         
         // Убираем самосвязывание
         if(fromNodeID == toNodeID) return; 
@@ -22,16 +22,22 @@ namespace SwarmIDE::Core {
         if(!srcNode || !dstNode) return;
 
         // Достаем пины по указателю
-        LogicPin* srcPin = srcNode->getLogicOutputPinByID(fromPinID);
-        LogicPin* dstPin = dstNode->getLogicInputPinByID(toPinID);
+        LogicPin* srcPin = srcNode->findPin(fromPinID, Direction::Output, fromIndex);
+        LogicPin* dstPin = dstNode->findPin(toPinID, Direction::Input, toIndex);
+
+        // Проверяем существование пинов
         if (!srcPin || !dstPin) return;
 
         // Проверяем совместимость типов
-        if(srcPin->typeName != dstPin->typeName) return;
+        if(srcPin->dataType != dstPin->dataType) return;
+
+        // Проверка на соответсвия ограничениям к соединениям
+        if((srcPin->currentConnections >= srcPin->maxConnections || srcPin->maxConnections == -1) ||
+           (dstPin->currentConnections >= dstPin->maxConnections || dstPin->maxConnections == -1)) return;
 
         // (Будущее) Здесь добавим проверку: если к dstPin уже кто-то подключен - удаляем старую связь!
 
-        Connection connect = {fromNodeID, toNodeID, fromPinID, toPinID};
+        Connection connect = {fromNodeID, fromPinID, fromIndex, toNodeID, toPinID, toIndex};
         auto it = std::find(connection.begin(), connection.end(), connect);
         
         if(it == connection.end()) connection.push_back(connect);

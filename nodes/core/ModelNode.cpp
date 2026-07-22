@@ -6,14 +6,14 @@
 namespace SwarmIDE::Nodes {
 
     ModelNode::ModelNode(const std::string& nodeName) : LogicNode(nodeName) {
-        addOutputPin("model_core", "string");
+        addPin(Core::PinID::Model, Core::Direction::Output, Core::DataType::STRING);
     }
 
     ModelNode::ModelNode(const std::string& nodeName, const std::string& targetModelID) : LogicNode(nodeName) {
         modelID = targetModelID;
 
         // Подключаем выходные пины
-        addOutputPin("model_core", "string"); 
+        addPin(Core::PinID::Model, Core::Direction::Output, Core::DataType::STRING);
     }
   
     void ModelNode::Execute() {
@@ -21,30 +21,52 @@ namespace SwarmIDE::Nodes {
         SetState(Executing); 
 
         // Логирование
-        Core::LoggingManager::Print("\n[EXECUTING] ModelNode ID: ", GetID(), "\n"); 
+        Core::LoggingManager::ExecutingNode("ModelNode", GetID()); 
 
         // Создание ActiveModel и загрузка в память
         try {
             bool result = SwarmIDE::Core::ModelManager::getInstance().loadModelToMemory(modelID);
             if(result) {
                 // Устанавливаем ID модели в выходной пин
-                setOutputPinValue("model_core", Core::DataVariant(modelID));                    
+                setPinValue(Core::DataVariant(modelID), Core::PinID::Model, Core::Direction::Output);                    
                 SetState(Success); 
 
-                Core::LoggingManager::Print("\n[EXECUTION COMPLETED]: State: SUCCESS; ModelNode ID: ", GetID(), "\n"); 
+                Core::LoggingManager::SuccessNode("ModelNode", GetID());
             }
             else {
                 SetState(Failed);
 
-                Core::LoggingManager::Print("\n[EXECUTION COMPLETED]: State: Failed; ModelNode ID: ", GetID(), "\n"); 
+                Core::LoggingManager::FailedNode("ModelNode", GetID());
             }
         }
         catch (const std::exception& e) {
             std::cerr << "[ERROR] ModelNode failed: " << e.what() << std::endl;
             SetState(Failed);
 
-            Core::LoggingManager::Print("\n[EXECUTION COMPLETED]: State: Failed; ModelNode ID: ", GetID(), "\n"); 
+            Core::LoggingManager::FailedNode("ModelNode", GetID()); 
         }
+    }
+
+    json ModelNode::serializeNode() {
+
+        json nodeJson;
+
+        nodeJson["id"] = GetID().str();
+        nodeJson["name"] = GetName();
+            
+        nodeJson["type"] = getTypeName(); 
+        nodeJson["state"] = GetState();
+        nodeJson["ModelID"] = getTargetModelID();
+        
+        return nodeJson;
+    }
+
+    void ModelNode::deserializeNode(json nodeJson) {
+        
+        SetID(UUIDv4::UUID(nodeJson["id"].get<std::string>()));
+        SetName(nodeJson["name"]);
+        SetState(nodeJson["state"]);
+        setTargetModelID(nodeJson["ModelID"]);
     }
 
     // РЕГИСТРАЦИЯ НОДЫ В ФАБРИКЕ

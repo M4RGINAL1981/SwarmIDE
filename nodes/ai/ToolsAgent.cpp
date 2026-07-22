@@ -8,20 +8,20 @@ namespace SwarmIDE::Nodes {
     ToolsAgent::ToolsAgent(const std::string& name) : BaseAgent(name) { 
         
         // Подключаем входные пины
-        addInputPin("input_text", "string");
-        addInputPin("model_core", "model");
-        addInputPin("memory_db",  "memory");
-        addInputPin("tool", "tool");
+        addPin(Core::PinID::DataStream, Core::Direction::Input, Core::DataType::STRING);
+        addPin(Core::PinID::Model, Core::Direction::Input, Core::DataType::STRING);
+        addPin(Core::PinID::Memory, Core::Direction::Input, Core::DataType::STRING);
+        addPin(Core::PinID::Tools, Core::Direction::Input, Core::DataType::STRING);
 
         // Подключаем выходные пины
-        addOutputPin("output_text", "string");  
+        addPin(Core::PinID::DataStream, Core::Direction::Output, Core::DataType::STRING);  
     }
 
     void ToolsAgent::Execute() {
         SetState(Executing); // Устанавливаем ноде статус Executing (Выполнение)
 
         // 1. Читаем данные из входного пина
-        Core::DataVariant inputData = getInputPinValue("input_text");
+        Core::DataVariant inputData = getPinValue(Core::PinID::DataStream, Core::Direction::Input);
 
         std::string incomingText = "";
         if (inputData.isType<std::string>()) {
@@ -33,7 +33,7 @@ namespace SwarmIDE::Nodes {
         std::cout << resultText << std::endl;
 
         // 3. Записываем результат в ВЫХОДНОЙ пин
-        setOutputPinValue("output_text", Core::DataVariant(resultText));
+        setPinValue(Core::DataVariant(resultText), Core::PinID::DataStream, Core::Direction::Output);
 
         SetState(Success);
 
@@ -52,6 +52,28 @@ namespace SwarmIDE::Nodes {
             
         7. Меняет свой статус на `Success`.
         */
+    }
+
+    json ToolsAgent::serializeNode() {
+
+        json nodeJson;
+
+        nodeJson["id"] = GetID().str();
+        nodeJson["name"] = GetName();
+            
+        nodeJson["type"] = getTypeName(); 
+        nodeJson["state"] = GetState();
+        nodeJson["SystemInstrucion"] = getSystemInstruction();
+        
+        return nodeJson;
+    }
+
+    void ToolsAgent::deserializeNode(json nodeJson) {
+        
+        SetID(UUIDv4::UUID(nodeJson["id"].get<std::string>()));
+        SetName(nodeJson["name"]);
+        SetState(nodeJson["state"]);
+        setSystemInstruction(nodeJson["SystemInstrucion"]);
     }
 
 

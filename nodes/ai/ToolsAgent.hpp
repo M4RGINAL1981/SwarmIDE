@@ -11,6 +11,18 @@ namespace SwarmIDE::Nodes {
         void Execute() override;
 
         std::string getTypeName() override { return "ToolsAgent"; };
+
+        /**
+         * @brief Выгрузка ноды в json
+         * @return json 
+         */
+        virtual json serializeNode() override;
+
+        /**
+         * @brief Загрузка ноды из json
+         * @param[in] jsonNode 
+         */
+        virtual void deserializeNode(json jsonNode) override;
     };
 
 }

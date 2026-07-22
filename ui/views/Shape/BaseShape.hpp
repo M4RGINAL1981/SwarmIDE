@@ -1,4 +1,5 @@
-/*#pragma once 
+#pragma once 
+#include "SwarmIDE.hpp"
 #include "SwarmIDE.hpp"
 #include "ui/Topology.hpp"
 #include "graphics/Camera.hpp"
@@ -51,4 +52,4 @@ namespace SwarmIDE::UI::Shape {
         ImU32 color;                      // Цвет
     };
 }
-    */
+    

@@ -77,6 +77,11 @@ namespace SwarmIDE::Core {
     }
 
     void GraphManager::ProcessQueueParallel(const std::vector<UUIDv4::UUID>& allNodesID){
+
+        LoggingManager::EnterText();
+        LoggingManager::Info("PROCESS QUEUE PARALLEL");
+        LoggingManager::EnterText();
+
         // 1. Иницилизация
         std::set<UUIDv4::UUID> remaining;                           // Все ноды, что ещё не отработали
         std::set<UUIDv4::UUID> completedNodes;                      // Все ноды, что завершились с успехом
@@ -98,8 +103,7 @@ namespace SwarmIDE::Core {
                 bool flag = true;                                                                           // Флаг-проверка, что все родительские ноды отработали
                 auto connections = ConnectionManager::getInstance().getIncomingConnectionsForNode(nodeID);  // Получаем все входяшие связи для данной ноды
 
-                LoggingManager::Print("\n[READINESS CHECK]: type Node: ", findNodeByID(nodeID)->getTypeName(), " Node ID: ", nodeID, "\n"); 
-                LoggingManager::Print("[COUNT CONNECTIONS]:", connections.size(), "\n"); 
+                LoggingManager::ReadinessCheck(findNodeByID(nodeID)->getTypeName(), nodeID);
 
                 for(auto connect : connections) {
                     auto it = std::find(completedNodes.begin(), completedNodes.end(), connect->fromNodeID); // Проверяем что нода отработала
@@ -120,16 +124,18 @@ namespace SwarmIDE::Core {
                     auto node1 = findNodeByID(connect->toNodeID);    // Узел, во входной пин которого передается значение
                     auto node2 = findNodeByID(connect->fromNodeID);  // Узел, из выходного пина которого берется значение
 
-                    node1->setInputPinValue(connect->toPinID, node2->getOutputPinValue(connect->fromPinID));
+                    node1->setPinValue(node2->getPinValue(connect->fromPinID, Direction::Output, connect->fromIndex), connect->toPinID, Direction::Input, connect->toIndex);
                 }
                 
                 if(flag)  {                                                                                 // Если все родительские ноды, отработали И родитель не в failedNodes
                     readyNodes.push_back(nodeID);                                           
-                    LoggingManager::Print("[QUEUE RESULT]: This node is ready. Connection: ", connections.size(), "\n"); 
+                    LoggingManager::QueueResult(findNodeByID(nodeID)->getTypeName(), nodeID, true);
                 }
                 else {
-                    LoggingManager::Print("[QUEUE RESULT]: This node is not ready. Connection: ", connections.size(), "\n"); 
+                    LoggingManager::QueueResult(findNodeByID(nodeID)->getTypeName(), nodeID, false);
                 }
+
+                LoggingManager::EnterText();
             }
 
             // Проверка на дедлок
@@ -149,14 +155,14 @@ namespace SwarmIDE::Core {
                 }   
             }
 
-            for(auto& future : futures) future.get();                                // Ждём завершения всех нод
-            for(auto& nodeID : readyNodes) {                                         // Удаляем ID уже завершенных свою работу нод
+            for(auto& future : futures) future.get();                                       // Ждём завершения всех нод
+            for(auto& nodeID : readyNodes) {                                                // Удаляем ID уже завершенных свою работу нод
                 remaining.erase(nodeID);      
                 auto node = findNodeByID(nodeID);
                 if(node->GetState() == Nodes::Success) completedNodes.insert(nodeID);       // Если нода завершилась успешно - добавляем её в множество нод, отработавших успешно
                 else if (node->GetState() == Nodes::Failed) failedNodes.insert(nodeID);     // Если нода завершилась ошибкой - добавляем её в множество нод, отработавших с ошибкой
             }
-            futures.clear();                                                         // Очишаем вектор талоничков
+            futures.clear();                                                                // Очишаем вектор талоничков
         }
     }
 }

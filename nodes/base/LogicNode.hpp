@@ -3,7 +3,6 @@
 #include "core/graph/LogicPin.hpp"
 #include "core/graph/GraphRegistry.hpp"
 #include "core/engine/GenerateIDManager.hpp"
-#include <glm/glm.hpp>
 #include <optional>
 #include <vector>
 #include <memory>
@@ -16,11 +15,11 @@ namespace SwarmIDE::Nodes {
      * @brief Текуший статус выполнения логического узла
      */
     enum State {
-        Idle,           /**< Простой: узел ожидает активации или триггера. */
-        Waiting,        /**< Ожидание: узел ждет данные от входящих пинов. */
-        Executing,      /**< Выполнение: вычислительное ядро обрабатывает логику узла. */
-        Success,        /**< Успех: узел успешно выполнил задачу и передал данные дальше. */
-        Failed          /**< Провал: критическая ошибка при выполнении (например, таймаут API). */
+        Idle,                     /**< Простой: узел ожидает активации или триггера. */
+        Waiting,                  /**< Ожидание: узел ждет данные от входящих пинов. */
+        Executing,                /**< Выполнение: вычислительное ядро обрабатывает логику узла. */
+        Success,                  /**< Успех: узел успешно выполнил задачу и передал данные дальше. */
+        Failed                    /**< Провал: критическая ошибка при выполнении (например, таймаут API). */
     };
     
     /**
@@ -35,16 +34,9 @@ namespace SwarmIDE::Nodes {
     public:
         /**
          * @brief Конструктор узла с начальным положением в нулевых координатах.
-         * @param[in] name Имя отображаемого объекта на холсте.
+         * @param[in]             name Имя отображаемого объекта на холсте.
          */
-        LogicNode(const std::string& name) : name(name) { worldPos = glm::vec2(0.0f, 0.0f); MakeNewID(); }; 
-        
-        /**
-         * @brief Конструктор узла с указанием точных координат на холсте.
-         * @param[in] name Имя отображаемого объекта.
-         * @param[in] worldPos Позиция в 2D-пространстве сцены OpenGL.
-         */
-        LogicNode(const std::string& name, glm::vec2 worldPos) : name(name), worldPos(worldPos) { MakeNewID(); };
+        LogicNode(const std::string& name) : name(name) { MakeNewID(); }; 
         
         virtual ~LogicNode() = default;
                                           
@@ -56,78 +48,90 @@ namespace SwarmIDE::Nodes {
         virtual void Execute() = 0;
 
         /**
+         * @brief Выгрузка ноды в json.
+         * @details Берёт все поля в ноде и загружает их в json.
+         * 
+         * @return                json 
+         */
+        virtual json serializeNode() = 0; 
+
+        /**
+         * @brief Загрузка ноды из json.
+         * @details Берёт объект json, проходиться по всем его полям и загружает ноду.
+         * 
+         * @param[in]             nodeJson объект json, который хранит все поля ноды.
+         */
+        virtual void deserializeNode(json nodeJson) = 0;
+
+        /**
          * @brief Возвращает строковый тип узла.
-         * @return std::string Уникальный идентификатор типа (например, "ConversationalAgent").
+         * @return                std::string Уникальный идентификатор типа (например, "ConversationalAgent").
          */
         virtual std::string getTypeName() = 0;
 
         /**
-         * @brief Добавляет новый входной пин к узлу.
-         * @param[in] id Уникальный строковый идентификатор пина внутри этой ноды.
-         * @param[in] type Строковое имя типа данных, принимаемого пином (например, "json").
+         * @brief Добавляет новый пин.
+         * @param[in] id          Идентификатор пина.
+         * @param[in] dir         Направление пина (Вход / Выход).
+         * @param[in] dataType    Тип данных, который ожидает или передает пин.
+         * @param[in] index       Порядковый номер (для нод с несколькими одинаковыми пинами)
+         * @param[in] maxConn     Максимальное количество одновременных связей (-1 для безлимита).
+         * @param[in] value       Контейнер с текущим значением данных на пине.
          */
-        void addInputPin(std::string id, std::string type);
-
-        /**
-         * @brief Добавляет новый выходной пин к узлу.
-         * @param[in] id Уникальный строковый идентификатор пина внутри этой ноды.
-         * @param[in] type Строковое имя типа данных, который пин отдает наружу.
-         */
-        void addOutputPin(std::string id, std::string type);
+        void addPin(Core::PinID id, Core::Direction dir, Core::DataType dataType, int index = 0, int maxConn = 1, Core::DataVariant value = Core::DataVariant());
 
         /**
          * @brief Получить текущее значение входного пина.
-         * @param[in] id Идентификатор пина.
-         * @return DataVariant Вариантный тип данных, содержащий текущее значение.
+         * @param[in] id          Идентификатор пина.
+         * @param[in] dir         Направление пина (Вход / Выход).
+         * @param[in] index       Порядковый номер пина (для нод с несколькими одинаковыми пинами).
+         *  
+         * @return                DataVariant Вариантный тип данных, содержащий текущее значение.
+         * 
+         * @see Core::DataVariant
          */
-        Core::DataVariant getInputPinValue(std::string id);
-
-        /**
-         * @brief Получить текущее значение выходного пина.
-         * @param[in] id Идентификатор пина.
-         * @return DataVariant Вариантный тип данных, содержащий текущее значение.
-         */
-        Core::DataVariant getOutputPinValue(std::string id);
+        Core::DataVariant getPinValue(Core::PinID id, Core::Direction dir, int index = 0);
 
         /**
          * @brief Записать значение во входной пин (обычно вызывается менеджером связей).
-         * @param[in] id Идентификатор пина.
-         * @param[in] value Новые данные для записи.
+         * @param[in] value      Новые данные для записи.
+         * @param[in] id         Идентификатор пина.
+         * @param[in] dir        Направление пина (Вход / Выход).
+         * @param[in] index      Порядковый номер пина (для нод с несколькими одинаковыми пинами).
          */
-        void setInputPinValue(std::string id, Core::DataVariant value);
+        void setPinValue(Core::DataVariant value, Core::PinID id, Core::Direction dir, int index = 0);
 
-        /**
-         * @brief Записать значение в выходной пин (обычно вызывается менеджером связей).
-         * @param[in] id Идентификатор пина.
-         * @param[in] value Новые данные для записи.
-         */
-        void setOutputPinValue(std::string id, Core::DataVariant value);
-        
         /**
          * @brief Поиск указателя на входной пин по его ID.
-         * @param[in] id Идентификатор пина.
-         * @return LogicPin* Указатель на пин или nullptr, если пин не найден.
+         * @param[in] id         Идентификатор пина.
+         * @param[in] dir        Направление пина (Вход / Выход).
+         * @param[in] index      Порядковый номер пина (для нод с несколькими одинаковыми пинами).
+         * 
+         * @return               LogicPin* Указатель на пин или nullptr, если пин не найден.
+         * 
+         * @see Core::LogicPin
          */
-        Core::LogicPin* getLogicInputPinByID(std::string id);
-
-        /**
-         * @brief Поиск указателя на выходной пин по его ID.
-         * @param[in] id Идентификатор пина.
-         * @return LogicPin* Указатель на пин или nullptr, если пин не найден.
-         */
-        Core::LogicPin* getLogicOutputPinByID(std::string id);
+        Core::LogicPin* findPin(Core::PinID id, Core::Direction dir, int index = 0);
 
         /**
          * @brief Проверяет, заполнены ли все входные пины данными, необходимыми для старта.
-         * @return true Если все обязательные входы содержат валидные данные.
+         * @return               true Если все обязательные входы содержат валидные данные.
          */
         bool isFullInputPin() const;
 
         /**
          * @brief Проверяет, заполнены ли все выходные пины данными, необходимыми для старта.
-         * @return true Если все обязательные выходы содержат валидные данные.
+         * @return               true Если все обязательные выходы содержат валидные данные
          */
         bool isFullOutputPin() const;
+
+        /**
+         * @brief Генерирует и присваивает узлу новый уникальный UUID.
+         * @note Использует синглтон GenerateIDManager под капотом.
+         * 
+         * @warning Пока не ясно, зачен нужен данный методы
+         */
+        void MakeNewID() {  id = Core::GenerateIDManager::getInstance().GetNewID(); }
 
         /**
          * @brief Сброс состояния узла.
@@ -137,19 +141,10 @@ namespace SwarmIDE::Nodes {
 
         // =====================================================================
         // Геттеры и Сеттеры 
-        // =====================================================================
+        // =====================================================================            
 
-        glm::vec2 GetWorldPos() { return worldPos; }                
-        void SetWorldPos(glm::vec2 p) { worldPos = p; }             
-
-        UUIDv4::UUID GetID() { return id; }                         
+        UUIDv4::UUID GetID() { return id; }               
         void SetID(UUIDv4::UUID i) { id = i; }                      
-
-        /**
-         * @brief Генерирует и присваивает узлу новый уникальный UUID.
-         * @note Использует синглтон GenerateIDManager под капотом.
-         */
-        void MakeNewID() {  id = Core::GenerateIDManager::getInstance().GetNewID(); }
 
         std::string GetName() { return name; }                      
         void SetName(const std::string& n) { name = n; }            
@@ -164,13 +159,10 @@ namespace SwarmIDE::Nodes {
         LogicNode& operator=(const LogicNode&) = delete;
 
     protected:
-        std::string name;                                           /**< Имя объекта на сцене. */
-        UUIDv4::UUID id;                                            /**< Уникальный UUID узла в рамках сессии графа. */
-        glm::vec2 worldPos;                                         /**< 2D Координаты центра объекта в мировом пространстве. */
+        std::string name;                                           /**< @brief Имя объекта на сцене. */
+        UUIDv4::UUID id;                                            /**< @brief Уникальный UUID узла в рамках сессии графа. */
 
-        std::vector<std::unique_ptr<Core::LogicPin>> inputs;        /**< Вектор умных указателей на входные порты. */
-        std::vector<std::unique_ptr<Core::LogicPin>> outputs;       /**< Вектор умных указателей на выходные порты. */
-
-        State state = State::Idle;                                  /**< Текущий статус выполнения ноды вычислительным ядром. */
+        std::vector<std::unique_ptr<Core::LogicPin>> pins;          /**< @brief Вектор умных указателей на порты. */
+        State state = State::Idle;                                  /**< @brief Текущий статус выполнения ноды вычислительным ядром. */
     };
 }

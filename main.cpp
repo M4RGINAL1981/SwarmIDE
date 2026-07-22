@@ -126,17 +126,17 @@ int main() {
 
         // 3. Соединения (Исправили направление: от Выхода модели -> к Входу агента)
         
-        connections.connect(id1, id4, "output_text", "input_text");  // TextNode 1 -> Агент 1
-        connections.connect(id2, id5, "output_text", "input_text");  // TextNode 2 -> Агент 2
+        connections.connect(id1, Core::PinID::DataStream, 0, id4, Core::PinID::DataStream, 0);  // TextNode 1 -> Агент 1
+        connections.connect(id2, Core::PinID::DataStream, 0, id5, Core::PinID::DataStream, 0);  // TextNode 2 -> Агент 2
 
-        connections.connect(id4, id3, "output_text", "input_text1"); // Агент 1 -> MergeNode
-        connections.connect(id5, id3, "output_text", "input_text2"); // Агент 2 -> MergeNode
+        connections.connect(id4, Core::PinID::DataStream, 0, id3, Core::PinID::DataStream, 0); // Агент 1 -> MergeNode
+        connections.connect(id5, Core::PinID::DataStream, 0, id3, Core::PinID::DataStream, 1); // Агент 2 -> MergeNode
 
-        connections.connect(id3, id6, "output_text", "input_text");  // МеrgeNode -> Aгент 3
+        connections.connect(id3, Core::PinID::DataStream, 0, id6, Core::PinID::DataStream, 0);  // МеrgeNode -> Aгент 3
 
-        connections.connect(id7, id4, "model_core", "model_core");   // Модель 1 -> Агент 1
-        connections.connect(id8, id5, "model_core", "model_core");   // Модель 2 -> Агент 2
-        connections.connect(id9, id6, "model_core", "model_core");   // Модель 3 -> Агент 3
+        connections.connect(id7, Core::PinID::Model, 0, id4, Core::PinID::Model, 0);   // Модель 1 -> Агент 1
+        connections.connect(id8, Core::PinID::Model, 0, id5, Core::PinID::Model, 0);   // Модель 2 -> Агент 2
+        connections.connect(id9, Core::PinID::Model, 0, id6, Core::PinID::Model, 0);   // Модель 3 -> Агент 3
         
         // 4. Вызываем обход графа
         graph.StartExecutionAll();

@@ -5,97 +5,46 @@
 
 namespace SwarmIDE::Nodes {
 
-    /* Пример структуры Логического пина
-    struct LogicPin {
-        Хранит логическое состояние порта
-    
-        std::string id;                    // Уникальное имя пина
-        Direction direction;               // Направление пина (Вход/Выход)
-        std::string typeName;              // Идентификатор типа данных, которые пин согласен принять
-        DataVariant value;                 // Контейнер, в котором лежат данные 
-    };
-    */
 
-    // Добавить новый входной пин для ноды
-    void LogicNode::addInputPin(std::string id, std::string type) {
-        inputs.push_back(std::make_unique<Core::LogicPin>(Core::LogicPin{id, Core::Direction::Input, type, Core::DataVariant()}));
+    void LogicNode::addPin(Core::PinID id, Core::Direction dir, Core::DataType dataType, int index, int maxConn, Core::DataVariant value) {
+        pins.push_back(std::make_unique<Core::LogicPin>(Core::LogicPin(id, dir, dataType, index, maxConn, value)));
     }
 
-    // Добавить новый выходной пин для ноды
-    void LogicNode::addOutputPin(std::string id, std::string type) {
-        outputs.push_back(std::make_unique<Core::LogicPin>(Core::LogicPin{id, Core::Direction::Output, type, Core::DataVariant()}));
-    }
-    
-    
-    // Считывает значение логического пина ноды (Вход)
-    Core::DataVariant LogicNode::getInputPinValue(std::string id) {
-        for(auto& Ipin : inputs) {
-            if(Ipin->id == id) return Ipin->value;
-        }
+    Core::DataVariant LogicNode::getPinValue(Core::PinID id, Core::Direction dir, int index) {
+        Core::LogicPin* pin = findPin(id, dir, index);
+        if(pin != nullptr) return pin->value;
         return Core::DataVariant();
     }
 
-    // Выдаёт значение логического пина ноды (Выход)
-    Core::DataVariant LogicNode::getOutputPinValue(std::string id) {
-        for(auto& Opin : outputs) {
-            if(Opin->id == id) return Opin->value;
-        }
-        return Core::DataVariant();
+    void LogicNode::setPinValue(Core::DataVariant value, Core::PinID id, Core::Direction dir, int index) {
+        Core::LogicPin* pin = findPin(id, dir, index);
+        if(pin != nullptr) pin->value = value;
     }
 
-    // Устанавливает значение логического пина ноды (Вход)
-    void LogicNode::setInputPinValue(std::string id, Core::DataVariant value) {
-        for(auto& Ipin : inputs) {
-            if(Ipin->id == id) {
-                Ipin->value = value;
-                return;
-            }
-        }
-    }
-
-    // Устанавливает значение логического пина ноды (Выход)           
-    void LogicNode::setOutputPinValue(std::string id, Core::DataVariant value) {
-        for(auto& Opin : outputs) {
-            if(Opin->id == id) {
-                Opin->value = value;
-                return;
-            }
-        }
-    }
-
-    // Выдаёт входной логически пин по ноды ID
-    Core::LogicPin* LogicNode::getLogicInputPinByID(std::string id) {
-        for(auto& Ipin : inputs) {
-            if(Ipin->id == id) return Ipin.get();
+    Core::LogicPin* LogicNode::findPin(Core::PinID id, Core::Direction dir, int index) {
+        for(auto& pin : pins) {
+            if(pin->id == id && pin->direction == dir && pin->index == index) return pin.get();
         }
         return nullptr;
     }
 
-    // Выдаёт выходной логический пин ноды по ID
-    Core::LogicPin* LogicNode::getLogicOutputPinByID(std::string id) {
-        for(auto& Opin : outputs) {
-            if(Opin->id == id) return Opin.get();
-        }
-        return nullptr;
-    }
         
     bool LogicNode::isFullInputPin() const {
-        for(const auto& Ipin : inputs) {
-            if(Ipin->value.isEmpty()) return false;
+        for(const auto& pin : pins) {
+            if(pin->value.isEmpty() && pin->direction == Core::Direction::Input) return false;
         }
         return true;
     }
 
     bool LogicNode::isFullOutputPin() const {
-        for(const auto& Opin : outputs) {
-            if(Opin->value.isEmpty()) return false;
+        for(const auto& pin : pins) {
+            if(pin->value.isEmpty() && pin->direction == Core::Direction::Output) return false;
         }
         return true;
     }
 
     void LogicNode::Reset() {
         state = State::Idle;
-        for(auto& Ipin : inputs) Ipin->value.clear();
-        for(auto& Opin : outputs) Opin->value.clear();
+        for(auto& pin : pins) pin->value.clear();
     }
 }

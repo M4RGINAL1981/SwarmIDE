@@ -71,8 +71,8 @@ namespace SwarmIDE::Core {
          * @brief Получить текущее количество узлов на сцене холста.
          * @return int Количество активных объектов в графе.
          */
-        int getCountObject() { return nodes.size(); }        
-
+        int getCountNodes() { return nodes.size(); }        
+        
         /**
          * @brief Получить доступ к контейнеру со всеми узлами.
          * @return std::vector<std::unique_ptr<Nodes::LogicNode>>& Ссылка на внутренний массив объектов графа.

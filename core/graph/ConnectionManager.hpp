@@ -16,10 +16,12 @@ namespace SwarmIDE::Core {
      */
     struct Connection {
         UUIDv4::UUID fromNodeID;      /**< Уникальный UUID узла-источника (откуда идет связь). */
-        UUIDv4::UUID toNodeID;        /**< Уникальный UUID узла-цели (куда приходит связь). */
+        PinID fromPinID;              /**< Идентификатор выходного пина узла-источника. */
+        int fromIndex = 0;            /**< Индекс выходного пина */
 
-        std::string fromPinID;        /**< Строковый идентификатор выходного пина узла-источника. */
-        std::string toPinID;          /**< Строковый идентификатор входного пина узла-цели. */
+        UUIDv4::UUID toNodeID;        /**< Уникальный UUID узла-цели (куда приходит связь). */
+        PinID toPinID;                /**< Идентификатор входного пина узла-цели. */
+        int toIndex = 0;              /**< Индекс входного пина */
 
         /**
          * @brief Оператор сравнения двух соединений.
@@ -58,13 +60,19 @@ namespace SwarmIDE::Core {
          * данные из выходного пина источника будут автоматически прокинуты во входной пин цели.
          * 
          * @param[in] fromNodeID UUID узла-источника данных.
-         * @param[in] toNodeID UUID узла-получателя данных.
-         * @param[in] fromPinID Идентификатор выходного порта ноды-источника.
-         * @param[in] toPinID Идентификатор входного порта ноды-цели.
+         * @param[in] fromPinID  Идентификатор порта ноды-источника.
+         * @param[in] fromIndex  Индекс порта ноды-источника.
+         * @param[in] toNodeID   UUID узла-получателя данных.
+         * @param[in] toPinID    Идентификатор порта ноды-цели.
+         * @param[in] toIndex    Индекс порта ноды-цели.
          * 
          * @see disconnect()
+         * @see Nodes::LogicNode
+         * @see Core::LogicPin
+         * 
+         * @todo Нужно будет сделать так, что если к входной ноде через входной пин уже кто-то подключен - то мы должны затирать связь и заменять новой
          */
-        void connect(UUIDv4::UUID fromNodeID, UUIDv4::UUID toNodeID, std::string fromPinID, std::string toPinID);
+        void connect(UUIDv4::UUID fromNodeID, PinID fromPinID, int fromIndex, UUIDv4::UUID toNodeID, PinID toPinID, int toIndex);
        
         /**
          * @brief Разорвать конкретную логическую связь в графе.

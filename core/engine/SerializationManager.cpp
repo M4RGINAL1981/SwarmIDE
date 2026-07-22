@@ -1,10 +1,8 @@
 #include "SwarmIDE.hpp"
 #include "core/engine/SerializationManager.hpp"
-#include "nodes/ai/ConversationalAgent.hpp"
-#include "nodes/ai/PlanExecuteAgent.hpp"
-#include "nodes/ai/ToolsAgent.hpp"
-#include "nodes/memory/PostgreSQL.hpp"
-#include "nodes/tools/JiraSoftware.hpp"
+#include "nodes/base/LogicNode.hpp"
+#include "nodes/core/TextNode.hpp"
+#include "nodes/core/ModelNode.hpp"
 #include <json.hpp>
 #include <fstream>
 #include <iostream>
@@ -14,8 +12,7 @@
 using json = nlohmann::json;
 
 namespace SwarmIDE::Core {
-
-    /*
+    
     SerializationManager& SerializationManager::getInstance() {
         static SerializationManager instance;
         return instance;
@@ -33,132 +30,93 @@ namespace SwarmIDE::Core {
         return defaultName;
     }
    
-
     void SerializationManager::SaveGraph(const std::string& filepath) {
 
-        std::cout << "SaveGraph" << std::endl;
+        LoggingManager::Info("The graph is saved");
 
         json root;
 
-        root["objects"] = json::array();
+        root["nodes"] = json::array();
         root["connections"] = json::array();
 
-        auto& objects = SwarmIDE::Core::ObjectManager::getInstance().getObjects();
-        for(auto& object : objects) {
-            json objJson;
-            objJson["id"] = object->GetID();
-            objJson["name"] = object->GetName();
-            
-            // В качестве типа всегда пишем "BaseModel", чтобы фабрика загрузки знала, какой класс создавать
-            objJson["type"] = object->GetTypeName(); 
-            
-            objJson["posX"] = object->GetWorldPos().x;
-            objJson["posY"] = object->GetWorldPos().y;
+        auto& nodes = GraphManager::getInstance().getNodes();
 
-            if (object->GetTypeName() == "Model") {
-                auto* modelNode = dynamic_cast<SwarmIDE::Object::BaseModel*>(object.get());
-                if (modelNode) objJson["modelId"] = modelNode->GetModelID();
-            }
+        // Запись в файл информацию о нодах
+        for(auto& node : nodes) root["objects"].push_back(node->serializeNode());            
 
-            root["objects"].push_back(objJson);            
-        }
-        auto& connection = SwarmIDE::Core::ConnectionManager::getInstance().getConnection();
+        // Запись в файл информацию о подключениях
+        auto& connection = ConnectionManager::getInstance().getAllConnections();
         for(auto& connect : connection) {
             json connJson;
             connJson["fromNodeID"] = connect.fromNodeID;
-            connJson["toNodeID"] = connect.toNodeID;
             connJson["fromPinID"] = connect.fromPinID;
+            connJson["fromIndex"] = connect.fromIndex;
+            connJson["toNodeID"] = connect.toNodeID;
             connJson["toPinID"] = connect.toPinID;
+            connJson["toIndex"] = connect.toIndex;
 
             root["connections"].push_back(connJson);
         }
 
         std::ofstream file(filepath);
         if (!file.is_open()) {
-            std::cerr << "SaveGraph Error: " << std::strerror(errno) << " (Path: " << filepath << ")" << std::endl;
+            LoggingManager::Error("Save Graph", std::strerror(errno), " (Path: ", filepath, ")");
             return;
         }
         file << root.dump(4);
         file.close();
+
+        LoggingManager::Info("The graph has been preserved.");
     }
 
     void SerializationManager::LoadGraph(const std::string& filepath) {
 
-        std::cout << "LoadGraph" << std::endl;
+        LoggingManager::Info("The Graph is loading.");
 
         std::ifstream file(filepath);
         if (!file.is_open()) {
-            std::cerr << "LoadGraph Error: " << std::strerror(errno) << " (Path: " << filepath << ")" << std::endl;
+            LoggingManager::Error("LoadGraph Error: ", std::strerror(errno), " (Path: ", filepath, ")");
             return;
         }
 
         json root;
         file >> root;
         
+        // Очистка графа перед загрузкой
         SerializationManager::ClearGraph();
 
-        if(root.contains("objects")) {
-            for (const auto& objJson : root["objects"]) {
-                int id = objJson["id"];
-                std::string name = objJson["name"];
-                std::string type = objJson["type"];
-                glm::vec2 pos(objJson["posX"], objJson["posY"]);
-
-                std::unique_ptr<BaseObject> newObj = nullptr;
-
-                if (type == "ConversationalAgent")    newObj.reset(new SwarmIDE::Object::AI::ConversationalAgent(name, pos));
-                else if (type == "PlanExecuteAgent")  newObj.reset(new SwarmIDE::Object::AI::PlanExecuteAgent(name, pos));
-                else if (type == "ToolsAgent")        newObj.reset(new SwarmIDE::Object::AI::ToolsAgent(name, pos));
-                else if (type == "PostgreSQL")        newObj.reset(new SwarmIDE::Object::Memory::PostgreSQL(name, pos));
-                else if (type == "JiraSoftware")      newObj.reset(new SwarmIDE::Object::Tool::JiraSoftware(name, pos));
-                else if (type == "Model") {
-                    std::string modelId = objJson.value("modelId", ""); 
-                    auto* modelPtr = SwarmIDE::Core::ModelManager::getInstance().GetModelForID(modelId);
-                    
-                    if (modelPtr) {
-                        newObj.reset(new SwarmIDE::Object::BaseModel(name, pos, modelPtr));
-                    } 
-                    else {
-                        std::cerr << "Warning: Model with ID '" << modelId << "' not found in ModelManager!" << std::endl;
-                    }
-                }
-
-                if(newObj) {
-                    newObj->SetID(id);
-                    newObj->SetFonts(SerializationManager::getInstance().GetFonts());
-                    ObjectManager::getInstance().addObject(std::move(newObj));
-                }
+        if(root.contains("nodes")) {
+            for (const auto& nodeJson : root["nodes"]) {
+                std::unique_ptr<Nodes::LogicNode> newNode = GraphRegistry::getInstance().createNode(nodeJson["type"]);
+                newNode->deserializeNode(nodeJson);
             }
         }
 
         if(root.contains("connections")) {
             for (const auto& connJson : root["connections"]) {
-                int sObjID = connJson["sourceObjectID"];
-                int tObjID = connJson["targetObjectID"];
-                std::string sPinID = connJson["sourcePinID"];
-                std::string tPinID = connJson["targetPinID"];
 
-                auto* sObj = ObjectManager::getInstance().findObjectByID(sObjID);
-                auto* tObj = ObjectManager::getInstance().findObjectByID(tObjID);
+                UUIDv4::UUID fromNodeID = connJson["fromNodeID"];
+                PinID fromPinID = connJson["fromPinID"];
+                int fromIndex = connJson["fromIndex"];
 
-                if (sObj && tObj) {
-                    auto* sPin = sObj->GetShape()->GetAnchorPin(sPinID);
-                    auto* tPin = tObj->GetShape()->GetAnchorPin(tPinID);
+                UUIDv4::UUID toNodeID = connJson["toNodeID"];
+                PinID toPinID = connJson["toPinID"];
+                int toIndex = connJson["toIndex"];
 
-                    if(sPin && tPin) ConnectionManager::getInstance().connect(sObjID, tObjID, *sPin, *tPin);
-                }
+                ConnectionManager::getInstance().connect(fromNodeID, fromPinID, fromIndex, toNodeID, toPinID, toIndex);
             }
         }
 
+        LoggingManager::Info("The Graph has been loaded.");
     }
 
     void SerializationManager::ClearGraph() {
 
-        std::cout << "ClearGraph" << std::endl;
+        LoggingManager::Info("The Graph is cleaning.");
 
-        SwarmIDE::Core::ConnectionManager::getInstance().removeAllConnections();
-        SwarmIDE::Core::ObjectManager::getInstance().removeAllObjects();
+        ConnectionManager::getInstance().removeAllConnections();
+        GraphManager::getInstance().removeAllNodes();
+        
+        LoggingManager::Info("The Graph has been cleaned.");
     }
-    */
-
 }

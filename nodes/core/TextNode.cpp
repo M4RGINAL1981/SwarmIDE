@@ -6,14 +6,15 @@
 namespace SwarmIDE::Nodes {
 
     TextNode::TextNode(const std::string& nodeName) : LogicNode(nodeName) {
-        addOutputPin("output_text", "string");
+        // Подключаем выходные пины
+        addPin(Core::PinID::DataStream, Core::Direction::Output, Core::DataType::STRING);
     }
 
     TextNode::TextNode(const std::string& nodeName, const std::string& textContent) : LogicNode(nodeName) {
         text = textContent;
 
         // Подключаем выходные пины
-        addOutputPin("output_text", "string"); 
+        addPin(Core::PinID::DataStream, Core::Direction::Output, Core::DataType::STRING);
     }
   
     void TextNode::Execute() {
@@ -21,20 +22,42 @@ namespace SwarmIDE::Nodes {
         SetState(Executing);                         
 
         // Логирование
-        Core::LoggingManager::Print("\n[EXECUTING] TextNode ID: ", GetID(), "\n"); 
+        Core::LoggingManager::ExecutingNode("TextNode", GetID()); 
 
 
         try {
-            setOutputPinValue("output_text", Core::DataVariant(text));
+            setPinValue(Core::DataVariant(text), Core::PinID::DataStream, Core::Direction::Output);
             SetState(Success);
             
-            Core::LoggingManager::Print("\n[EXECUTION COMPLETED]: State: FAILED; TextNode ID: ", GetID(), "\n"); 
+            Core::LoggingManager::SuccessNode("TextNode", GetID()); 
         }
         catch (...) {
             SetState(Failed);
 
-            Core::LoggingManager::Print("\n[EXECUTION COMPLETED]: State: FAILED; TextNode ID: ", GetID(), "\n"); 
+            Core::LoggingManager::FailedNode("TextNode", GetID()); 
         }
+    }
+
+    json TextNode::serializeNode() {
+
+        json nodeJson;
+
+        nodeJson["id"] = GetID().str();
+        nodeJson["name"] = GetName();
+                
+        nodeJson["type"] = getTypeName(); 
+        nodeJson["state"] = GetState();
+        nodeJson["text"] = getText();
+            
+        return nodeJson;
+    }
+
+    void TextNode::deserializeNode(json nodeJson) {
+        
+        SetID(UUIDv4::UUID(nodeJson["id"].get<std::string>()));
+        SetName(nodeJson["name"]);
+        SetState(nodeJson["state"]);
+        setText(nodeJson["text"]);
     }
 
     // РЕГИСТРАЦИЯ НОДЫ В ФАБРИКЕ
