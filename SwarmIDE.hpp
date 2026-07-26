@@ -46,7 +46,6 @@ namespace SwarmIDE {
         struct ModelAsset;
         
         // Системные менеджеры
-        class AppController;               
         class LoggingManager;             
         class SerializationManager;      
         class GenerateIDManager;           
@@ -89,18 +88,19 @@ namespace SwarmIDE {
     // ImGui
     namespace UI {
 
-        // Менеджер отрисовки нод и подключений                  
-        class Topology;                    
-        class ConnectionDrawer;      
+        // Менеджер отрисовки нод и подключений                    
+        class AppController;  
+        class CanvasManager;
 
         // UI-Нода и фигуры
         class ViewNode;      
+        class ViewPin;
+        class ViewConnection;
 
         class BaseShape;               
-        class SquareShape;             
         class RectangleShape;          
-        class CircleShape;             
-        class TriangleShape;
+        class CircleShape;   
+        class DShape;
 
         // Орисовка меню и системных компонент
         class Menu;
@@ -113,7 +113,6 @@ namespace SwarmIDE {
         // Камера, сетка, цвета и менеджер текстур (Иконок)
         class Camera;
         class Grid;
-        class Colors;
         class TextureManager;
     }
 

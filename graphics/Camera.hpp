@@ -4,7 +4,6 @@
 #include <glm/glm.hpp>
 #include <algorithm>
 
-
 namespace SwarmIDE::Graphics {
 
     class Camera {
@@ -30,7 +29,7 @@ namespace SwarmIDE::Graphics {
             zoomFactor = targetZoom;
         }
 
-        /*
+        
         // Плавно догоняем цель каждый кадр
         void update(float deltaTime) {
             float interpolationSpeed = 15.0f; // Скорость доводки зума
@@ -38,7 +37,7 @@ namespace SwarmIDE::Graphics {
             targetZoom = screenSize[currentZoomFactor];
             zoomFactor = targetZoom;
         }
-        */
+        
 
         int GetCurrentZoomIndex() { return currentZoomFactor; }
 

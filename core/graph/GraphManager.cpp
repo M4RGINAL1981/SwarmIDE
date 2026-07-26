@@ -44,8 +44,6 @@ namespace SwarmIDE::Core {
                 }), 
             nodes.end()
         );
-
-        std::cout << "[REMOVE]: Node is delete. Node ID: " << nodeID << std::endl;
     }
 
     void GraphManager::removeAllNodes() {

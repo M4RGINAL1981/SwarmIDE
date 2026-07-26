@@ -1,21 +1,104 @@
+#pragma once
 #include "SwarmIDE.hpp"
+#include "nodes/base/LogicNode.hpp"
+#include "ui/views/Shape/BaseShape.hpp"
+#include "ui/views/ViewPin.hpp"
+#include "ui/windows/ThemeManager.hpp"
 #include "glm/glm.hpp"
-#include "glfw/glfw3.h"
-#include "glad/glad.h"
 
 namespace SwarmIDE::UI {
 
     /**
      * @class ViewNode
-     * @brief Класс для отрисовки ноды.
+     * @brief Визуальная нода
      * @details Используемый паттерн проектирования наблюдатель.
      * 
-     * @see Node::LogicNode
+     * @see SwarmIDE::Node::LogicNode
+     * @see SwarmIDE::UI::ViewPin
+     * @see SwarmIDE::UI::ThemeManager
      */
     class ViewNode {
     public:
 
+        /**
+         * @brief Конструктор визуальной ноды
+         * 
+         * @param[in] nodeID ID логической ноды
+         */
+        ViewNode(UUIDv4::UUID nodeID);
+
+        /**
+         * @brief Конструктор визуальной ноды
+         * 
+         * @param nodeID ID логической ноды
+         * @param worldPos Координаты ноды для создания
+         */
+        ViewNode(UUIDv4::UUID nodeID, glm::vec2 spawnPos) : ViewNode(nodeID) { worldPos = spawnPos; }
+
+        /**
+         * @brief Деструктор визуальной ноды
+         * 
+         */
+        ~ViewNode();
+
+        /**
+         * @brief Отрисовка подложки, заголовка, иконки и вызов DrawPins()
+         * 
+         * @param[in] drawList   Спец лист
+         * @param[in] screenPos  Координаты визуальной ноды на экране
+         * @param[in] zoom       Текущий зум
+         */
+        void Draw(ImDrawList* drawList, glm::vec2 screenPos, float zoom);
+
+        /**
+         * @brief 
+         * 
+         * @param[in] pinID  Идентификтор пина
+         * @param[in] dir    Направление пина (Вход / Выход)
+         * @param[in] index  Индекс пина, если есть пины с одинаковыми PinID
+         * @return const ViewPin& 
+         */
+        ViewPin* findViewPin(Core::PinID pinID, Core::Direction dir, int index);
+
+        /**
+         * @brief Опрашивает состояние ноды
+         * @details 
+         * State::Idle      -> Cерый 
+         * State::Waiting   -> Желтый
+         * State::Executing -> Синий
+         * State::Success   -> Зеленый
+         * State::Failed    -> Красный
+         * 
+         * @return const Nodes::State& - текущий статус ноды
+         */
+        const Nodes::State& GetStateColor();
+
+        /**
+         * @brief Получить мировые координаты визуальной ноды
+         * 
+         * @return glm::vec2& 
+         */
+        glm::vec2& GetWorldPos() { return worldPos; }
+
+        /**
+         * @brief Установить новые мировые координаты визуальной ноды
+         * 
+         * @param[in] glm::vec2 wP новые координаты визуальной ноды
+         */
+        void SetWorldPos(glm::vec2 wP) { worldPos = wP; }
+
+        /**
+         * @brief Обрабатывает перемещение ноды мышкой (Drag)
+         */
+        void HandleInteraction();
+
     private:
-        glm::vec2 worldPos;       /**< @brief Положение ноды на поле */
+        Nodes::LogicNode* node = nullptr;                  /** @brief < Указатель на ноду. */
+        std::unique_ptr<Shape::BaseShape> shape;           /** @brief < Указатель на фигуру/трафарет */
+        std::vector<std::unique_ptr<ViewPin>> viewPins;    /** @brief < Визуальные пины ноды */
+        glm::vec2 worldPos;                                /** @brief < Положение ноды на поле. */
+        glm::vec2 nodeSize;                                /** @brief < Размер ноды. */
+        bool isSelected;                                   /** @brief < Выбрана ли нода в данный момент. */
+        bool isHovered;                                    /** @brief < Наведена ли мышь на хитбокс ноды. */
     };
 }

@@ -1,17 +1,28 @@
-/*#pragma once 
+#pragma once 
 #include "SwarmIDE.hpp"
-#include "ui/Shape/BaseShape.hpp"
+#include "ui/views/Shape/BaseShape.hpp"
 
 namespace SwarmIDE::UI::Shape {
+
+    /**
+     * @class CircleShape
+     * @brief Фигура круг
+     */
     class CircleShape : public BaseShape {
     public:
+        /**
+         * @brief Конструктор фигуры круг
+         */
         CircleShape();
-        CircleShape(glm::vec2 pos);
-        ~CircleShape() { count = 0; }
 
-        bool Draw(const std::string& title, Camera& camera, Fonts& fonts, glm::vec2 windowSize, std::function<void()> renderContent, std::optional<std::string> iconKey = std::nullopt) override;
+        /**
+         * @brief Деструктор фигуры круг
+         */
+        ~CircleShape() = default;
+
+        virtual void DrawBackground(ImDrawList* drawList, glm::vec2 pos, glm::vec2 size, float zoom, Nodes::State state, bool isHovered) override;
+
     private:
-        static int count;
+        
     };
 }
-*/

@@ -126,10 +126,14 @@ namespace SwarmIDE::Nodes {
         bool isFullOutputPin() const;
 
         /**
+         * @brief Возвращает пины логической ноды
+         * @return std::vector<std::unique_ptr<Core::LogicPin>>& пины
+         */
+        std::vector<std::unique_ptr<Core::LogicPin>>& GetPins() { return pins; }
+
+        /**
          * @brief Генерирует и присваивает узлу новый уникальный UUID.
          * @note Использует синглтон GenerateIDManager под капотом.
-         * 
-         * @warning Пока не ясно, зачен нужен данный методы
          */
         void MakeNewID() {  id = Core::GenerateIDManager::getInstance().GetNewID(); }
 

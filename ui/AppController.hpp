@@ -1,14 +1,8 @@
 #pragma once
 #include "SwarmIDE.hpp"
-#include "core/graph/GraphManager.hpp"
-#include "core/graph/GraphRegistry.hpp"
-#include "core/graph/ConnectionManager.hpp"
-#include "core/engine/SerializationManager.hpp"
-#include "core/models/ModelManager.hpp"
-#include "graphics/Camera.hpp"
-#include "graphics/Grid.hpp"
+#include "ui/canvas/CanvasManager.hpp"
 
-namespace SwarmIDE::Core {
+namespace SwarmIDE::UI {
 
     /**
      * @class AppController
@@ -39,19 +33,9 @@ namespace SwarmIDE::Core {
 
     private:
         GLFWwindow* window;                              /**< Системный указатель на окно программы, управляемое библиотекой GLFW. */
-        Graphics::Camera camera;                         /**< Объект 2D-камеры для перемещения и масштабирования холста. */
-        Graphics::Grid grid;                             /**< Графическая бесконечная сетка, рисуемая на фоне холста в OpenGL. */
 
-        // Ссылки на менеджеры ядра (Core Managers)
-        GraphManager& graph_manager;                     /**< Ссылка на менеджер жизненного цикла и обхода узлов. */
-        ConnectionManager& connect_manager;              /**< Ссылка на менеджер логических связей (ребер графа). */
-        SerializationManager& serialization_manager;     /**< Ссылка на менеджер сохранения и загрузки проектов в JSON. */
-        ModelManager& model_manager;                     /**< Ссылка на менеджер локальных LLM-моделей (llama.cpp) для ИИ-агентов. */
-        GenerateIDManager& generate_id_manager;          /**< Ссылка на потокобезопасный генератор UUIDv4. */
-        GraphRegistry& graph_registry;                   /**< Ссылка на фабрику объектов для динамического создания нод. */
+        CanvasManager& canvas_manager;
         
-        //SwarmIDE::UI::Fonts fonts;
-
         glm::vec2 lastMousePos = glm::vec2(0.0f);        /**< Координаты последнего зарегистрированного положения курсора мыши (используется для панорамирования). */
         bool isPanning = false;                          /**< Флаг, указывающий, зажата ли кнопка мыши для перемещения (скролла) по холсту. */
     };

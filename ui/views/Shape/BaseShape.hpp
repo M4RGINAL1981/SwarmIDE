@@ -1,55 +1,41 @@
 #pragma once 
 #include "SwarmIDE.hpp"
-#include "SwarmIDE.hpp"
-#include "ui/Topology.hpp"
-#include "graphics/Camera.hpp"
-#include "graphics/Colors.hpp"
-#include "ui/Theme.hpp"
+#include "core/graph/LogicPin.hpp"
+#include "nodes/base/LogicNode.hpp" 
+#include "ui/views/ViewPin.hpp"
+#include "ui/canvas/CanvasManager.hpp"
+#include "ui/windows/ThemeManager.hpp"
+#include "imgui/imgui.h"
+#include "glm/glm.hpp"
 #include <vector>
-#include <string>
-#include <functional>
-#include <optional>
-#include <glm/glm.hpp>
 
 namespace SwarmIDE::UI::Shape {
 
+    /**
+     * @class BaseShape
+     * @brief Трафарет для ViewNode
+     * 
+     * @see SwarmIDE::UI::ViewNode
+     */
     class BaseShape {
     public:
-        BaseShape() = default;
-        BaseShape(glm::vec2 pos) : position(pos) {};
+
+        /**
+         * @brief Дестркутор трафарета/фигуры
+         */
         virtual ~BaseShape() = default;
 
-        void SetPosition(glm::vec2 pos) { position = pos; }
-        glm::vec2 GetPosition() const { return position; }
-
-        void SetSize(glm::vec2 s) { size = s; }
-        glm::vec2 GetSize() const { return size; }
-
-        void SetColor(ImU32 c) { color = c; }
-        ImU32 GetColor() const { return color; }
-
-        void SetRotation(float rot) { rotation = rot; }
-        float GetRotation() { return rotation; }
-
-        // const std::vector<SwarmIDE::UI::AnchorPin>& GetLocalPins() const { return localPins; }
-        // std::vector<AnchorPin>& GetLocalPins () { return localPins; }
-        // void SetLocalPins(const std::vector<AnchorPin>& pins) { localPins = pins; }
-
-        // Главный метод: пересчет локальных пинов в глобальные экранные координаты
-        std::vector<TransformedPin> GetWorldPins(float zoomFactor) const;
-        TransformedPin GetWorldPin(AnchorPin pin, float zoomFactor) const;
-
-        AnchorPin* GetAnchorPin(std::string pinID) const;
-
-        // Чистый виртуальный метод отрисовки формы окна
-        // renderContent — это лямбда, внутри которой Агент будет рисовать свои кнопки/текст
-        virtual bool Draw(const std::string& title, Camera& camera, Fonts& fonts, glm::vec2 windowSize, std::function<void()> renderContent, std::optional<std::string> iconKey = std::nullopt) = 0;
-
-    protected:
-        glm::vec2 position {0.0f, 0.0f};  // Позиция окна на холсте
-        glm::vec2 size{400.0f, 400.0f};   // Размер окна 
-        float rotation{0.0f};             // Угол поворота в радианах
-        ImU32 color;                      // Цвет
+        /**
+         * @brief Отрисовка самой геометрии (подложки ноды)
+         * 
+         * @param[in] drawList  Список отрисовки главного окна холста
+         * @param[in] pos       Координаты фигуры
+         * @param[in] size      Размер фигуры
+         * @param[in] zoom      Текущий зум на холсте
+         * @param[in] state     Текущий статус работы логической ноды (Idle, Executing и т.д.)
+         * @param[in] isHovered Наведена ли мышь на ноду
+         */
+        virtual void DrawBackground(ImDrawList* drawList, glm::vec2 pos, glm::vec2 size, float zoom, Nodes::State state, bool isHovered) = 0;
     };
 }
     

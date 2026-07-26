@@ -1,17 +1,16 @@
-/*#pragma once 
+#pragma once 
 #include "SwarmIDE.hpp"
-#include "ui/Shape/BaseShape.hpp"
+#include "ui/views/Shape/BaseShape.hpp"
 
 namespace SwarmIDE::UI::Shape {
+
     class RectangleShape : public BaseShape {
     public:
-        RectangleShape();
-        RectangleShape(glm::vec2 pos);
-        ~RectangleShape() { count = 0; }
+        RectangleShape() = default;
+        ~RectangleShape() = default;
 
-        bool Draw(const std::string& title, Camera& camera, Fonts& fonts, glm::vec2 windowSize, std::function<void()> renderContent, std::optional<std::string> iconKey = std::nullopt) override;
+
+        virtual void DrawBackground(ImDrawList* drawList, glm::vec2 pos, glm::vec2 size, float zoom, Nodes::State state, bool isHovered) override;
     private:
-        static int count;
     };
 }
-    */
