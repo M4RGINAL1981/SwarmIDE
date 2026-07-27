@@ -2,6 +2,9 @@
 #include "ui/views/ViewPin.hpp"
 #include "ui/windows/ThemeManager.hpp"
 #include "core/engine/LoggingManager.hpp"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 
 namespace SwarmIDE::UI {
 
@@ -19,6 +22,8 @@ namespace SwarmIDE::UI {
     }
 
     void ViewPin::Draw(ImDrawList* drawList, float zoom) {
+        Core::LoggingManager::Info("[VIEW_PIN]: ViewPin is draw begin");
+
         auto& theme = ThemeManager::getInstance();
 
         auto colorDefault = theme.GetColorU32(ColorRole::PinDefault);
@@ -30,18 +35,24 @@ namespace SwarmIDE::UI {
         if(shapePin == PinShapeType::Circle) {
             ImVec2 center = ImVec2(cachedScreenPos.x, cachedScreenPos.y);
 
-            if(isHovered) drawList->AddCircleFilled(center, radius, colorHover);
+            if(is_hovered) drawList->AddCircleFilled(center, radius, colorHover);
             else drawList->AddCircleFilled(center, radius, colorDefault);
+            
+            Core::LoggingManager::Info("[VIEW_PIN]: ViewPin is draw end");
         }
         else if (shapePin == PinShapeType::Square) {
             ImVec2 pMin = ImVec2(cachedScreenPos.x - radius, cachedScreenPos.y - radius);
             ImVec2 pMax = ImVec2(cachedScreenPos.x + radius, cachedScreenPos.y + radius);
 
-            if(isHovered) drawList->AddRectFilled(pMin, pMax, colorHover);
+            if(is_hovered) drawList->AddRectFilled(pMin, pMax, colorHover);
             else drawList->AddRectFilled(pMin, pMax, colorDefault);    
+            
+            Core::LoggingManager::Info("[VIEW_PIN]: ViewPin is draw end");
         }
-        Core::LoggingManager::Fatal("Shape Pin is not identifacate");
-        throw std::runtime_error("Shape Pin is not identificate");
+        else {
+            Core::LoggingManager::Fatal("Shape Pin is not identifacate");
+            throw std::runtime_error("Shape Pin is not identificate");
+        }
     }
 
     void ViewPin::UpdatePos(glm::vec2 NodeScreenPos, float zoom) {

@@ -1,6 +1,7 @@
 #pragma once 
 #include "SwarmIDE.hpp"
 #include "nodes/base/LogicNode.hpp"
+#include "core/engine/LoggingManager.hpp"
 #include <string>
 #include <vector>
 #include <memory>         
@@ -67,8 +68,8 @@ namespace SwarmIDE::Core {
         GraphRegistry& operator=(GraphRegistry&&) = delete;
         
     private:
-        GraphRegistry() = default;
-        ~GraphRegistry() = default;
+        GraphRegistry() { Core::LoggingManager::Info("[GRAPH_REGISTRY]: Constructor"); }
+        ~GraphRegistry() { Core::LoggingManager::Info("[GRAPH_REGISTRY]: Destructor");}
 
         /** @brief Внутренняя хэш-таблица, связывающая имя типа ноды с её фабричной функцией. */
         std::unordered_map<std::string, std::function<std::unique_ptr<Nodes::LogicNode>()>> storage;

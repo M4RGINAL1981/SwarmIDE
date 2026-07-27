@@ -33,8 +33,6 @@ namespace SwarmIDE::Graphics {
 
     private:
         friend UI::Menu;    
-        friend UI::ConnectionDrawer;
-        friend Core::AppController;
 
         TextureManager() {};
         ~TextureManager();

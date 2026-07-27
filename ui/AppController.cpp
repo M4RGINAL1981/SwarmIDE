@@ -16,8 +16,10 @@ unsigned int SCR_HEIGHT = 2160;
 namespace SwarmIDE::UI {
     
     AppController::AppController() : window(nullptr), canvas_manager(UI::CanvasManager::getInstance()) {
+        Core::LoggingManager::Info("[APP_CONTROLER]: AppController is begin constructor");
 
         if (!glfwInit()) {
+            Core::LoggingManager::Error("[ERROR]: Failed to initialize GLFW");
             std::cerr << "Failed to initialize GLFW" << std::endl;
             return;
         }
@@ -27,6 +29,8 @@ namespace SwarmIDE::UI {
 
         this->window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "SwarmIDE v1.0", NULL, NULL);
         if (window == NULL) {
+            
+            Core::LoggingManager::Error("[ERROR]: Failed to create GLFW window");
             std::cerr << "Failed to create GLFW window" << std::endl;
             glfwTerminate();
             return;
@@ -38,7 +42,7 @@ namespace SwarmIDE::UI {
 
         glfwSetMouseButtonCallback(window, [](GLFWwindow* w, int button, int action, int mods) {
             ImGuiIO& io = ImGui::GetIO();
-            if (io.WantCaptureMouse) return;
+            //if (io.WantCaptureMouse) return;
 
             auto* app = static_cast<AppController*>(glfwGetWindowUserPointer(w));
             if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
@@ -91,6 +95,7 @@ namespace SwarmIDE::UI {
         glfwSetFramebufferSizeCallback(window, [](GLFWwindow* w, int width, int height) {
             glViewport(0, 0, width, height);
             UI::CanvasManager::getInstance().GetGrid().SetWindowSize(width, height); 
+            UI::CanvasManager::getInstance().SetWindowSize(width, height);
         });
 
         // --- ИНИЦИАЛИЗАЦИЯ ImGui ---
@@ -107,61 +112,72 @@ namespace SwarmIDE::UI {
 
         // --- ИНИЦИАЛИЗАЦИЯ OpenGL (GLAD) ---
         if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+            
+            Core::LoggingManager::Error("[ERROR]: Failed to initialize GLAD");
             std::cerr << "Failed to initialize GLAD" << std::endl;
             return;
         }
         glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+
+        canvas_manager.grid.init();
+
+        Core::LoggingManager::Info("[APP_CONTROLER]: AppController is end constructor");
     }
     
     void AppController::run() {
-        // Создаем тестовые ноды (Имена переменных должны отличаться)
+
         Command::CmdCreateNode cmd1("TextNode", "Text Input 1");
         cmd1.Execute();
         Command::CmdCreateNode cmd2("ModelNode", "DeepSeek-R1");
         cmd2.Execute();
+        Command::CmdCreateNode cmd3("ConversationalAgent", "Agent1");
+        cmd3.Execute();
+        Command::CmdCreateNode cmd4("ConversationalAgent", "Agent2");
+        cmd4.Execute();
+        Command::CmdCreateNode cmd5("MergeNode", "Merge");
+        cmd5.Execute();
 
+        Core::LoggingManager::Info("[APP_CONTROLER]: GameLoop is begin");
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
 
-            // 1. Расчет дельты времени
             float currentFrame = (float)glfwGetTime();
             static float lastFrame = 0.0f;
             float deltaTime = currentFrame - lastFrame;
             lastFrame = currentFrame;
 
-            // Обновляем логику холста (плавный зум камеры)
             canvas_manager.Update(deltaTime);
+            canvas_manager.HandleCanvasInputs();
 
-            // 2. Подготовка кадров ImGui
+            // --- КРИТИЧЕСКИЙ ФИКС СЕТКИ: Очищаем экран ДО отрисовки чего-либо ---
+            glm::vec3 colorBackground = ThemeManager::getInstance().GetColorVec3(ColorRole::GridBackground);
+            glClearColor(colorBackground.r, colorBackground.g, colorBackground.b, 1.0F);
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            // Теперь спокойно готовим кадр ImGui
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
 
-            // 3. Отрисовка UI-логики (Полноэкранное окно-подложка)
             ImGui::SetNextWindowPos(ImVec2(0, 0));
             ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0)); // Убираем отступы
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
             ImGui::Begin("Canvas", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus);
             
-            canvas_manager.Draw();
+            canvas_manager.Draw(); // Тут вызовется grid.draw() и нарисует поверх чистого экрана
             
             ImGui::End();
             ImGui::PopStyleVar();
 
             ImGui::Render();
 
-            // 4. Очистка экрана фоновым цветом сетки
-            glm::vec3 colorBackground = ThemeManager::getInstance().GetColorVec3(ColorRole::GridBackground);
-            glClearColor(colorBackground.r, colorBackground.g, colorBackground.b, 1.0F);
-            glClear(GL_COLOR_BUFFER_BIT);
-
-            // 5. Вывод ImGui поверх OpenGL сцены
+            // Рендерим сам ImGui поверх нашей OpenGL сцены
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
             
             glfwSwapBuffers(window);
         }
+        Core::LoggingManager::Info("[APP_CONTROLER]: GameLoop is end");
 
-        // Очистка ресурсов при выходе
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();

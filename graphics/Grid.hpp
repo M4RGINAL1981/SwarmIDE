@@ -9,6 +9,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "graphics/Camera.hpp"
 #include "ui/windows/ThemeManager.hpp"
+#include "core/engine/LoggingManager.hpp"
+#include "core/engine/LoggingManager.hpp"
 
 namespace SwarmIDE::Graphics {
 
@@ -32,6 +34,11 @@ namespace SwarmIDE::Graphics {
          * @brief Конструктор сетки
          */
         Grid();
+
+        /**
+         * @brief Деструктор сетки
+         */
+        ~Grid() { Core::LoggingManager::Info("[GRID]: Destructor"); }
 
         /**
          * @brief Иницилизация сетки

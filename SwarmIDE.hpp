@@ -105,6 +105,21 @@ namespace SwarmIDE {
         // Орисовка меню и системных компонент
         class Menu;
         class Theme;
+
+        namespace Shape {
+            class BaseShape;
+            class CircleShape;
+            class DShape;
+            class RectangleShape;
+        }
+
+        namespace Command {
+            class Cmd;
+            class CmdCreateConnection;
+            class CmdCreateNode;
+            class MoveNode;
+            class CommandBus;
+        }
     }   
 
     // OpenGL

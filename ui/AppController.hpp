@@ -33,7 +33,6 @@ namespace SwarmIDE::UI {
 
     private:
         GLFWwindow* window;                              /**< Системный указатель на окно программы, управляемое библиотекой GLFW. */
-
         CanvasManager& canvas_manager;
         
         glm::vec2 lastMousePos = glm::vec2(0.0f);        /**< Координаты последнего зарегистрированного положения курсора мыши (используется для панорамирования). */

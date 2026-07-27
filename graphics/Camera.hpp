@@ -3,11 +3,16 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <algorithm>
+#include "core/engine/LoggingManager.hpp"
 
 namespace SwarmIDE::Graphics {
 
     class Camera {
     public:
+
+        Camera() { Core::LoggingManager::Info("[CAMERA]: Constructor"); }
+        ~Camera() { Core::LoggingManager::Info("[CAMERA]: Destructor"); }
+
         // Трансформация координат (центрированная относительно экрана)
         glm::vec2 worldToScreen(glm::vec2 worldPos, glm::vec2 windowSize) { 
             return ((worldPos + offset) * zoomFactor) + (windowSize * 0.5f); 
@@ -20,22 +25,17 @@ namespace SwarmIDE::Graphics {
         void pan(glm::vec2 delta){ 
             offset += (delta / zoomFactor); 
         }
-
-        // Меняем только ЦЕЛЬ зума
         
         void zoom(int direction){
             currentZoomFactor = std::clamp(currentZoomFactor + direction, 0, static_cast<int>(screenSize.size() - 1));
             targetZoom = screenSize[currentZoomFactor];
-            zoomFactor = targetZoom;
+            // Строку zoomFactor = targetZoom; удалили, чтобы дать mix работать!
         }
 
-        
-        // Плавно догоняем цель каждый кадр
         void update(float deltaTime) {
             float interpolationSpeed = 15.0f; // Скорость доводки зума
             zoomFactor = glm::mix(zoomFactor, targetZoom, std::clamp(deltaTime * interpolationSpeed, 0.0f, 1.0f));
-            targetZoom = screenSize[currentZoomFactor];
-            zoomFactor = targetZoom;
+            // Весь мусор снизу, перетиравший zoomFactor обратно, удален
         }
         
 

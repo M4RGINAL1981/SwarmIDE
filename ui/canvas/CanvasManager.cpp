@@ -2,6 +2,7 @@
 #include "ui/canvas/CanvasManager.hpp"
 #include "graphics/Camera.hpp"
 #include "graphics/Grid.hpp"
+#include "core/engine/LoggingManager.hpp"
 
 namespace SwarmIDE::UI {
     CanvasManager& CanvasManager::getInstance(){
@@ -9,10 +10,8 @@ namespace SwarmIDE::UI {
         return instance;
     }
 
-    CanvasManager::CanvasManager() {
-        camera = Graphics::Camera();
-        grid = Graphics::Grid();
-        grid.init();
+    CanvasManager::CanvasManager() : camera(Graphics::Camera()), grid(Graphics::Grid())  {
+        Core::LoggingManager::Info("[CANVAS_MANAGER]: Constructor");
     }
 
     void CanvasManager::AddViewNode(UUIDv4::UUID nodeID, glm::vec2 spawnPos) {
@@ -68,23 +67,84 @@ namespace SwarmIDE::UI {
     }
 
     void CanvasManager::Draw() {
+        Core::LoggingManager::Info("[CANVAS_MANAGER]: DRAW is begin");
+
         ImDrawList* drawList = ImGui::GetWindowDrawList();
 
         grid.draw(camera);
 
-        float zoom = camera.GetCurrentZoomIndex();
-
-        // Отрисовка соединений
+        // БЫЛО: float zoom = camera.GetCurrentZoomIndex();
+        // СТАЛО: Передаем реальный float множитель
+        float zoom = camera.zoomFactor; 
+        
+        Core::LoggingManager::Info("[CANVAS_MANAGER]: Connection is Draw");
         for(auto& conn : viewLinks) {
             conn->Draw(drawList, zoom);
         }
-
-        // Отрисовка нод и их пинов
+        
+        Core::LoggingManager::Info("[CANVAS_MANAGER]: Node is Draw");
         for(auto& [id, viewNode] : viewNodes) {
             glm::vec2 worldPos = viewNode->GetWorldPos();
             glm::vec2 screenPos = camera.worldToScreen(worldPos, windowSize);
 
             viewNode->Draw(drawList, screenPos, zoom);
+        }
+
+        Core::LoggingManager::Info("[CANVAS_MANAGER]: DRAW is end");
+    }
+
+    void CanvasManager::HandleCanvasInputs() {
+        ImGuiIO& io = ImGui::GetIO();
+        
+        // Если мышь занята стандартным интерфейсом ImGui (например, контекстным меню) — игнорируем
+        //if (io.WantCaptureMouse) return;
+
+        glm::vec2 mousePos = glm::vec2(io.MousePos.x, io.MousePos.y);
+        
+        static UUIDv4::UUID draggedNodeID;
+        static bool isDraggingNode = false;
+
+        // ЛЕВЫЙ КЛИК: Проверяем нажатие на ноду
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+            for (auto& [id, viewNode] : viewNodes) {
+                glm::vec2 screenPos = camera.worldToScreen(viewNode->GetWorldPos(), windowSize);
+                glm::vec2 scaledSize = viewNode->GetNodeSize() * camera.zoomFactor;
+
+                // Попала ли мышь в границы ноды на экране
+                if (mousePos.x >= screenPos.x && mousePos.x <= screenPos.x + scaledSize.x &&
+                    mousePos.y >= screenPos.y && mousePos.y <= screenPos.y + scaledSize.y) {
+                    
+                    draggedNodeID = id;
+                    isDraggingNode = true;
+                    viewNode->isSelected = true;
+                    break;
+                }
+            }
+        }
+
+        // ПРОЦЕСС ПЕРЕМЕЩЕНИЯ
+        if (isDraggingNode) {
+            if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+                // Переводим дельту движения мыши из экранных координат в мировые (деля на zoom)
+                glm::vec2 worldDelta = glm::vec2(io.MouseDelta.x, io.MouseDelta.y) / camera.zoomFactor;
+                
+                if (viewNodes.contains(draggedNodeID)) {
+                    viewNodes[draggedNodeID]->worldPos += worldDelta;
+                }
+            }
+            
+            if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+                isDraggingNode = false;
+            }
+        }
+        
+        // ПОДВЕШИВАЕМ ХОВЕР (Определяем наведение для изменения цвета рамки)
+        for (auto& [id, viewNode] : viewNodes) {
+            glm::vec2 screenPos = camera.worldToScreen(viewNode->GetWorldPos(), windowSize);
+            glm::vec2 scaledSize = viewNode->nodeSize * camera.zoomFactor;
+
+            viewNode->isHovered = (mousePos.x >= screenPos.x && mousePos.x <= screenPos.x + scaledSize.x &&
+                                mousePos.y >= screenPos.y && mousePos.y <= screenPos.y + scaledSize.y);
         }
     }
 }

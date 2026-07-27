@@ -1,9 +1,11 @@
 #include "SwarmIDE.hpp"
 #include "graphics/Grid.hpp"
+#include "core/engine/LoggingManager.hpp"
 
 namespace SwarmIDE::Graphics {
 
     Grid::Grid() {
+        Core::LoggingManager::Info("[GRID]: Constructor");
         auto& theme = UI::ThemeManager::getInstance();
 
         color = theme.GetColorVec3(UI::ColorRole::GridLine);
@@ -13,6 +15,8 @@ namespace SwarmIDE::Graphics {
 
 
     void Grid::init() {
+        Core::LoggingManager::Info("[GRID]: init is begin");
+
         // 1. Считывание шейдеров
         std::string vPath = "resources/shaders/grid_vertex.glsl";
         std::string fPath = "resources/shaders/grid_fragment.glsl";
@@ -30,6 +34,7 @@ namespace SwarmIDE::Graphics {
         }
 
         if (!ShaderVFile.is_open() || !ShaderFFile.is_open()) {
+            Core::LoggingManager::Error("[GRID]: ERROR: Не удалось найти или открыть файлы шейдеров сетки!");
             std::cerr << "ERROR: Не удалось найти или открыть файлы шейдеров сетки!\n";
             std::cerr << "Искал по путям: " << vPath << " и " << fPath << "\n";
             return;
@@ -48,14 +53,26 @@ namespace SwarmIDE::Graphics {
         int success;
         char infoLog[512];
 
+        if (vStringCode.empty()) {
+            Core::LoggingManager::Error("[GRID]: CRITICAL - Shader file NOT FOUND or EMPTY!");
+        } else {
+            Core::LoggingManager::Info("[GRID]: Loaded {} chars of shader", vStringCode.length());
+        }
+
+        Core::LoggingManager::Info("[GRID]: 1");
+
         unsigned int vShader = glCreateShader(GL_VERTEX_SHADER);
         glShaderSource(vShader, 1, &vCode, NULL); 
         glCompileShader(vShader);
         glGetShaderiv(vShader, GL_COMPILE_STATUS, &success);
         if (!success) {
             glGetShaderInfoLog(vShader, 512, NULL, infoLog);
+            
+            Core::LoggingManager::Error("[GRID]: ERROR: Вершинный шейдер сетки НЕ скомпилировался");
             std::cerr << "ERROR: Вершинный шейдер сетки НЕ скомпилировался:\n" << infoLog << "\n";
         }
+
+        Core::LoggingManager::Info("[GRID]: 2");
 
         unsigned int fShader = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(fShader, 1, &fCode, NULL); 
@@ -63,6 +80,7 @@ namespace SwarmIDE::Graphics {
         glGetShaderiv(fShader, GL_COMPILE_STATUS, &success);
         if (!success) {
             glGetShaderInfoLog(fShader, 512, NULL, infoLog);
+            Core::LoggingManager::Error("[GRID]: ERROR: Фрагментный шейдер сетки НЕ скомпилировался");
             std::cerr << "ERROR: Фрагментный шейдер сетки НЕ скомпилировался:\n" << infoLog << "\n";
         }
 
@@ -74,6 +92,8 @@ namespace SwarmIDE::Graphics {
         glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
         if (!success) {
             glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+            
+            Core::LoggingManager::Error("[GRID]: ERROR: Шейдерная программа сетки НЕ слинковалась");
             std::cerr << "ERROR: Шейдерная программа сетки НЕ слинковалась:\n" << infoLog << "\n";
         }
 
@@ -99,9 +119,14 @@ namespace SwarmIDE::Graphics {
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
         glBindVertexArray(0);
+        
+        Core::LoggingManager::Info("[GRID]: init is end");
     }
 
     void Grid::draw(Camera& camera) {
+        
+        Core::LoggingManager::Info("[GRID]: draw is begin");
+
         if(!isVisible) return;
 
         glEnable(GL_BLEND);
@@ -133,5 +158,8 @@ namespace SwarmIDE::Graphics {
 
         glUseProgram(0);
         glDisable(GL_BLEND);
+
+        
+        Core::LoggingManager::Info("[GRID]: draw is end");
     }
 }

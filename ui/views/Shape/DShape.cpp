@@ -1,21 +1,20 @@
 #include "SwarmIDE.hpp"
 #include "ui/views/Shape/DShape.hpp"
+#include "ui/windows/ThemeManager.hpp"
+#ifndef IM_PI
+#define IM_PI 3.14159265358979323846f
+#endif
 
 namespace SwarmIDE::UI::Shape {
 
     void DShape::DrawBackground(ImDrawList* drawList, glm::vec2 pos, glm::vec2 size, float zoom, Nodes::State state, bool isHovered) {
-        // 1. Вычисляем координаты углов
         ImVec2 pMin = ImVec2(pos.x, pos.y);
         ImVec2 pMax = ImVec2(pos.x + size.x, pos.y + size.y);
 
-        // 2. Достаем менеджер тем
         auto& theme = ThemeManager::getInstance();
-        
-        // 3. Высчитываем масштабируемую геометрию
         float rounding = theme.GetStyleVar(StyleVarRole::NodeRounding) * zoom;
         float borderThickness = theme.GetStyleVar(StyleVarRole::NodeBorderThickness) * zoom;
         
-        // 4. ОПРЕДЕЛЯЕМ ЦВЕТ ЗАЛИВКИ В ЗАВИСИМОСТИ ОТ СТАТУСА
         ImU32 bgColor;
         switch (state) {
             case Nodes::State::Waiting:   
@@ -31,17 +30,26 @@ namespace SwarmIDE::UI::Shape {
                 bgColor = theme.GetColorU32(ColorRole::NodeStateIdle); break;
         }
 
-        // 5. ОПРЕДЕЛЯЕМ ЦВЕТ РАМКИ В ЗАВИСИМОСТИ ОТ НАВЕДЕНИЯ МЫШИ
         ImU32 borderColor = isHovered ? 
             theme.GetColorU32(ColorRole::NodeHover) : 
             theme.GetColorU32(ColorRole::NodeBorder);
 
-        // 6. Рисуем подложку
-        drawList->AddRectFilled(pMin, ImVec2(pMax.x / 2.0f, pMax.y), bgColor, rounding, ImDrawFlags_RoundCornersLeft);
-        drawList->AddRectFilled(ImVec2(pMax.x /2.0f, pMax.y), pMax, bgColor, size.x / 2.0f, ImDrawFlags_RoundCornersRight);
+        // Идеальный D-Shape через векторный путь ImGui
+        float radius = size.y / 2.0f;
+        ImVec2 centerRight(pMax.x - radius, pMin.y + radius);
 
-        // 7. Рисуем красивую рамку поверх
-        drawList->AddRect(pMin, ImVec2(pMax.x / 2.0f, pMax.y), borderColor, rounding, ImDrawFlags_RoundCornersLeft, borderThickness);
-        drawList->AddRect(ImVec2(pMax.x / 2.0f, pMax.y), pMax, borderColor, size.x / 2.0f, ImDrawFlags_RoundCornersRight, borderThickness);
+        // 1. Рисуем заливку подложки
+        drawList->PathArcTo(ImVec2(pMin.x + rounding, pMin.y + rounding), rounding, IM_PI, IM_PI * 1.5f); // Левый верхний
+        drawList->PathArcTo(centerRight, radius, IM_PI * 1.5f, IM_PI * 2.0f);                            // Правый верхний полукруг
+        drawList->PathArcTo(centerRight, radius, 0.0f, IM_PI * 0.5f);                                     // Правый нижний полукруг
+        drawList->PathArcTo(ImVec2(pMin.x + rounding, pMax.y - rounding), rounding, IM_PI * 0.5f, IM_PI); // Левый нижний
+        drawList->PathFillConvex(bgColor);
+
+        // 2. Рисуем внешний контур (цельный, без внутренних швов)
+        drawList->PathArcTo(ImVec2(pMin.x + rounding, pMin.y + rounding), rounding, IM_PI, IM_PI * 1.5f);
+        drawList->PathArcTo(centerRight, radius, IM_PI * 1.5f, IM_PI * 2.0f);
+        drawList->PathArcTo(centerRight, radius, 0.0f, IM_PI * 0.5f);
+        drawList->PathArcTo(ImVec2(pMin.x + rounding, pMax.y - rounding), rounding, IM_PI * 0.5f, IM_PI);
+        drawList->PathStroke(borderColor, ImDrawFlags_Closed, borderThickness);
     }
 }

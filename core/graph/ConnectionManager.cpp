@@ -32,8 +32,8 @@ namespace SwarmIDE::Core {
         if(srcPin->dataType != dstPin->dataType) return;
 
         // Проверка на соответсвия ограничениям к соединениям
-        if((srcPin->currentConnections >= srcPin->maxConnections || srcPin->maxConnections == -1) ||
-           (dstPin->currentConnections >= dstPin->maxConnections || dstPin->maxConnections == -1)) return;
+        if((srcPin->maxConnections != -1 && srcPin->currentConnections >= srcPin->maxConnections) || 
+           (dstPin->maxConnections != -1 && dstPin->currentConnections >= dstPin->maxConnections)) return;
 
         // (Будущее) Здесь добавим проверку: если к dstPin уже кто-то подключен - удаляем старую связь!
 

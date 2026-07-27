@@ -5,6 +5,9 @@
 #include "ui/views/ViewPin.hpp"
 #include "ui/windows/ThemeManager.hpp"
 #include "glm/glm.hpp"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 
 namespace SwarmIDE::UI {
 
@@ -39,7 +42,7 @@ namespace SwarmIDE::UI {
          * @brief Деструктор визуальной ноды
          * 
          */
-        ~ViewNode();
+        ~ViewNode() = default;
 
         /**
          * @brief Отрисовка подложки, заголовка, иконки и вызов DrawPins()
@@ -88,17 +91,32 @@ namespace SwarmIDE::UI {
         void SetWorldPos(glm::vec2 wP) { worldPos = wP; }
 
         /**
+         * @brief Возвращает размер визуальной ноды
+         * @return glm::vec2& 
+         */
+        glm::vec2& GetNodeSize() { return nodeSize; }
+
+        /**
+         * @brief Устанавливает размер визуальной ноды
+         * @param nS 
+         */
+        void SetNodeSize(glm::vec2 nS) { nodeSize = nS; }
+
+        /**
          * @brief Обрабатывает перемещение ноды мышкой (Drag)
          */
         void HandleInteraction();
 
     private:
-        Nodes::LogicNode* node = nullptr;                  /** @brief < Указатель на ноду. */
-        std::unique_ptr<Shape::BaseShape> shape;           /** @brief < Указатель на фигуру/трафарет */
-        std::vector<std::unique_ptr<ViewPin>> viewPins;    /** @brief < Визуальные пины ноды */
-        glm::vec2 worldPos;                                /** @brief < Положение ноды на поле. */
-        glm::vec2 nodeSize;                                /** @brief < Размер ноды. */
-        bool isSelected;                                   /** @brief < Выбрана ли нода в данный момент. */
-        bool isHovered;                                    /** @brief < Наведена ли мышь на хитбокс ноды. */
+
+        friend CanvasManager;
+
+        Nodes::LogicNode* node = nullptr;                                /** @brief < Указатель на ноду. */
+        std::unique_ptr<SwarmIDE::UI::Shape::BaseShape> shape;           /** @brief < Указатель на фигуру/трафарет */
+        std::vector<std::unique_ptr<ViewPin>> viewPins;                  /** @brief < Визуальные пины ноды */
+        glm::vec2 worldPos;                                              /** @brief < Положение ноды на поле. */
+        glm::vec2 nodeSize;                                              /** @brief < Размер ноды. */
+        bool isSelected;                                                 /** @brief < Выбрана ли нода в данный момент. */
+        bool isHovered;                                                  /** @brief < Наведена ли мышь на хитбокс ноды. */
     };
 }

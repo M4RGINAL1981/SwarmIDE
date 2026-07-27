@@ -1,6 +1,7 @@
 #pragma once
 #include "SwarmIDE.hpp"
 #include "uuid_v4/uuid_v4.h"
+#include "core/engine/LoggingManager.hpp"
 #include <mutex>
 
 namespace SwarmIDE::Core {
@@ -40,8 +41,9 @@ namespace SwarmIDE::Core {
         GenerateIDManager& operator=(GenerateIDManager&&) = delete;
 
     private:
-        GenerateIDManager() = default;
-        ~GenerateIDManager() = default;
+        GenerateIDManager() { Core::LoggingManager::Info("[GENERATE_ID_MANAGER]: Constructor"); }
+        ~GenerateIDManager() { Core::LoggingManager::Info("[GENERATE_ID_MANAGER]: Destructor");}
+
 
         std::mutex mtx; /**< Мьютекс для защиты внутреннего состояния генератора при многопоточном вызове. */
         UUIDv4::UUIDGenerator<std::mt19937> generator; /**< Движок генерации UUIDv4, использующий стандартный алгоритм mt19937. */

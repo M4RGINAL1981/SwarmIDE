@@ -139,8 +139,8 @@ namespace SwarmIDE::Core {
     private:
         friend class SerializationManager; /**< Доступ для сохранения/загрузки ребер графа в JSON конфигурацию. */
 
-        ConnectionManager() = default;
-        ~ConnectionManager() = default;
+        ConnectionManager() { Core::LoggingManager::Info("[CONNECTION_MANAGER]: Constructor"); }
+        ~ConnectionManager() { Core::LoggingManager::Info("[CONNECTION_MANAGER]: Destructor");}
 
         GraphManager* graph_manager = nullptr; /**< Указатель на менеджер графа для валидации топологии. */
      

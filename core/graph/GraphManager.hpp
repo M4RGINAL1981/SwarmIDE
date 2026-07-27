@@ -98,8 +98,8 @@ namespace SwarmIDE::Core {
         friend class SerializationManager;     /**< Доступ для сохранения/загрузки структуры графа в JSON/файл. */
 
         /** @brief Закрытый конструктор синглтона. */
-        GraphManager() {};
-        ~GraphManager() = default;
+        GraphManager() { Core::LoggingManager::Info("[GRAPH_MANAGER]: Constructor"); }
+        ~GraphManager() { Core::LoggingManager::Info("[GRAPH_MANAGER]: Destructor");}
 
         /**
          * @brief Рекурсивно собирает все родительские узлы (построение дерева зависимостей).

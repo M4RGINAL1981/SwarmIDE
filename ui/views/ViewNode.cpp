@@ -8,6 +8,10 @@
 #include "ui/views/Shape/RectangleShape.hpp"
 #include "ui/views/Shape/DShape.hpp"
 
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
 namespace SwarmIDE::UI {
     ViewNode::ViewNode(UUIDv4::UUID nodeID) {
         auto newNode = Core::GraphManager::getInstance().findNodeByID(nodeID);
@@ -19,7 +23,7 @@ namespace SwarmIDE::UI {
         worldPos = glm::vec2(0.0f, 0.0f);
 
         // Создание ViewPin
-        auto pins = newNode->GetPins();
+        auto& pins = newNode->GetPins();
         
         // 1. Создаем 4 корзины для сортировки
         std::vector<Core::LogicPin*> leftPins, rightPins, topPins, bottomPins;
@@ -117,15 +121,20 @@ namespace SwarmIDE::UI {
     }
 
     void ViewNode::Draw(ImDrawList* drawList, glm::vec2 screenPos, float zoom) {
+        Core::LoggingManager::Info("[VIEW_NODE]: ViewNode is draw begin");
 
-        // Отрисовка подложки
-        shape->DrawBackground(drawList, screenPos, nodeSize, zoom, node->GetState(), isHovered);
+        // МАСШТАБИРУЕМ РАЗМЕР: Умножаем базовый размер ноды на зум камеры
+        glm::vec2 scaledSize = nodeSize * zoom;
+
+        // Передаем scaledSize вместо статичного nodeSize
+        shape->DrawBackground(drawList, screenPos, scaledSize, zoom, node->GetState(), isHovered);
 
         // Отрисовка пинов
         for(auto& pin : viewPins) {
             pin->UpdatePos(screenPos, zoom);
             pin->Draw(drawList, zoom);
         }   
+        Core::LoggingManager::Info("[VIEW_NODE]: ViewNode is draw end");
     }
 
     ViewPin* ViewNode::findViewPin(Core::PinID pinID, Core::Direction dir, int index) {

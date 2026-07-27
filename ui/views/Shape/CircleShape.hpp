@@ -13,7 +13,7 @@ namespace SwarmIDE::UI::Shape {
         /**
          * @brief Конструктор фигуры круг
          */
-        CircleShape();
+        CircleShape() = default;
 
         /**
          * @brief Деструктор фигуры круг

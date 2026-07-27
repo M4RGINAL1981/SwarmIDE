@@ -3,6 +3,7 @@
 #include "ui/views/ViewNode.hpp"
 #include "ui/views/ViewConnection.hpp"
 #include "ui/windows/ThemeManager.hpp"
+#include "core/engine/LoggingManager.hpp"
 #include "graphics/Grid.hpp"
 #include "graphics/Camera.hpp"
 #include "uuid_v4/uuid_v4.h"
@@ -134,6 +135,7 @@ namespace SwarmIDE::UI {
         Graphics::Grid& GetGrid() { return grid; }
         void Update(float deltaTime) { camera.update(deltaTime); }
 
+        void SetWindowSize(int width, int height) { windowSize = glm::vec2((float)width, (float)height); }
 
         // Блокируем копирование и перемещение менеджера
         CanvasManager(const CanvasManager&) = delete;
@@ -141,8 +143,11 @@ namespace SwarmIDE::UI {
         CanvasManager(CanvasManager&&) = delete;
         CanvasManager& operator=(CanvasManager&&) = delete;
     private:
+
+        friend AppController;
+
         CanvasManager();
-        ~CanvasManager() = default;
+        ~CanvasManager() { Core::LoggingManager::Info("[CANVAS_MANAGER]: Destructor"); }
 
         glm::vec2 windowSize = glm::vec2(3840, 2160);                                      /** @brief < Размер окна */
 

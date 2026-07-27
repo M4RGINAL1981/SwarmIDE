@@ -2,6 +2,9 @@
 #include "SwarmIDE.hpp"
 #include "core/graph/LogicPin.hpp"
 #include "glm/glm.hpp"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 
 namespace SwarmIDE::UI {
 
@@ -26,7 +29,7 @@ namespace SwarmIDE::UI {
         /**
          * @brief Деструктор визуального пина.
          */
-        ~ViewPin();
+        ~ViewPin() = default;
 
         /**
          * @brief Проверка на соответствие.
@@ -126,7 +129,7 @@ namespace SwarmIDE::UI {
          * @return true  Мышь указывает на пин.
          * @return false Мышь не указывает на пин.
          */
-        bool isHovered() { return isHovered; }
+        bool isHovered() { return is_hovered; }
 
     private:
         Core::PinID pinID;                   /** @brief < Строковый идентификтор пина.*/
@@ -135,6 +138,6 @@ namespace SwarmIDE::UI {
         glm::vec2 localPos;                  /** @brief < Смещение относительно верхнего левого угла родительской ноды. */
         glm::vec2 normal;                    /** @brief < Вектор нормали */
         glm::vec2 cachedScreenPos;           /** @brief < Мировые экранные координаты пина (рассчитываются каждый кадр с учетом зума холста). */
-        bool isHovered;                      /** @brief < Флаг, указыывающий, наведена ли сейчас мышь на пин или нет. */
+        bool is_hovered;                      /** @brief < Флаг, указыывающий, наведена ли сейчас мышь на пин или нет. */
     };
 }

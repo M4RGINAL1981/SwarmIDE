@@ -71,8 +71,8 @@ namespace SwarmIDE::Core {
         friend ConnectionManager;
         friend ModelManager;
 
-        SerializationManager() {};
-        ~SerializationManager() = default;
+        SerializationManager() { Core::LoggingManager::Info("[SERIALIZATION_MANAGER]: Constructor"); }
+        ~SerializationManager() { Core::LoggingManager::Info("[SERIALIZATION_MANAGER]: Destructor");}
     };
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "SwarmIDE.hpp"
 #include "ui/windows/ThemeTypes.hpp"
+#include "core/engine/LoggingManager.hpp"
 #include "imgui/imgui.h"
 #include <glm/glm.hpp>
 #include <string>
@@ -33,7 +34,7 @@ namespace SwarmIDE::UI {
 
     private:
         ThemeManager();
-        ~ThemeManager() = default;
+        ~ThemeManager() { Core::LoggingManager::Info("[THEME_MANAGER]: Destructor"); }
 
         // Вспомогательная функция для парсинга HEX в ImU32
         ImU32 ParseHexColor(const std::string& hexStr);

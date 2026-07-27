@@ -15,6 +15,7 @@ namespace SwarmIDE::UI {
     }
 
     ThemeManager::ThemeManager() {
+        Core::LoggingManager::Info("[THEME_MANAGER]: Constructor");
         Core::LoggingManager::Info("[THEME MANAGER]: Loading themes from ", themesPath);
 
         std::ifstream modelsFile(themesPath);

@@ -15,6 +15,9 @@ int main() {
 #endif
     setlocale(LC_ALL, "ru_RU.UTF-8");
 
+
+    Core::LoggingManager::Info("[MAIN]: main is begin");
+
     try {
         UI::AppController app;
         app.run();
@@ -23,6 +26,8 @@ int main() {
         std::cerr << "\n[FATAL ERROR]: " << e.what() << std::endl;
         return 1;
     } 
+
+    Core::LoggingManager::Info("[MAIN]: main is end");
 
     return 0;
 }
