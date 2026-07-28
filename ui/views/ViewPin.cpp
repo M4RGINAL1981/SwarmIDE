@@ -2,6 +2,7 @@
 #include "ui/views/ViewPin.hpp"
 #include "ui/windows/ThemeManager.hpp"
 #include "core/engine/LoggingManager.hpp"
+#include "glm/geometric.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -21,15 +22,14 @@ namespace SwarmIDE::UI {
         return false;
     }
 
-    void ViewPin::Draw(ImDrawList* drawList, float zoom) {
-        Core::LoggingManager::Info("[VIEW_PIN]: ViewPin is draw begin");
+    void ViewPin::Draw(ImDrawList* drawList, float zoomFactor) {
 
         auto& theme = ThemeManager::getInstance();
 
         auto colorDefault = theme.GetColorU32(ColorRole::PinDefault);
         auto colorHover = theme.GetColorU32(ColorRole::PinHover);
 
-        auto radius = theme.GetStyleVar(StyleVarRole::PinRadius) * zoom;
+        auto radius = theme.GetStyleVar(StyleVarRole::PinRadius) * zoomFactor;
         auto shapePin = theme.GetPinShape();
 
         if(shapePin == PinShapeType::Circle) {
@@ -38,7 +38,6 @@ namespace SwarmIDE::UI {
             if(is_hovered) drawList->AddCircleFilled(center, radius, colorHover);
             else drawList->AddCircleFilled(center, radius, colorDefault);
             
-            Core::LoggingManager::Info("[VIEW_PIN]: ViewPin is draw end");
         }
         else if (shapePin == PinShapeType::Square) {
             ImVec2 pMin = ImVec2(cachedScreenPos.x - radius, cachedScreenPos.y - radius);
@@ -47,7 +46,6 @@ namespace SwarmIDE::UI {
             if(is_hovered) drawList->AddRectFilled(pMin, pMax, colorHover);
             else drawList->AddRectFilled(pMin, pMax, colorDefault);    
             
-            Core::LoggingManager::Info("[VIEW_PIN]: ViewPin is draw end");
         }
         else {
             Core::LoggingManager::Fatal("Shape Pin is not identifacate");
@@ -59,4 +57,11 @@ namespace SwarmIDE::UI {
         cachedScreenPos = NodeScreenPos + (localPos * zoom); 
     }
 
+    bool ViewPin::IsPointInside(glm::vec2 mousePos, float zoomFactor) {
+        auto& theme = ThemeManager::getInstance();
+        auto radius = theme.GetStyleVar(StyleVarRole::PinRadius) * zoomFactor;
+
+        if(glm::length(mousePos - cachedScreenPos) < radius) return true;
+        return false;
+    }
 }

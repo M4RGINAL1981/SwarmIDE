@@ -64,8 +64,7 @@ namespace SwarmIDE::Core {
         int maxConnections = 1;                   /**< @brief Максимальное количество одновременных связей (-1 для безлимита). */
         DataVariant value = Core::DataVariant();  /**< @brief Контейнер с текущим значением данных на пине. */
     private:
-        friend ConnectionManager;
-
+        friend class ConnectionManager;
         int currentConnections = 0;               /**< @brief Текущее кол-во одновременных связей */
     };
 }

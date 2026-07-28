@@ -95,12 +95,22 @@ namespace SwarmIDE::UI {
          * @return glm::vec2& 
          */
         glm::vec2& GetNodeSize() { return nodeSize; }
-
         /**
          * @brief Устанавливает размер визуальной ноды
          * @param nS 
          */
         void SetNodeSize(glm::vec2 nS) { nodeSize = nS; }
+
+        void MoveBy(glm::vec2 delta) { worldPos += delta; }
+        void SetHovered(bool state) { isHovered = state; }
+        void SetSelected(bool state) { isSelected = state; }
+
+        /**
+         * @brief Вернуть все визуальные пины нодыы
+         * 
+         * @return std::vector<std::unique_ptr<ViewPin>> 
+         */
+        std::vector<std::unique_ptr<ViewPin>>& GetViewPins() { return viewPins; }
 
         /**
          * @brief Обрабатывает перемещение ноды мышкой (Drag)
@@ -111,7 +121,8 @@ namespace SwarmIDE::UI {
 
         friend CanvasManager;
 
-        Nodes::LogicNode* node = nullptr;                                /** @brief < Указатель на ноду. */
+        UUIDv4::UUID nodeID;                                             /** @brief < ID ноды. */
+        Nodes::State state = Nodes::State::Idle;                         /** @brief < Статус ноды. */
         std::unique_ptr<SwarmIDE::UI::Shape::BaseShape> shape;           /** @brief < Указатель на фигуру/трафарет */
         std::vector<std::unique_ptr<ViewPin>> viewPins;                  /** @brief < Визуальные пины ноды */
         glm::vec2 worldPos;                                              /** @brief < Положение ноды на поле. */

@@ -36,6 +36,15 @@ namespace SwarmIDE::UI::Shape {
          * @param[in] isHovered Наведена ли мышь на ноду
          */
         virtual void DrawBackground(ImDrawList* drawList, glm::vec2 pos, glm::vec2 size, float zoom, Nodes::State state, bool isHovered) = 0;
+    
+        /**
+         * @brief Проверят наведена ли мышь на фигуру или нет
+         * 
+         * @param mousePos Положение мыши на поле в данный момент времени
+         * @return true Мышь находиться на ноде
+         * @return false Мышь не находиться на ноде
+         */
+        virtual bool isPointInside(glm::vec2 mousePos, glm::vec2 nodePos, glm::vec2 nodeSize, float zoomFactor) = 0;
     };
 }
     

@@ -86,6 +86,7 @@ namespace SwarmIDE {
     // =========================================================================
 
     // ImGui
+    // ImGui
     namespace UI {
 
         // Менеджер отрисовки нод и подключений                    
@@ -97,30 +98,25 @@ namespace SwarmIDE {
         class ViewPin;
         class ViewConnection;
 
-        class BaseShape;               
-        class RectangleShape;          
-        class CircleShape;   
-        class DShape;
-
         // Орисовка меню и системных компонент
         class Menu;
         class Theme;
 
         namespace Shape {
-            class BaseShape;
-            class CircleShape;
+            class BaseShape;               
+            class RectangleShape;          
+            class CircleShape;   
             class DShape;
-            class RectangleShape;
         }
 
         namespace Command {
             class Cmd;
             class CmdCreateConnection;
             class CmdCreateNode;
-            class MoveNode;
+            class CmdMoveNode; // Исправлено с MoveNode
             class CommandBus;
         }
-    }   
+    }
 
     // OpenGL
     namespace Graphics {

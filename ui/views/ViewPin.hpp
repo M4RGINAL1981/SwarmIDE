@@ -103,13 +103,11 @@ namespace SwarmIDE::UI {
          * @return glm::vec2 
          */
         glm::vec2 GetScreenPos() { return cachedScreenPos; }
-
         /**
          * @brief Установить экранные координаты пина
          * @param screenPos 
          */
         void SetScreenPos(glm::vec2 screenPos) { cachedScreenPos = screenPos; }
-
 
         /**
          * @brief Возвращает нормаль пина
@@ -129,15 +127,30 @@ namespace SwarmIDE::UI {
          * @return true  Мышь указывает на пин.
          * @return false Мышь не указывает на пин.
          */
-        bool isHovered() { return is_hovered; }
+        bool GetHovered() { return is_hovered; }
+        /**
+         * @brief Установить переменную о наведении мыши на пин
+         * @param[in] ih Переменная о наведении мыши на пин
+         */
+        void SetHovered(bool ih) { is_hovered = ih; }
+
+        /**
+         * @brief Проверка на то, что наведена ли мышь на пин или нет
+         * 
+         * @param mousePos текущие положение мыши
+         * @param zoomFactor Текущий зум
+         * @return true Мышь наведена на пин
+         * @return false Мышь не наведена на пин
+         */
+        bool IsPointInside(glm::vec2 mousePos, float zoomFactor);
 
     private:
-        Core::PinID pinID;                   /** @brief < Строковый идентификтор пина.*/
-        Core::Direction dir;                 /** @brief < Вход или Выход (enum Input/Output). */
-        int index;                           /** @brief < Индекс пина, если есть пины с одинаковыми PinID */
-        glm::vec2 localPos;                  /** @brief < Смещение относительно верхнего левого угла родительской ноды. */
-        glm::vec2 normal;                    /** @brief < Вектор нормали */
-        glm::vec2 cachedScreenPos;           /** @brief < Мировые экранные координаты пина (рассчитываются каждый кадр с учетом зума холста). */
+        Core::PinID pinID;                    /** @brief < Строковый идентификтор пина.*/
+        Core::Direction dir;                  /** @brief < Вход или Выход (enum Input/Output). */
+        int index;                            /** @brief < Индекс пина, если есть пины с одинаковыми PinID */
+        glm::vec2 localPos;                   /** @brief < Смещение относительно верхнего левого угла родительской ноды. */
+        glm::vec2 normal;                     /** @brief < Вектор нормали */
+        glm::vec2 cachedScreenPos;            /** @brief < Мировые экранные координаты пина (рассчитываются каждый кадр с учетом зума холста). */
         bool is_hovered;                      /** @brief < Флаг, указыывающий, наведена ли сейчас мышь на пин или нет. */
     };
 }

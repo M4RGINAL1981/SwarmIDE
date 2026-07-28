@@ -27,7 +27,7 @@ namespace SwarmIDE::UI {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-        this->window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "SwarmIDE v1.0", NULL, NULL);
+        this->window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "SwarmIDE v0.21", NULL, NULL);
         if (window == NULL) {
             
             Core::LoggingManager::Error("[ERROR]: Failed to create GLFW window");
@@ -137,6 +137,10 @@ namespace SwarmIDE::UI {
         Command::CmdCreateNode cmd5("MergeNode", "Merge");
         cmd5.Execute();
 
+        cmd5;
+
+        auto& camera = UI::CanvasManager::getInstance().GetCamera();
+
         Core::LoggingManager::Info("[APP_CONTROLER]: GameLoop is begin");
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
@@ -145,9 +149,10 @@ namespace SwarmIDE::UI {
             static float lastFrame = 0.0f;
             float deltaTime = currentFrame - lastFrame;
             lastFrame = currentFrame;
+            
 
             canvas_manager.Update(deltaTime);
-            canvas_manager.HandleCanvasInputs();
+            canvas_manager.HandleCanvasInputs(camera.zoomFactor);
 
             // --- КРИТИЧЕСКИЙ ФИКС СЕТКИ: Очищаем экран ДО отрисовки чего-либо ---
             glm::vec3 colorBackground = ThemeManager::getInstance().GetColorVec3(ColorRole::GridBackground);

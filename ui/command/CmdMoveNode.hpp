@@ -22,7 +22,8 @@ namespace SwarmIDE::UI::Command {
          * @param[in] nodeID 
          * @param[in] pos
          */
-        CmdMoveNode(const UUIDv4::UUID& nodeID, const glm::vec2& pos);
+        CmdMoveNode(const UUIDv4::UUID& id, const glm::vec2& oldP, glm::vec2& newP) 
+            : nodeID(id), oldPos(oldP), newPos(newP) {};
 
         /**
          * @brief Перемещение ноды на координаты
@@ -37,8 +38,9 @@ namespace SwarmIDE::UI::Command {
         virtual void Undo() override;
 
     private:
-        UUIDv4::UUID nodeID;
-        glm::vec2 pos;
+        UUIDv4::UUID nodeID;      /** @brief < ID ноды */
+        glm::vec2 oldPos;         /** @brief < Старая позиция ноды */
+        glm::vec2 newPos;         /** @brief < Новая позиция ноды */
     };
 
 }

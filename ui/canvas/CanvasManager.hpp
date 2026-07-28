@@ -12,6 +12,38 @@
 
 namespace SwarmIDE::UI {
 
+    /**
+     * @brief Указывает текущиее состояние событий мыши
+     */
+    enum class MouseEvents {
+        IDLE,                  /** @brief < Ничего не делаем / Просто водим мышкой */
+        DRAGGING_NODE,         /** @brief < Тащим ноду */
+        DRAGGING_WIRE          /** @brief < Тянем связь из пина */
+    };
+
+    /**
+     * @struct ActiveLinkContext
+     * @brief Структура, хранящая состояние сборки связи 
+     * (тянет ли пользователь провод из пина прямо сейчас, откуда тянет, где мышь).
+     */
+    struct ActiveLinkContext {
+        MouseEvents state = MouseEvents::IDLE;         /** @brief < Текущиее состояние */
+
+        // Данные для перемещения ноды
+        UUIDv4::UUID grabberNodeID;                    /** @brief < Какую ноду тащим */
+        glm::vec2 initialNodePos;                      /** @brief < Где она была до начала перетаскивания (для отмены) */
+
+        // Данные для создания связи
+        UUIDv4::UUID startNodeID;                      /** @brief < Из какой ноды тянем связь */  
+        Core::PinID startPinID;                        /** @brief < ID стартового пина */
+        Core::Direction startPinDir;                   /** @brief < Направление (Input/Output) */
+        int startPinIndex;                             /** @brief < Индекс пина */
+
+        // Временые координаты мыши для отрисовки тянущегося провода
+        glm::vec2 currentMouseWorldPos;
+
+        void Reset() { state = MouseEvents::IDLE; }    /** @brief < Методы для очистки контекста */
+    };
     
     /**
      * @class CanvasManager
@@ -112,8 +144,15 @@ namespace SwarmIDE::UI {
 
         /**
          * @brief Найти визуальное соединение 
+         * @param[in] conn - Логическое соединение
          */
-        //ViewNode* findViewConnection();
+        ViewConnection* findViewConnection(Core::Connection* conn);
+
+        /**
+         * @brief Синхронизация логики и визуала
+         * 
+         */
+        void SyncWithCoreGraph();
 
         /**
          * @brief Отрисовывает бесконечную сетку, все линки, все ноды.
@@ -123,13 +162,9 @@ namespace SwarmIDE::UI {
         /**
          * @brief Клик по пустому месту, выделение рамкой (Box Selection),
          * панорамирование холста средней кнопкой мыши.
+         * @param[in] zoomFactor - текущий зум.
          */
-        void HandleCanvasInputs();
-
-        /**
-         * @brief Синхронизирует появление/удаление нод бэкенда с UI-компонентами.
-         */
-        void SyncWithCoreGraph();
+        void HandleCanvasInputs(float zoomFactor);
 
         Graphics::Camera& GetCamera() { return camera; }
         Graphics::Grid& GetGrid() { return grid; }
@@ -143,8 +178,7 @@ namespace SwarmIDE::UI {
         CanvasManager(CanvasManager&&) = delete;
         CanvasManager& operator=(CanvasManager&&) = delete;
     private:
-
-        friend AppController;
+        friend class AppController;
 
         CanvasManager();
         ~CanvasManager() { Core::LoggingManager::Info("[CANVAS_MANAGER]: Destructor"); }
@@ -156,13 +190,6 @@ namespace SwarmIDE::UI {
         std::unordered_map<UUIDv4::UUID, std::unique_ptr<ViewNode>> viewNodes;             /** @brief < Хеш-Таблица. Ключ - ID логической ноды. Значение - Визуальная нода. */
         std::vector<std::unique_ptr<ViewConnection>> viewLinks;                            /** @brief < Вектор визуальных соединений. */
 
-        /**
-         * @struct activeLinkContext
-         * @brief Структура, хранящая состояние сборки связи 
-         * (тянет ли пользователь провод из пина прямо сейчас, откуда тянет, где мышь).
-         */
-        struct activeLinkContext {
-            // Не знаю, какие поля должны быть
-        };
+        ActiveLinkContext activeLinkContext;
     };
 }

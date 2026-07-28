@@ -7,6 +7,7 @@ namespace SwarmIDE::UI::Shape {
 void CircleShape::DrawBackground(ImDrawList* drawList, glm::vec2 pos, glm::vec2 size, float zoom, Nodes::State state, bool isHovered) {
         // 1. Вычисляем координаты углов
         ImVec2 center = ImVec2(pos.x + (size.x / 2.0f), pos.y + (size.y / 2.0f));
+        float radius = (size.x / 2.0f);
 
         // 2. Достаем менеджер тем
         auto& theme = ThemeManager::getInstance();
@@ -36,10 +37,16 @@ void CircleShape::DrawBackground(ImDrawList* drawList, glm::vec2 pos, glm::vec2 
             theme.GetColorU32(ColorRole::NodeBorder);
 
         // 6. Рисуем подложку
-        drawList->AddCircleFilled(center, size.x / 2.0f, bgColor);
+        drawList->AddCircleFilled(center, radius, bgColor);
 
         // 7. Рисуем красивую рамку поверх
-        drawList->AddCircle(center, size.x / 2.0f, borderColor, 0, borderThickness);
+        drawList->AddCircle(center, radius, borderColor, 0, borderThickness);
     }
 
+    bool CircleShape::isPointInside(glm::vec2 mousePos, glm::vec2 nodePos, glm::vec2 nodeSize, float zoomFactor) {
+        glm::vec2 scaledSize = nodeSize * zoomFactor;
+        glm::vec2 center = nodePos + (scaledSize / 2.0f);
+        float radius = scaledSize.x / 2.0f;
+        return glm::length(mousePos - center) <= radius;
+    }
 }

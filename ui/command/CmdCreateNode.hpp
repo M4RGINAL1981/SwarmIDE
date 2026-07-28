@@ -36,7 +36,6 @@ namespace SwarmIDE::UI::Command {
         virtual void Undo() override;
 
     private:
-
         std::string typeName;     /** @brief < Тип ноды */
         std::string nodeName;     /** @brief < Имя ноды */
         UUIDv4::UUID nodeID;      /** @brief < ID ноды */

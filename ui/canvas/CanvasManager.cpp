@@ -1,5 +1,6 @@
 #include "SwarmIDE.hpp"
 #include "ui/canvas/CanvasManager.hpp"
+#include "core/graph/GraphManager.hpp"
 #include "graphics/Camera.hpp"
 #include "graphics/Grid.hpp"
 #include "core/engine/LoggingManager.hpp"
@@ -66,85 +67,140 @@ namespace SwarmIDE::UI {
         );
     }
 
+    void CanvasManager::SyncWithCoreGraph() {
+        auto& coreGraph = Core::GraphManager::getInstance();
+        const auto& coreNodes = coreGraph.getNodes();
+        
+        // 1. УДАЛЕНИЕ: Убираем из UI ноды, которых больше нет в Core
+        for (auto it = viewNodes.begin(); it != viewNodes.end(); ) {
+            UUIDv4::UUID currentID = it->first;
+            
+            if (!coreGraph.findNodeByID(currentID)) {
+                removeViewConnectionsForNode(currentID);
+                it = viewNodes.erase(it);
+            } else {
+                ++it;
+            }
+        }
+
+        // 2. ДОБАВЛЕНИЕ: Создаем визуальные ноды для новых логических нод
+        for (const auto& coreNode : coreNodes) {
+            UUIDv4::UUID id = coreNode->GetID();
+            if (!viewNodes.contains(id)) {
+                // Используем корректный метод получения позиции камеры (например, GetCameraCenter или аналогичный)
+                // Либо передаем дефолтную позицию / позицию из ноды
+                AddViewNode(id, glm::vec2(0.0f, 0.0f)); 
+            }
+        }
+
+        // 3. СИНХРОНИЗАЦИЯ СВЯЗЕЙ
+        const auto& coreConnections = Core::ConnectionManager::getInstance().getAllConnections();
+        
+        std::erase_if(viewLinks, [&coreConnections](const std::unique_ptr<ViewConnection>& viewLink) {
+            auto* logicalConn = viewLink->GetConnection();
+            // Проверяем наличие связи через поиск в векторе логических связей ConnectionManager
+            auto& allConns = Core::ConnectionManager::getInstance().getAllConnections();
+            auto it = std::find(allConns.begin(), allConns.end(), *logicalConn);
+            return it == allConns.end(); 
+        });
+    }
+
     void CanvasManager::Draw() {
-        Core::LoggingManager::Info("[CANVAS_MANAGER]: DRAW is begin");
 
         ImDrawList* drawList = ImGui::GetWindowDrawList();
 
         grid.draw(camera);
 
-        // БЫЛО: float zoom = camera.GetCurrentZoomIndex();
-        // СТАЛО: Передаем реальный float множитель
         float zoom = camera.zoomFactor; 
         
-        Core::LoggingManager::Info("[CANVAS_MANAGER]: Connection is Draw");
         for(auto& conn : viewLinks) {
             conn->Draw(drawList, zoom);
         }
         
-        Core::LoggingManager::Info("[CANVAS_MANAGER]: Node is Draw");
         for(auto& [id, viewNode] : viewNodes) {
             glm::vec2 worldPos = viewNode->GetWorldPos();
             glm::vec2 screenPos = camera.worldToScreen(worldPos, windowSize);
 
             viewNode->Draw(drawList, screenPos, zoom);
         }
-
-        Core::LoggingManager::Info("[CANVAS_MANAGER]: DRAW is end");
     }
 
-    void CanvasManager::HandleCanvasInputs() {
+    ViewConnection* CanvasManager::findViewConnection(Core::Connection* conn) {
+        if (!conn) return nullptr;
+        
+        // Ищем визуальное соединение, которое ссылается на этот логический connection
+        for (auto& viewLink : viewLinks) {
+            if (viewLink->GetConnection() == conn) {
+                return viewLink.get();
+            }
+        }
+        return nullptr;
+    }
+
+    void CanvasManager::HandleCanvasInputs(float zoomFactor) {
         ImGuiIO& io = ImGui::GetIO();
-        
-        // Если мышь занята стандартным интерфейсом ImGui (например, контекстным меню) — игнорируем
-        //if (io.WantCaptureMouse) return;
-
         glm::vec2 mousePos = glm::vec2(io.MousePos.x, io.MousePos.y);
-        
-        static UUIDv4::UUID draggedNodeID;
-        static bool isDraggingNode = false;
 
-        // ЛЕВЫЙ КЛИК: Проверяем нажатие на ноду
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-            for (auto& [id, viewNode] : viewNodes) {
-                glm::vec2 screenPos = camera.worldToScreen(viewNode->GetWorldPos(), windowSize);
-                glm::vec2 scaledSize = viewNode->GetNodeSize() * camera.zoomFactor;
+        ViewPin* hoveredViewPin = nullptr;
+        ViewNode* hoveredViewNode = nullptr;
 
-                // Попала ли мышь в границы ноды на экране
-                if (mousePos.x >= screenPos.x && mousePos.x <= screenPos.x + scaledSize.x &&
-                    mousePos.y >= screenPos.y && mousePos.y <= screenPos.y + scaledSize.y) {
-                    
-                    draggedNodeID = id;
-                    isDraggingNode = true;
-                    viewNode->isSelected = true;
-                    break;
-                }
+        // Сбрасываем флаги наведения перед каждым кадром
+        for(auto& [id, viewNode] : viewNodes) {
+            viewNode->isHovered = false;
+            for(auto& viewPin : viewNode->GetViewPins()) {
+                viewPin->SetHovered(false);
             }
         }
 
-        // ПРОЦЕСС ПЕРЕМЕЩЕНИЯ
-        if (isDraggingNode) {
+        // Если ничего не делаем — ищем, на что наведена мышь
+        if(activeLinkContext.state == MouseEvents::IDLE) { 
+            for(auto& [id, viewNode] : viewNodes) {
+                auto& viewPins = viewNode->GetViewPins();
+                for(auto& viewPin : viewPins) {
+                    if(viewPin->IsPointInside(mousePos, zoomFactor)) {
+                        viewPin->SetHovered(true);
+                        hoveredViewPin = viewPin.get();
+                        break;
+                    }
+                }
+
+                // Если пин не задет, проверяем попадание в саму ноду
+                if(hoveredViewPin == nullptr) {
+                    // КРИТИЧЕСКИЙ ФИКС: Переводим мировые координаты ноды в экранные для корректного хитбокса
+                    glm::vec2 screenPos = camera.worldToScreen(viewNode->worldPos, windowSize);
+                    if(viewNode->shape->isPointInside(mousePos, screenPos, viewNode->nodeSize, zoomFactor)) {
+                        viewNode->isHovered = true;
+                        hoveredViewNode = viewNode.get();
+                        break;
+                    }
+                }
+            }
+
+            // Обработка действий мыши
+            if(hoveredViewPin != nullptr) {
+                // Логика создания связи (в будущем)
+            }
+            else if(hoveredViewNode != nullptr) {
+                if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+                    activeLinkContext.state = MouseEvents::DRAGGING_NODE;
+                    activeLinkContext.grabberNodeID = hoveredViewNode->nodeID;
+                }
+            }
+        }
+        // Если нода захвачена — плавно перетаскиваем её независимо от положения курсора внутри неё
+        else if(activeLinkContext.state == MouseEvents::DRAGGING_NODE) {
             if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
-                // Переводим дельту движения мыши из экранных координат в мировые (деля на zoom)
                 glm::vec2 worldDelta = glm::vec2(io.MouseDelta.x, io.MouseDelta.y) / camera.zoomFactor;
-                
-                if (viewNodes.contains(draggedNodeID)) {
-                    viewNodes[draggedNodeID]->worldPos += worldDelta;
+                ViewNode* draggedNode = findViewNodeByID(activeLinkContext.grabberNodeID);
+                if (draggedNode) {
+                    draggedNode->MoveBy(worldDelta);
                 }
             }
             
-            if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
-                isDraggingNode = false;
+            // Сбрасываем состояние при отпускании левой кнопки мыши
+            if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+                activeLinkContext.Reset();
             }
-        }
-        
-        // ПОДВЕШИВАЕМ ХОВЕР (Определяем наведение для изменения цвета рамки)
-        for (auto& [id, viewNode] : viewNodes) {
-            glm::vec2 screenPos = camera.worldToScreen(viewNode->GetWorldPos(), windowSize);
-            glm::vec2 scaledSize = viewNode->nodeSize * camera.zoomFactor;
-
-            viewNode->isHovered = (mousePos.x >= screenPos.x && mousePos.x <= screenPos.x + scaledSize.x &&
-                                mousePos.y >= screenPos.y && mousePos.y <= screenPos.y + scaledSize.y);
         }
     }
 }

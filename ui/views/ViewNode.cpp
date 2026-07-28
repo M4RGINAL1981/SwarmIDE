@@ -19,7 +19,7 @@ namespace SwarmIDE::UI {
             Core::LoggingManager::Fatal("Node is not found. Node ID: ", nodeID);
             throw std::runtime_error("Node is not found");
         }
-        node = newNode;
+        this->nodeID = nodeID;
         worldPos = glm::vec2(0.0f, 0.0f);
 
         // Создание ViewPin
@@ -121,20 +121,18 @@ namespace SwarmIDE::UI {
     }
 
     void ViewNode::Draw(ImDrawList* drawList, glm::vec2 screenPos, float zoom) {
-        Core::LoggingManager::Info("[VIEW_NODE]: ViewNode is draw begin");
 
         // МАСШТАБИРУЕМ РАЗМЕР: Умножаем базовый размер ноды на зум камеры
         glm::vec2 scaledSize = nodeSize * zoom;
 
         // Передаем scaledSize вместо статичного nodeSize
-        shape->DrawBackground(drawList, screenPos, scaledSize, zoom, node->GetState(), isHovered);
+        shape->DrawBackground(drawList, screenPos, scaledSize, zoom, state, isHovered);
 
         // Отрисовка пинов
         for(auto& pin : viewPins) {
             pin->UpdatePos(screenPos, zoom);
             pin->Draw(drawList, zoom);
         }   
-        Core::LoggingManager::Info("[VIEW_NODE]: ViewNode is draw end");
     }
 
     ViewPin* ViewNode::findViewPin(Core::PinID pinID, Core::Direction dir, int index) {

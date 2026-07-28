@@ -6,29 +6,13 @@
 
 namespace SwarmIDE::UI::Command {
 
-    CmdMoveNode::CmdMoveNode(const UUIDv4::UUID& nodeID, const glm::vec2& pos) : nodeID(nodeID), pos(pos) {}
-
     void CmdMoveNode::Execute() {
-        auto viewNode = CanvasManager::getInstance().findViewNodeByID(nodeID);
-
-        if(!viewNode) {
-            Core::LoggingManager::Fatal("Node is not found. Node ID: ", nodeID);
-            throw std::runtime_error("Node is not found");
-        }
-
-        // Cохраняем координаты до перемещения
-        pos = viewNode->GetWorldPos();
+        auto node = CanvasManager::getInstance().findViewNodeByID(nodeID);
+        if (node) node->SetWorldPos(newPos); // Новая позиция
     }
 
-    void CmdMoveNode::Undo() {
-        auto viewNode = CanvasManager::getInstance().findViewNodeByID(nodeID);
-
-        if(!viewNode) {
-            Core::LoggingManager::Fatal("Node is not found. Node ID: ", nodeID);
-            throw std::runtime_error("Node is not found");
-        }
-
-        // Перемещаем ноду обратно
-        viewNode->SetWorldPos(pos);
+    void CmdMoveNode::Undo()  {
+        auto node = CanvasManager::getInstance().findViewNodeByID(nodeID);
+        if (node) node->SetWorldPos(oldPos); // Вернуть предыдушую позицию
     }
 }

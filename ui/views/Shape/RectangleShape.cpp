@@ -43,4 +43,15 @@ namespace SwarmIDE::UI::Shape {
         // 7. Рисуем красивую рамку поверх
         drawList->AddRect(pMin, pMax, borderColor, rounding, 0, borderThickness);
     }
+
+   bool RectangleShape::isPointInside(glm::vec2 mousePos, glm::vec2 nodePos, glm::vec2 nodeSize, float zoomFactor) {
+        glm::vec2 pMin = nodePos;
+        glm::vec2 pMax = nodePos + (nodeSize * zoomFactor);
+        
+        if (mousePos.x >= pMin.x && mousePos.x <= pMax.x &&
+            mousePos.y >= pMin.y && mousePos.y <= pMax.y) {
+            return true;
+        }
+        return false;
+    }
 }

@@ -84,10 +84,9 @@ namespace SwarmIDE::Core {
     }
 
     void ConnectionManager::removeConnectionsForNode(UUIDv4::UUID nodeID) {
-        for(auto& conn : connection){
-            if(conn.fromNodeID == nodeID) disconnect(conn);
-            if(conn.toNodeID == nodeID) disconnect(conn);
-        }
+        std::erase_if(connection, [nodeID](const Connection& conn) {
+            return conn.fromNodeID == nodeID || conn.toNodeID == nodeID;
+        });
     }
 
     ConnectionManager& ConnectionManager::getInstance() {

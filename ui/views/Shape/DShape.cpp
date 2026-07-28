@@ -52,4 +52,15 @@ namespace SwarmIDE::UI::Shape {
         drawList->PathArcTo(ImVec2(pMin.x + rounding, pMax.y - rounding), rounding, IM_PI * 0.5f, IM_PI);
         drawList->PathStroke(borderColor, ImDrawFlags_Closed, borderThickness);
     }
+
+    bool DShape::isPointInside(glm::vec2 mousePos, glm::vec2 nodePos, glm::vec2 nodeSize, float zoomFactor) {
+        glm::vec2 pMin = nodePos;
+        glm::vec2 pMax = nodePos + (nodeSize * zoomFactor);
+        
+        if (mousePos.x >= pMin.x && mousePos.x <= pMax.x &&
+            mousePos.y >= pMin.y && mousePos.y <= pMax.y) {
+            return true;
+        }
+        return false;
+    }
 }
