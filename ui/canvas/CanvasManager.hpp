@@ -42,7 +42,11 @@ namespace SwarmIDE::UI {
         // Временые координаты мыши для отрисовки тянущегося провода
         glm::vec2 currentMouseWorldPos;
 
-        void Reset() { state = MouseEvents::IDLE; }    /** @brief < Методы для очистки контекста */
+        void Reset() {                                 /** @brief < Методы для очистки контекста */
+            state = MouseEvents::IDLE;
+            initialNodePos = glm::vec2(0.0f, 0.0f);
+            currentMouseWorldPos = glm::vec2(0.0f, 0.0f);
+        }    
     };
     
     /**
@@ -150,12 +154,11 @@ namespace SwarmIDE::UI {
 
         /**
          * @brief Синхронизация логики и визуала
-         * 
          */
         void SyncWithCoreGraph();
 
         /**
-         * @brief Отрисовывает бесконечную сетку, все линки, все ноды.
+         * @brief Отрисовывает бесконечную сетку, все соединения и все ноды.
          */
         void Draw();
 
@@ -170,6 +173,12 @@ namespace SwarmIDE::UI {
         Graphics::Grid& GetGrid() { return grid; }
         void Update(float deltaTime) { camera.update(deltaTime); }
 
+        /**
+         * @brief Установить размер окна
+         * 
+         * @param width 
+         * @param height 
+         */
         void SetWindowSize(int width, int height) { windowSize = glm::vec2((float)width, (float)height); }
 
         // Блокируем копирование и перемещение менеджера

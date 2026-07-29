@@ -69,19 +69,18 @@ namespace SwarmIDE::Core {
          * @see disconnect()
          * @see Nodes::LogicNode
          * @see Core::LogicPin
-         * 
-         * @todo Нужно будет сделать так, что если к входной ноде через входной пин уже кто-то подключен - то мы должны затирать связь и заменять новой
          */
-        void connect(UUIDv4::UUID fromNodeID, PinID fromPinID, int fromIndex, UUIDv4::UUID toNodeID, PinID toPinID, int toIndex);
+        Connection* connect(UUIDv4::UUID fromNodeID, PinID fromPinID, int fromIndex,
+                     UUIDv4::UUID toNodeID, PinID toPinID, int toIndex);
        
         /**
          * @brief Разорвать конкретную логическую связь в графе.
          * @details Удаляет ребро из общего списка. Обычно вызывается, когда пользователь 
          * кликает правой кнопкой мыши по линии связи на холсте или удаляет линию.
          * 
-         * @param[in] connect Объект связи, которую необходимо разорвать.
+         * @param[in] conn Указатель на объект связи, которую необходимо разорвать.
          */
-        void disconnect(Connection connect);
+        void disconnect(Connection* conn);
 
         /**
          * @brief Возвращает список всех исходящих связей для конкретного узла.
@@ -124,12 +123,6 @@ namespace SwarmIDE::Core {
          */
         void removeAllConnections() { connection.clear(); }
 
-        /**
-         * @brief Установить связь с менеджером вычислительного графа.
-         * @param[in] grph_manager Указатель на синглтон GraphManager.
-         */
-        void SetGraphManager(GraphManager* grph_manager) { graph_manager = grph_manager; }
-
         // Запрещаем дублирование синглтона менеджера связей
         ConnectionManager(const ConnectionManager&) = delete;
         ConnectionManager& operator=(const ConnectionManager&) = delete;
@@ -140,9 +133,7 @@ namespace SwarmIDE::Core {
         friend class SerializationManager; /**< Доступ для сохранения/загрузки ребер графа в JSON конфигурацию. */
 
         ConnectionManager() { Core::LoggingManager::Info("[CONNECTION_MANAGER]: Constructor"); }
-        ~ConnectionManager() { Core::LoggingManager::Info("[CONNECTION_MANAGER]: Destructor");}
-
-        GraphManager* graph_manager = nullptr; /**< Указатель на менеджер графа для валидации топологии. */
+        ~ConnectionManager();
      
         std::vector<Connection> connection;    /**< Внутренний вектор, хранящий все ребра текущей сцены. */
     };

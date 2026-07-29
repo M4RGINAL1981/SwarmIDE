@@ -48,6 +48,16 @@ namespace SwarmIDE::Core {
      */
     struct LogicPin {
 
+        /**
+         * @brief Конструктор логического пина
+         * 
+         * @param i            ID пина
+         * @param dir          Направление пина 
+         * @param dT           Тип данных пина
+         * @param ind          Индекс пина (Если в ноде, есть несколько пинов с одинаковым PinID)
+         * @param maxConn      Максимальное кол-во соединений
+         * @param v            Данные, которые храняться в пине
+         */
         LogicPin(PinID i, Direction dir, DataType dT, int ind, int maxConn, DataVariant v) {
             id = i;
             direction = dir;

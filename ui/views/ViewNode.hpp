@@ -101,6 +101,10 @@ namespace SwarmIDE::UI {
          */
         void SetNodeSize(glm::vec2 nS) { nodeSize = nS; }
 
+        /**
+         * @brief Сместить ноду на дельту
+         * @param[in] delta дельта смещения ноды 
+         */
         void MoveBy(glm::vec2 delta) { worldPos += delta; }
         void SetHovered(bool state) { isHovered = state; }
         void SetSelected(bool state) { isSelected = state; }

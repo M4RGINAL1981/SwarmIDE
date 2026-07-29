@@ -19,12 +19,14 @@ namespace SwarmIDE::UI::Command {
     void CmdCreateConnection::Undo() {
         Core::LoggingManager::Info("[REMOVE]: Connection is remove.");
 
+        // Проверка на существование связи
+        if(!conn) return;
+
         // Удаление визуальной связи
         CanvasManager::getInstance().RemoveViewConnection(conn);
 
         // Удаление логической связи
-
         if(!conn) return;
-        Core::ConnectionManager::getInstance().disconnect(*conn);
+        Core::ConnectionManager::getInstance().disconnect(conn);
     }
 }

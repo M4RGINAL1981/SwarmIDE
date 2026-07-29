@@ -15,6 +15,7 @@
 namespace SwarmIDE::UI {
     ViewNode::ViewNode(UUIDv4::UUID nodeID) {
         auto newNode = Core::GraphManager::getInstance().findNodeByID(nodeID);
+        // Если логической ноды нет - ошибка
         if(!newNode) {
             Core::LoggingManager::Fatal("Node is not found. Node ID: ", nodeID);
             throw std::runtime_error("Node is not found");
