@@ -55,6 +55,10 @@ namespace SwarmIDE::Nodes {
         SetState(nodeJson["state"]);
     }
 
+    void MergeNode::ApplyDefaultSettings() {
+        SetName("MergeNode");
+    }
+
     // РЕГИСТРАЦИЯ НОДЫ В ФАБРИКЕ
     REGISTER_NODE(MergeNode, "MergeNode");
 }

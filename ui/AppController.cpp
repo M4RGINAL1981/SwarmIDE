@@ -1,7 +1,8 @@
 #include "SwarmIDE.hpp"
 #include "ui/AppController.hpp"
 #include "ui/windows/ThemeManager.hpp"
-#include "ui/command/CmdCreateNode.hpp"
+#include "ui/command/CommandBus.hpp"
+#include "ui/windows/Menu.hpp"
 
 #include <iostream>
 #include <glad/glad.h>
@@ -12,6 +13,26 @@
 
 unsigned int SCR_WIDTH = 3840;
 unsigned int SCR_HEIGHT = 2160;
+
+namespace {
+    void HandleShortcutCommands(SwarmIDE::UI::Command::CommandBus& command_bus) {
+        ImGuiIO& io = ImGui::GetIO();
+
+        // Проверяем, что зажат Ctrl (поддерживает и левый, и правый)
+        bool ctrlPressed = io.KeyCtrl; 
+
+        // Отлавливаем Ctrl + Z
+        if (ctrlPressed && ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
+            // Вызываем вашу команду отмены действия
+            command_bus.Undo();
+        }
+
+        // Отлавливаем Ctrl + Y
+        if (ctrlPressed && ImGui::IsKeyPressed(ImGuiKey_Y, false)) {
+            command_bus.Redo();
+        }
+    }
+}
 
 namespace SwarmIDE::UI {
     
@@ -126,20 +147,25 @@ namespace SwarmIDE::UI {
     
     void AppController::run() {
 
-        Command::CmdCreateNode cmd1("TextNode", "Text Input 1");
-        cmd1.Execute();
-        Command::CmdCreateNode cmd2("ModelNode", "DeepSeek-R1");
-        cmd2.Execute();
-        Command::CmdCreateNode cmd3("ConversationalAgent", "Agent1");
-        cmd3.Execute();
-        Command::CmdCreateNode cmd4("ConversationalAgent", "Agent2");
-        cmd4.Execute();
-        Command::CmdCreateNode cmd5("MergeNode", "Merge");
-        cmd5.Execute();
+        auto& command_bus = Command::CommandBus::getInstance();
+        
+        auto cmd1 = std::make_unique<Command::CmdCreateNode>("TextNode", "Text Input 1");
+        auto cmd2 = std::make_unique<Command::CmdCreateNode>("ModelNode", "DeepSeek-R1");
+        auto cmd3 = std::make_unique<Command::CmdCreateNode>("ConversationalAgent", "Agent1");
+        auto cmd4 = std::make_unique<Command::CmdCreateNode>("ConversationalAgent", "Agent2");
+        auto cmd5 = std::make_unique<Command::CmdCreateNode>("MergeNode", "Merge");
 
-        cmd5;
+        command_bus.PushAndExecute(std::move(cmd1));
+        command_bus.PushAndExecute(std::move(cmd2));
+        command_bus.PushAndExecute(std::move(cmd3));
+        command_bus.PushAndExecute(std::move(cmd4));
+        command_bus.PushAndExecute(std::move(cmd5));
 
         auto& camera = UI::CanvasManager::getInstance().GetCamera();
+        auto& grid = UI::CanvasManager::getInstance().GetGrid();
+        auto& menu = Menu::getInstance();
+        menu.SetCamera(&camera);
+        menu.SetGrid(&grid);
 
         Core::LoggingManager::Info("[APP_CONTROLER]: GameLoop is begin");
         while (!glfwWindowShouldClose(window)) {
@@ -150,16 +176,18 @@ namespace SwarmIDE::UI {
             float deltaTime = currentFrame - lastFrame;
             lastFrame = currentFrame;
             
-
             canvas_manager.Update(deltaTime);
             canvas_manager.HandleCanvasInputs(camera.zoomFactor);
 
-            // --- КРИТИЧЕСКИЙ ФИКС СЕТКИ: Очищаем экран ДО отрисовки чего-либо ---
+            // Отлавливаем горячие клавиши
+            HandleShortcutCommands(command_bus);
+
+            // Очищаем экран ДО отрисовки чего-либо
             glm::vec3 colorBackground = ThemeManager::getInstance().GetColorVec3(ColorRole::GridBackground);
             glClearColor(colorBackground.r, colorBackground.g, colorBackground.b, 1.0F);
             glClear(GL_COLOR_BUFFER_BIT);
 
-            // Теперь спокойно готовим кадр ImGui
+            // Готовим кадр ImGui
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
@@ -169,7 +197,8 @@ namespace SwarmIDE::UI {
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
             ImGui::Begin("Canvas", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus);
             
-            canvas_manager.Draw(); // Тут вызовется grid.draw() и нарисует поверх чистого экрана
+            menu.DrawMenu();
+            canvas_manager.Draw();
             
             ImGui::End();
             ImGui::PopStyleVar();

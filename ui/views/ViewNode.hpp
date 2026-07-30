@@ -34,7 +34,7 @@ namespace SwarmIDE::UI {
          * @brief Конструктор визуальной ноды
          * 
          * @param nodeID ID логической ноды
-         * @param worldPos Координаты ноды для создания
+         * @param spawnPos Координаты ноды для создания
          */
         ViewNode(UUIDv4::UUID nodeID, glm::vec2 spawnPos) : ViewNode(nodeID) { worldPos = spawnPos; }
 
@@ -86,7 +86,7 @@ namespace SwarmIDE::UI {
         /**
          * @brief Установить новые мировые координаты визуальной ноды
          * 
-         * @param[in] glm::vec2 wP новые координаты визуальной ноды
+         * @param[in] wP новые координаты визуальной ноды
          */
         void SetWorldPos(glm::vec2 wP) { worldPos = wP; }
 
@@ -106,7 +106,17 @@ namespace SwarmIDE::UI {
          * @param[in] delta дельта смещения ноды 
          */
         void MoveBy(glm::vec2 delta) { worldPos += delta; }
+
+        /**
+         * @brief Установить статус: Наведена ли мышь на ноду или нет?
+         * @param[in] state Статус
+         */
         void SetHovered(bool state) { isHovered = state; }
+
+        /**
+         * @brief Установить статус: Выбрана ли нода сейчас или нет?
+         * @param[in] state Статус
+         */
         void SetSelected(bool state) { isSelected = state; }
 
         /**
@@ -118,6 +128,7 @@ namespace SwarmIDE::UI {
 
         /**
          * @brief Обрабатывает перемещение ноды мышкой (Drag)
+         * @warning Сейчас не испльзуется, возмножно будет в будущем. Сейчас перемещение ноды занимается CanvasManager
          */
         void HandleInteraction();
 

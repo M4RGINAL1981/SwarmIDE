@@ -1,7 +1,9 @@
 #include "SwarmIDE.hpp"
 #include "nodes/ai/ToolsAgent.hpp"
 #include "core/graph/GraphRegistry.hpp"
-#include "imgui.h"
+#include "core/models/ModelManager.hpp"
+#include "core/engine/LoggingManager.hpp"
+#include <iostream>
 
 namespace SwarmIDE::Nodes {
 
@@ -18,40 +20,39 @@ namespace SwarmIDE::Nodes {
     }
 
     void ToolsAgent::Execute() {
-        SetState(Executing); // Устанавливаем ноде статус Executing (Выполнение)
+        // Устанавливаем ноде статус Executing (Выполнение)
+        SetState(Executing);                         
 
-        // 1. Читаем данные из входного пина
-        Core::DataVariant inputData = getPinValue(Core::PinID::DataStream, Core::Direction::Input);
+        // Логирование
+        Core::LoggingManager::ExecutingNode("ConversationalAgent", GetID());
 
-        std::string incomingText = "";
-        if (inputData.isType<std::string>()) {
-            incomingText = inputData.getValue<std::string>();
+        // 1. Читаем промпт и ID модели
+        std::string prompt = getPinValue(Core::PinID::DataStream, Core::Direction::Input).getValue<std::string>();
+        std::string targetModelID = getPinValue(Core::PinID::Model, Core::Direction::Input).getValue<std::string>();
+
+        if(getSystemInstruction().size() == 0) setSystemInstruction("Always answer in Russian language. Всегда отвечай на русском языке. Передай привет");
+
+        Core::LoggingManager::Info("[Agent ", GetName(), "]: Начинаю генерацию текста...\n");
+
+        // 2. Делаем логику
+        try {
+        std::string result = Core::ModelManager::getInstance().generateResponse(targetModelID, prompt, getSystemInstruction());
+
+
+            Core::LoggingManager::Info( "  Ответ от Агента [", GetName(), "]:\n", result,"\n");
+
+            // 3. Отдаем результат дальше по графу
+            setPinValue(Core::DataVariant(result), Core::PinID::DataStream, Core::Direction::Output);
+            SetState(Success);
+
+            Core::LoggingManager::SuccessNode("ConversationalAgent", GetID());
+
+        } catch (const std::exception& e) {
+            std::cerr << "Agent Generation Error: " << e.what() << std::endl;
+            SetState(Failed);
+
+            Core::LoggingManager::FailedNode("ConversationalAgent", GetID());
         }
-
-        // 2. Делаем логику (здесь будет вызов LLM, но пока просто тест)
-        std::string resultText = "Agent " + GetName() + " says: I received -> " + incomingText;
-        std::cout << resultText << std::endl;
-
-        // 3. Записываем результат в ВЫХОДНОЙ пин
-        setPinValue(Core::DataVariant(resultText), Core::PinID::DataStream, Core::Direction::Output);
-
-        SetState(Success);
-
-        /*
-        1. Берет `DataVariant` из пина `"model_core"`. Извлекает оттуда указатель на модель (`BaseModel*` или `llama_model*`).
-        
-        2. Берет строку из пина `"input_text"` (запрос пользователя).
-            
-        3. Берет историю чата из пина `"memory_db"` (если подключена база данных).
-            
-        4. Соединяет всё это с приватной переменной `systemInstruction`.
-            
-        5. Вызывает инференс (генерацию текста).
-            
-        6. Полученный текстовый ответ записывает в свой выходной пин `"output_text"`.
-            
-        7. Меняет свой статус на `Success`.
-        */
     }
 
     json ToolsAgent::serializeNode() {
@@ -76,6 +77,10 @@ namespace SwarmIDE::Nodes {
         setSystemInstruction(nodeJson["SystemInstrucion"]);
     }
 
+    void ToolsAgent::ApplyDefaultSettings() {
+        SetName("ToolsAgent");
+        setSystemInstruction("You are Alpha-Agent. Write down your instructions here...");
+    }
 
     // РЕГИСТРАЦИЯ НОДЫ В ФАБРИКЕ
     REGISTER_NODE(ToolsAgent, "ToolsAgent");

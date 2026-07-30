@@ -54,7 +54,7 @@ namespace SwarmIDE::Nodes {
         }
     }
 
-     json ConversationalAgent::serializeNode() {
+    json ConversationalAgent::serializeNode() {
 
         json nodeJson;
 
@@ -75,6 +75,11 @@ namespace SwarmIDE::Nodes {
         SetName(nodeJson["name"]);
         SetState(nodeJson["state"]);
         setSystemInstruction(nodeJson["SystemInstruction"]);
+    }
+
+    void ConversationalAgent::ApplyDefaultSettings() {
+        SetName("ConversationalAgent");
+        setSystemInstruction("You are Alpha-Agent. Write down your instructions here...");
     }
 
     // РЕГИСТРАЦИЯ НОДЫ В ФАБРИКЕ

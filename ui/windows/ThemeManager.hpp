@@ -18,7 +18,7 @@ namespace SwarmIDE::UI {
 
         // Получение цветов
         ImU32 GetColorU32(ColorRole role);
-        glm::vec3 GetColorVec3(ColorRole role); // Специально для OpenGL Grid!
+        glm::vec3 GetColorVec3(ColorRole role); 
 
         // Получение числовых параметров
         float GetStyleVar(StyleVarRole role);

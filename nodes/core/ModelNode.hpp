@@ -45,13 +45,6 @@ namespace SwarmIDE::Nodes {
          * @note Метод автоматически вызывается классом SwarmIDE::Core::GraphManager при обходе графа.
          */
         virtual void Execute() override;                                       
-
-        /**
-         * @brief Возвращает уникальный строковый идентификатор id модели.
-         * @return std::string Строка "ModelNode".
-         * @see LogicNode::getTypeName()
-         */
-        virtual std::string getTypeName() override { return "ModelNode"; }     
         
         /**
          * @brief Выгрузка ноды в json
@@ -66,6 +59,13 @@ namespace SwarmIDE::Nodes {
         virtual void deserializeNode(json jsonNode) override;
 
         /**
+         * @brief Возвращает уникальный строковый идентификатор id модели.
+         * @return std::string Строка "ModelNode".
+         * @see LogicNode::getTypeName()
+         */
+        virtual std::string getTypeName() override { return "ModelNode"; }     
+
+        /**
          * @brief Возвращает текущеe id модели.
          * @return std::string Строка c id модели.
          */
@@ -78,6 +78,11 @@ namespace SwarmIDE::Nodes {
          * @param[in] newModelID Новый id модели.
          */
         void setTargetModelID(const std::string& newModelID) { modelID = newModelID; }            
+
+        /**
+         * @brief Применить стандартные настройки для ноды
+         */
+        virtual void ApplyDefaultSettings() override;
 
     private:
         std::string modelID;  /**< Внутреннее хранилище id модели, передаваемое в агента. */       

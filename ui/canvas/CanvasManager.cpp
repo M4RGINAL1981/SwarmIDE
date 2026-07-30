@@ -1,6 +1,7 @@
 #include "SwarmIDE.hpp"
 #include "ui/canvas/CanvasManager.hpp"
 #include "core/graph/GraphManager.hpp"
+#include "ui/command/CommandBus.hpp"
 #include "graphics/Camera.hpp"
 #include "graphics/Grid.hpp"
 #include "core/engine/LoggingManager.hpp"
@@ -293,18 +294,8 @@ namespace SwarmIDE::UI {
                     Core::PinID toPinID = (activeLinkContext.startPinDir == Core::Direction::Input) ? activeLinkContext.startPinID : hoveredViewPin->GetPinID();
                     int toIndex = (activeLinkContext.startPinDir == Core::Direction::Input) ? activeLinkContext.startPinIndex : hoveredViewPin->GetIndex();
 
-                    /** @todo Здесь должна быть команда создания соединения: CmdCreateConnection */
-
-                    // Получаем указатель на структуру Connection из ConnectionManager
-                    Core::Connection* coreConn = Core::ConnectionManager::getInstance().connect(fromNodeID, fromPinID, fromIndex, toNodeID, toPinID, toIndex);
-                    
-                    // Если логическая связь создалась - создаём визуальную
-                    if (coreConn != nullptr) {
-                        // Добавляем во вьюху только если соединение успешно создалось/нашлось и еще не добавлено
-                        if (findViewConnection(coreConn) == nullptr) {
-                            AddViewConnection(coreConn);
-                        }
-                    }
+                    auto coreConn = std::make_unique<Command::CmdCreateConnection>(fromNodeID, fromPinID, fromIndex, toNodeID, toPinID, toIndex);
+                    Command::CommandBus::getInstance().PushAndExecute(std::move(coreConn));
                 }
                 // Сбрасываем состояние
                 activeLinkContext.Reset();

@@ -60,6 +60,11 @@ namespace SwarmIDE::Nodes {
         setText(nodeJson["text"]);
     }
 
+    void TextNode::ApplyDefaultSettings() {
+        SetName("TextNode");
+        setText("This is your prompt");
+    }
+
     // РЕГИСТРАЦИЯ НОДЫ В ФАБРИКЕ
     REGISTER_NODE(TextNode, "TextNode");
 }

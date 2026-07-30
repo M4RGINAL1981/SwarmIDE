@@ -19,9 +19,15 @@ namespace SwarmIDE::UI::Command {
          * @brief Конструктор команды, для создания нового соединения
          * @details Иницилизирует структуру conn.
          * 
-         * @param[in] conn Указатель на соединение
+         * @param[in] fromNodeID   ID ноды-источника
+         * @param[in] fromPinID    ID пина ноды-источника
+         * @param[in] fromIndex    Индекс пина ноды-источника
+         * @param[in] toNodeID     ID ноды-цели
+         * @param[in] toPinID      ID пина ноды-цели
+         * @param[in] toIndex      Индекс пина ноды-цели
          */
-        CmdCreateConnection(Core::Connection* conn) : conn(conn) {};
+        CmdCreateConnection(UUIDv4::UUID fromNodeID, Core::PinID fromPinID, int fromIndex,
+                            UUIDv4::UUID toNodeID, Core::PinID toPinID, int toIndex);
 
         /**
          * @brief Создаёт связь между нодами
@@ -35,7 +41,13 @@ namespace SwarmIDE::UI::Command {
 
     private:
 
-        Core::Connection* conn = nullptr;     /** @brief < Информация о соединении */
+        UUIDv4::UUID fromNodeID;       /** @brief < ID ноды-источника */
+        Core::PinID fromPinID;         /** @brief < ID пина ноды-источника */
+        int fromIndex;                 /** @brief < Индекс пина ноды-источника */
+
+        UUIDv4::UUID toNodeID;         /** @brief < ID ноды-цели */
+        Core::PinID toPinID;           /** @brief < ID пина ноды-цели */
+        int toIndex;                   /** @brief < Индекс пина ноды-цели */
     };
 
 }

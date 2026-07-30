@@ -69,6 +69,11 @@ namespace SwarmIDE::Nodes {
         setTargetModelID(nodeJson["ModelID"]);
     }
 
+    void ModelNode::ApplyDefaultSettings() {
+        SetName("ModelNode");
+        setTargetModelID("0"); // По умолчанию устанавливаем модель под индексом 0
+    }
+
     // РЕГИСТРАЦИЯ НОДЫ В ФАБРИКЕ
     REGISTER_NODE(ModelNode, "ModelNode");
 }

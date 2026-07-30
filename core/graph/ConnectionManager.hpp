@@ -30,8 +30,8 @@ namespace SwarmIDE::Core {
          * Также данный оператор работает и для зеркальных соединений
          * 
          * @param[in] other Другое соединение для сравнения.
-         * @return true Если соединения полностью совпадают.
-         * @return false Если есть хотя бы одно различие.
+         * @return          true Если соединения полностью совпадают или является зеркальным.
+         * @return          false Если есть хотя бы одно различие.
          */
         bool operator==(Connection other);
     };
@@ -65,13 +65,24 @@ namespace SwarmIDE::Core {
          * @param[in] toNodeID   UUID узла-получателя данных.
          * @param[in] toPinID    Идентификатор порта ноды-цели.
          * @param[in] toIndex    Индекс порта ноды-цели.
+         * @return Connection*   Указатель на соединение
          * 
          * @see disconnect()
          * @see Nodes::LogicNode
          * @see Core::LogicPin
          */
         Connection* connect(UUIDv4::UUID fromNodeID, PinID fromPinID, int fromIndex,
-                     UUIDv4::UUID toNodeID, PinID toPinID, int toIndex);
+                            UUIDv4::UUID toNodeID, PinID toPinID, int toIndex);
+
+        /**
+         * @brief Создать новую логическую связь между узлами в графе.
+         * @details Метод фиксирует соединение во внутреннем реестре. При запуске вычислений
+         * данные из выходного пина источника будут автоматически прокинуты во входной пин цели.
+         * 
+         * @param conn         Указатель на соединение
+         * @return Connection* Возвращает само соединение
+         */
+        Connection* connect(Connection* conn);
        
         /**
          * @brief Разорвать конкретную логическую связь в графе.
@@ -101,7 +112,7 @@ namespace SwarmIDE::Core {
          * @param[in] nodeID UUID узла.
          * @return std::vector<Connection*> Вектор указателей на все ребра, привязанные к объекту.
          */
-        std::vector<Connection*> getAllConnectionsForNode(UUIDv4::UUID nodeID);
+        std::vector<Connection> getAllConnectionsForNode(UUIDv4::UUID nodeID);
 
         /**
          * @brief Получить прямой доступ ко всему списку связей текущей сцены.
@@ -109,6 +120,20 @@ namespace SwarmIDE::Core {
          */
         std::vector<Connection>& getAllConnections() { return connection; }
         
+        /**
+         * @brief Ищет соединение по её аргументам. Если соединение не найдено - возвращает nullptr
+         * 
+         * @param[in] fromNodeID UUID узла-источника данных.
+         * @param[in] fromPinID  Идентификатор порта ноды-источника.
+         * @param[in] fromIndex  Индекс порта ноды-источника.
+         * @param[in] toNodeID   UUID узла-получателя данных.
+         * @param[in] toPinID    Идентификатор порта ноды-цели.
+         * @param[in] toIndex    Индекс порта ноды-цели.
+         * @return Connection*   Указатель на соединение
+         */
+        Connection* findConnection(UUIDv4::UUID fromNodeID, PinID fromPinID, int fromIndex,
+                                   UUIDv4::UUID toNodeID, PinID toPinID, int toIndex);
+
         /**
          * @brief Каскадное удаление всех связей, подключенных к конкретному узлу.
          * @details Автоматически вызывается из `GraphManager::removeNode()`. Гарантирует, что на сцене 

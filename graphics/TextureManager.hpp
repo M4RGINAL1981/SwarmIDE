@@ -32,7 +32,7 @@ namespace SwarmIDE::Graphics {
         TextureManager& operator=(TextureManager&&) = delete;
 
     private:
-        friend UI::Menu;    
+        friend class UI::Menu;    
 
         TextureManager() {};
         ~TextureManager();

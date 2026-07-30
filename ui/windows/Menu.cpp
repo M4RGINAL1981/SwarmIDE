@@ -1,25 +1,16 @@
 #include "SwarmIDE.hpp"
-/*
-#include "ui/Menu.hpp"
+#include "ui/windows/Menu.hpp"
 #include "imgui.h"
+#include "ui/command/CmdNodeOperations.hpp"
+#include "ui/command/CommandBus.hpp"
+#include "core/models/ModelManager.hpp"
+#include "ui/windows/ThemeManager.hpp"
 #undef APIENTRY
 #include <pfd/portable-file-dialogs.h>
 #include <filesystem>
 #include <thread>
 #include <windows.h>
 #pragma comment(lib, "urlmon.lib")
-
-// Подключаем все типы объектов для инстанцирования
-#include "object/ai/ConversationalAgent.hpp"
-#include "object/ai/ToolsAgent.hpp"
-#include "object/ai/PlanExecuteAgent.hpp"
-#include "object/BaseModel.hpp"
-#include "object/memory/PostgreSQL.hpp"
-#include "object/tool/JiraSoftware.hpp"
-
-using namespace SwarmIDE::Object::AI;
-using namespace SwarmIDE::Object::Memory;
-using namespace SwarmIDE::Object::Tool;
 
 namespace SwarmIDE::UI {
 
@@ -28,18 +19,23 @@ namespace SwarmIDE::UI {
         return instance;
     }
 
-    void Menu::Push(std::unique_ptr<SwarmIDE::Object::BaseObject> object) {
-        if (object_manager) { 
-            object_manager->addObject(std::move(object));
-        }
-    }
+    void Menu::DrawMenu() {
 
-    void Menu::DrawMenu(Camera& camera) {
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.12f, 0.85f));
+        auto& theme = ThemeManager::getInstance();
+
+        auto backgroundColor = theme.GetColorU32(ColorRole::MenuBackground);
+        auto rounding = theme.GetStyleVar(StyleVarRole::MenuRounding);
+        auto borderColor = theme.GetColorU32(ColorRole::MenuBorder);
+
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, backgroundColor);
+        ImGui::PushStyleColor(ImGuiCol_Border, borderColor);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, rounding);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 2.0f);
 
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | 
                                         ImGuiWindowFlags_NoResize | 
-                                        ImGuiWindowFlags_NoCollapse;
+                                        ImGuiWindowFlags_NoCollapse |
+                                        ImGuiWindowFlags_NoTitleBar;
 
         // Позиционируем панель управления, например, в левом верхнем углу экрана
         ImGui::SetNextWindowPos(ImVec2(10, 60), ImGuiCond_Always);
@@ -48,24 +44,20 @@ namespace SwarmIDE::UI {
         ImGui::Begin("SwarmIDE Spawn Panel", nullptr, window_flags);
         
         glm::vec2 centerScreen(winSize.x * 0.5f, winSize.y * 0.5f);
-        glm::vec2 spawnWorldPos = camera.screenToWorld(centerScreen, winSize);
+        glm::vec2 spawnWorldPos = camera->screenToWorld(centerScreen, winSize);
+        auto& command_bus = Command::CommandBus::getInstance();
+        auto& model_manager = Core::ModelManager::getInstance();
 
         // --- КАТЕГОРИЯ 1: AI AGENTS ---
-        if (ImGui::CollapsingHeader("AI Agents", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::CollapsingHeader("Agents", ImGuiTreeNodeFlags_DefaultOpen)) {
             static int selectedAgent = 0;
             const char* agents[] = { "ConversationalAgent", "ToolsAgent", "PlanExecuteAgent" };
             ImGui::Combo("Type##Agent", &selectedAgent, agents, IM_ARRAYSIZE(agents));
             
             if (ImGui::Button("Spawn Agent")) {
-                std::unique_ptr<SwarmIDE::Object::BaseObject> newObj = nullptr;
-                if (selectedAgent == 0) newObj = std::make_unique<ConversationalAgent>("ConversationalAgent", spawnWorldPos);
-                if (selectedAgent == 1) newObj = std::make_unique<ToolsAgent>("ToolsAgent", spawnWorldPos);
-                if (selectedAgent == 2) newObj = std::make_unique<PlanExecuteAgent>("PlanExecuteAgent", spawnWorldPos);
-                
-                if (newObj) {
-                    newObj->SetFonts(this->fonts);
-                    Push(std::move(newObj));
-                }
+                if (selectedAgent == 0) command_bus.PushAndExecute(std::make_unique<Command::CmdCreateNode>("ConversationalAgent","ConversationalAgent"));
+                if (selectedAgent == 1) command_bus.PushAndExecute(std::make_unique<Command::CmdCreateNode>("ToolsAgent","ToolsAgent"));
+                if (selectedAgent == 2) command_bus.PushAndExecute(std::make_unique<Command::CmdCreateNode>("PlanExecuteAgent","PlanExecuteAgent"));
             }
         }
 
@@ -75,21 +67,18 @@ namespace SwarmIDE::UI {
         if (ImGui::CollapsingHeader("Cognitive Models", ImGuiTreeNodeFlags_DefaultOpen)) {
             static int selectedModel = 0;
 
-            auto& allModels = model_manager->getInstance().GetModels(); 
+            auto& allAssets = model_manager.getAllAssets(); 
 
             ImGui::Combo("Type##Model", &selectedModel, [](void* data, int idx) {
-                auto* vector = static_cast<std::vector<SwarmIDE::Core::Model>*>(data);
-                return (*vector)[idx].name.c_str(); 
-            }, (void*)&allModels, static_cast<int>(allModels.size()));
+                auto* vecPtr = static_cast<const std::vector<std::unique_ptr<SwarmIDE::Core::ModelAsset>>*>(data);
+                return (*vecPtr)[idx]->name.c_str(); 
+            }, (void*)&allAssets, static_cast<int>(allAssets.size()));
             
             if (ImGui::Button("Spawn Model")) {
-                if (selectedModel >= 0 && selectedModel < allModels.size()) {
-                    auto& modelData = allModels[selectedModel];
+                if (selectedModel >= 0 && selectedModel < allAssets.size()) {
+                    auto& modelData = allAssets[selectedModel];
                     
-                    auto newObj = std::make_unique<SwarmIDE::Object::BaseModel>(modelData.name, spawnWorldPos, &modelData);
-                    
-                    newObj->SetFonts(this->fonts);
-                    Push(std::move(newObj));
+                    command_bus.PushAndExecute(std::make_unique<Command::CmdCreateNode>("ConversationalAgent","ConversationalAgent"));
                 }
             }
         }
@@ -103,13 +92,7 @@ namespace SwarmIDE::UI {
             ImGui::Combo("Type##Memory", &selectedMemory, memories, IM_ARRAYSIZE(memories));
             
             if (ImGui::Button("Spawn Memory")) {
-                std::unique_ptr<SwarmIDE::Object::BaseObject> newObj = nullptr;
-                if (selectedMemory == 0) newObj = std::make_unique<PostgreSQL>("PostgreSQL", spawnWorldPos);
-                
-                if (newObj) {
-                    newObj->SetFonts(this->fonts);
-                    Push(std::move(newObj));
-                }
+                // Пока нету
             }
         }
 
@@ -122,21 +105,16 @@ namespace SwarmIDE::UI {
             ImGui::Combo("Type##Tool", &selectedTool, tools, IM_ARRAYSIZE(tools));
             
             if (ImGui::Button("Spawn Tool")) {
-                std::unique_ptr<SwarmIDE::Object::BaseObject> newObj = nullptr;
-                if (selectedTool == 0) newObj = std::make_unique<JiraSoftware>("JiraSoftware", spawnWorldPos);
-                
-                if (newObj) {
-                    newObj->SetFonts(this->fonts);
-                    Push(std::move(newObj));
-                }
+                // Пока нету
             }
         }
 
         ImGui::End();
-        ImGui::PopStyleColor();
+        ImGui::PopStyleVar(2);
+        ImGui::PopStyleColor(2);
     }
 
-    void Menu::DrawTopBar(GLFWwindow* window, Camera& camera) {
+    void Menu::DrawTopBar(GLFWwindow* window) {
 
         bool isFpsCounterVisible = false;
 
@@ -145,7 +123,7 @@ namespace SwarmIDE::UI {
 
             // FILE
             if (ImGui::BeginMenu("File")) {
-                if (ImGui::MenuItem("New Canvas"))        { serialization_manager->getInstance().ClearGraph(); }
+                if (ImGui::MenuItem("New Canvas"))       // { serialization_manager->getInstance().ClearGraph(); }
 
 
                 if (ImGui::MenuItem("Open...", "Ctrl+O")) { 
@@ -158,7 +136,7 @@ namespace SwarmIDE::UI {
                     auto selectedFiles = openDialog.result();
                     if(!selectedFiles.empty()) {
                         std::string selectedPath = selectedFiles[0];
-                        serialization_manager->getInstance().LoadGraph(selectedPath);
+                        //serialization_manager->getInstance().LoadGraph(selectedPath);
                     }
                 }
 
@@ -166,18 +144,18 @@ namespace SwarmIDE::UI {
                 if (ImGui::MenuItem("Save", "Ctrl+S"))    { 
 
                     // 1. Получаем следующее свободное имя, например, "newSceneData1.json"
-                    std::string defaultFileName = serialization_manager->getInstance().GetNextAvailableFileName("newSceneData");
+                    //std::string defaultFileName = serialization_manager->getInstance().GetNextAvailableFileName("newSceneData");
 
                     // 2. Открываем нативное окно "Сохранить файл"
                     auto saveDialog = pfd::save_file(
                         "Save SwarmIDE Scene",                    // Заголовок окна
-                        defaultFileName,                          // Имя файла по умолчанию
+                   //     defaultFileName,                          // Имя файла по умолчанию
                         { "SwarmIDE Project (*.json)", "*.json"}  // Фильтр расширений файлов
                     );
 
                     // 3. Если пользователь выбрал путь и нажал "Сохранить"
                     std::string selectedPath = saveDialog.result();
-                    if(!selectedPath.empty()) serialization_manager->getInstance().SaveGraph(selectedPath);
+                    //if(!selectedPath.empty()) serialization_manager->getInstance().SaveGraph(selectedPath);
                 }
 
 
@@ -185,8 +163,9 @@ namespace SwarmIDE::UI {
                 if (ImGui::BeginMenu("Settings")) {
                     if (ImGui::BeginMenu("Models")) {  // Данный раздел позволяет узнать название и статус всех моделей и загрузить модели 
                         
-                        auto& allModels = model_manager->GetModels();                   // Получаем все модели
+                        //auto& allModels = model_manager->GetModels();                   // Получаем все модели
                         
+                        /*
                         for (auto& modelData : allModels) {                             // Проходимся по всем моделям
                             modelData.isDownloaded = model_manager->isDownloadedModelForID(modelData.id); 
                             
@@ -205,7 +184,8 @@ namespace SwarmIDE::UI {
                                 ImGui::TextDisabled("%s", statusLabel.c_str());
                             }
                         }
-                        DrawDownloadModel();                                           // Отображаем загрузку моделей.
+                            */
+                       // DrawDownloadModel();                                           // Отображаем загрузку моделей.
                         ImGui::EndMenu();
                     }
                     ImGui::EndMenu();
@@ -218,22 +198,22 @@ namespace SwarmIDE::UI {
             }
 
             if (ImGui::BeginMenu("View")) {
-                if (ImGui::MenuItem("Reset Camera", "Ctrl+R")) { camera.reset(); }
+                if (ImGui::MenuItem("Reset Camera", "Ctrl+R")) { camera->reset(); }
                 if (ImGui::MenuItem("Toggle Grid", "Ctrl+G")) { grid->toggleVisibility(); }
                 ImGui::EndMenu();
             }
             
             if (ImGui::BeginMenu("Edit")) {
-                if (ImGui::MenuItem("Clear Connections")) { connect_manager->removeAllConnections(); }
-                if (ImGui::MenuItem("Clear Objects")) { serialization_manager->getInstance().ClearGraph(); }
-                if (ImGui::MenuItem("Clear All")) { connect_manager->removeAllConnections(); serialization_manager->getInstance().ClearGraph(); }
-                if (ImGui::MenuItem("FPS Counter")) { isFpsCounterVisible = !isFpsCounterVisible; }
+              //  if (ImGui::MenuItem("Clear Connections")) { connect_manager->removeAllConnections(); }
+              //  if (ImGui::MenuItem("Clear Objects")) { serialization_manager->getInstance().ClearGraph(); }
+               // if (ImGui::MenuItem("Clear All")) { connect_manager->removeAllConnections(); serialization_manager->getInstance().ClearGraph(); }
+               // if (ImGui::MenuItem("FPS Counter")) { isFpsCounterVisible = !isFpsCounterVisible; }
                 ImGui::EndMenu();
             }
 
             if (ImGui::BeginMenu("Simulation")) {
-                if (ImGui::MenuItem("Run Swarm", "F5")) { Запуск ядра CUDA  }
-                if (ImGui::MenuItem("Stop", "Shift+F5")) { Остановка  }
+             //   if (ImGui::MenuItem("Run Swarm", "F5")) { Запуск ядра CUDA  }
+              //  if (ImGui::MenuItem("Stop", "Shift+F5")) { Остановка  }
                 ImGui::EndMenu();
             }
 
@@ -250,8 +230,9 @@ namespace SwarmIDE::UI {
         }
     }
 
+    /*
     void Menu::DrawDownloadModel() {
-        auto models = model_manager->GetModels();
+       // auto models = model_manager->GetModels();
 
         // Размеры и позиция окна полосы загрузки
         ImVec2 windowSize = ImVec2(500.0f, 120.0f); // Уменьшил высоту, 200 много для одной полосы
@@ -348,6 +329,5 @@ namespace SwarmIDE::UI {
         draw_list->AddRect(min_p, max_p, color_black, 0.0f, 0, 1.5f);
     }
 
-
+    */
 }
-*/

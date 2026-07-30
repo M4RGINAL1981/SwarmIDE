@@ -19,8 +19,9 @@ namespace SwarmIDE::UI::Command {
         /**
          * @brief Конструктор команды для перемещния ноды
          * 
-         * @param[in] nodeID 
-         * @param[in] pos
+         * @param[in] id 
+         * @param[in] oldP
+         * @param[in] newP
          */
         CmdMoveNode(const UUIDv4::UUID& id, const glm::vec2& oldP, glm::vec2& newP) 
             : nodeID(id), oldPos(oldP), newPos(newP) {};

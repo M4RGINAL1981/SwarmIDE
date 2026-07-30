@@ -278,22 +278,7 @@ namespace SwarmIDE::Core {
         activeModels.clear();                                   // Удаляем карту с моделями
     }
 
-    /**
-     * @brief Пошаговая реализация инференса и текстовой генерации через llama.cpp.
-     * @details Функция выполняет полный цикл работы с нейросетью: от потокобезопасного 
-     * извлечения контекста до пошагового декодирования токенов и фильтрации стоп-слов.
-     * 
-     * @param[in] modelId Уникальный строковый идентификатор модели.
-     * @param[in] prompt Основной текст запроса для ИИ-агента.
-     * @param[in] systemInstruction Системный промпт для задания роли/правил.
-     * @return std::string Чистый сгенерированный текст ответа (без стоп-слов).
-     * 
-     * @throws std::invalid_argument Если запрашиваемый @p modelId отсутствует в реестре активных моделей.
-     * @throws std::runtime_error Если модель найдена, но её внутренние указатели `llama.cpp` сломаны.
-     */
-    std::string ModelManager::generateResponse(const std::string& modelId, 
-                                            const std::string& prompt, 
-                                            const std::string& systemInstruction) {
+    std::string ModelManager::generateResponse(const std::string& modelId, const std::string& prompt, const std::string& systemInstruction) {
 
         // =====================================================================
         // 1. ВАЛИДАЦИЯ И ИЗВЛЕЧЕНИЕ МОДЕЛИ (Потокобезопасный критический участок)

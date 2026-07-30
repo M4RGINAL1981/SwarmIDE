@@ -25,7 +25,11 @@ namespace SwarmIDE::UI::Shape {
         /**
          * @brief Проверят наведена ли мышь на фигуру или нет
          * 
-         * @param mousePos Положение мыши на поле в данный момент времени
+         * @param mousePos   Положение мыши на экране в данный момент времени
+         * @param nodePos    Положение ноды на экране в данный момент времени
+         * @param nodeSize   Размер ноды
+         * @param zoomFactor Текущий зум
+         * 
          * @return true Мышь находиться на ноде
          * @return false Мышь не находиться на ноде
          */

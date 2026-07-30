@@ -69,6 +69,8 @@ namespace SwarmIDE::Nodes {
          */
         virtual std::string getTypeName() = 0;
 
+        virtual void ApplyDefaultSettings() = 0;
+
         /**
          * @brief Добавляет новый пин.
          * @param[in] id          Идентификатор пина.

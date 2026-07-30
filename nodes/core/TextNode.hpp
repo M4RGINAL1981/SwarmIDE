@@ -52,7 +52,6 @@ namespace SwarmIDE::Nodes {
          * @see LogicNode::getTypeName()
          */
         virtual std::string getTypeName() override { return "TextNode"; }
-
           
         /**
          * @brief Выгрузка ноды в json
@@ -80,6 +79,11 @@ namespace SwarmIDE::Nodes {
          * @param[in] t Новая текстовая строка.
          */
         void setText(const std::string& t) { text = t; }
+
+        /**
+         * @brief Установить стандартные настройки ноды
+         */
+        virtual void ApplyDefaultSettings() override;
 
     private:
         std::string text = ""; /**< Внутреннее хранилище текста, передаваемого в агента. */

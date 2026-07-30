@@ -50,7 +50,8 @@ namespace SwarmIDE::UI {
 
         /**
          * @brief Отрисовка пина.
-         * @param[in] drawList
+         * @param[in] drawList список для отрисовки
+         * @param[in] zoom Текущий зум
          */
         void Draw(ImDrawList* drawList, float zoom);
 

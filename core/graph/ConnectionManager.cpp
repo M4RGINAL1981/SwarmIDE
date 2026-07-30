@@ -14,14 +14,25 @@ namespace {
 namespace SwarmIDE::Core {
 
     bool Connection::operator==(Connection other) {
+
         if(fromNodeID == other.fromNodeID &&
-        toNodeID == other.toNodeID &&
         fromPinID == other.fromPinID &&
-        toPinID == other.toPinID) return true;
+        fromIndex == other.fromIndex &&
+        toNodeID == other.toNodeID &&
+        toPinID == other.toPinID &&
+        toIndex == other.toIndex) return true;
+
+        if(fromNodeID == other.toNodeID &&
+        fromPinID == other.toPinID &&
+        fromIndex == other.toIndex &&
+        toNodeID == other.fromNodeID &&
+        toPinID == other.fromPinID &&
+        toIndex == other.fromIndex) return true;
         return false;
     }
 
-    Connection* ConnectionManager::connect(UUIDv4::UUID fromNodeID, PinID fromPinID, int fromIndex, UUIDv4::UUID toNodeID, PinID toPinID, int toIndex) {
+    Connection* ConnectionManager::connect(UUIDv4::UUID fromNodeID, PinID fromPinID, int fromIndex, 
+                                           UUIDv4::UUID toNodeID, PinID toPinID, int toIndex) {
         
         // Убираем самосвязывание
         if(fromNodeID == toNodeID) return nullptr; 
@@ -62,6 +73,44 @@ namespace SwarmIDE::Core {
         return &(*it);
     }
 
+    Connection* ConnectionManager::connect(Connection* conn){
+        if(!conn) return nullptr;
+
+        if(conn->fromNodeID == conn->toNodeID) return nullptr; 
+
+        // Находим логические ноды
+        Nodes::LogicNode* srcNode = GraphManager::getInstance().findNodeByID(conn->fromNodeID);
+        Nodes::LogicNode* dstNode = GraphManager::getInstance().findNodeByID(conn->toNodeID);
+
+        // Если ноды не обнаружены - возвращаем пустышку
+        if(!srcNode || !dstNode) return nullptr;
+
+        // Находим логические пины нод
+        LogicPin* srcPin = srcNode->findPin(conn->fromPinID, Direction::Output, conn->fromIndex);
+        LogicPin* dstPin = dstNode->findPin(conn->toPinID, Direction::Input, conn->toIndex);
+
+        // Проверка валидации пинов
+        if (!isValidConnection(srcPin, dstPin)) return nullptr;
+
+        // Если количество подключений не соблюдено - возвращем пустышку
+        if((srcPin->maxConnections != -1 && srcPin->currentConnections >= srcPin->maxConnections) || 
+           (dstPin->maxConnections != -1 && dstPin->currentConnections >= dstPin->maxConnections)) return nullptr;
+
+        // Увеличиваем счётчик подключений к пинам
+        srcPin->currentConnections++;
+        dstPin->currentConnections++;
+
+        // Проверяем на уже существование соединения
+        auto it = std::find(connection.begin(), connection.end(), *conn);
+        if(it == connection.end()) {
+            LoggingManager::Info("[CREATE]: Connection is create");
+            connection.push_back(*conn);
+            return &connection.back(); 
+        }
+        
+        return &(*it);
+    } 
+
     void ConnectionManager::disconnect(Connection* conn) {
         if(!conn) return;
         auto it = std::find(connection.begin(), connection.end(), *conn);
@@ -90,14 +139,25 @@ namespace SwarmIDE::Core {
         return incoming;
     }
 
-    std::vector<Connection*> ConnectionManager::getAllConnectionsForNode(UUIDv4::UUID nodeID) {
-        std::vector<Connection*> result;
+    std::vector<Connection> ConnectionManager::getAllConnectionsForNode(UUIDv4::UUID nodeID) {
+        std::vector<Connection> result;
         for(auto& conn : connection) {
             if(conn.fromNodeID == nodeID || conn.toNodeID == nodeID) {
-                result.push_back(&conn);
+                result.push_back(conn);
             }
         }
         return result;
+    }       
+
+    Connection* ConnectionManager::findConnection(UUIDv4::UUID fromNodeID, PinID fromPinID, int fromIndex,
+                               UUIDv4::UUID toNodeID, PinID toPinID, int toIndex) {
+        for(auto conn : connection) {
+            Connection otherConn = { fromNodeID, fromPinID, fromIndex, toNodeID, toPinID, toIndex };
+            if(conn == otherConn) {
+                return &conn;
+            }
+        }
+        return nullptr;
     }
 
     void ConnectionManager::removeConnectionsForNode(UUIDv4::UUID nodeID) {
