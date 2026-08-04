@@ -16,6 +16,23 @@ namespace SwarmIDE::UI {
         Core::LoggingManager::Info("[CANVAS_MANAGER]: Constructor");
     }
 
+    CanvasManager::~CanvasManager() {
+        Core::LoggingManager::Info("[CANVAS_MANAGER]: Destructor");
+        
+        Core::LoggingManager::Info("[CANVAS_MANAGER]: ViewConnectionID:");
+        for(const auto& [connectionID, viewConnection] : viewConnections) {
+            Core::LoggingManager::Info(" - ", connectionID);
+        }
+
+        Core::LoggingManager::Info("[CANVAS_MANAGER]: ViewNodeID:");
+        for(const auto& [nodeID, viewNode] : viewNodes) {
+            Core::LoggingManager::Info(" - ", nodeID);
+        }
+
+        viewConnections.clear();
+        viewNodes.clear();
+    }
+
     void CanvasManager::AddViewNode(UUIDv4::UUID nodeID, glm::vec2 spawnPos) {
         if(viewNodes.contains(nodeID)) return;
         auto viewNode = std::make_unique<ViewNode>(nodeID, spawnPos);
@@ -25,12 +42,7 @@ namespace SwarmIDE::UI {
     void CanvasManager::RemoveViewNode(UUIDv4::UUID nodeID) {
         removeViewConnectionsForNode(nodeID); 
         viewNodes.erase(nodeID);
-    }
-          
-    void CanvasManager::removeAllViewNodes() {
-        RemoveAllViewConnection();
-        viewNodes.clear();
-    }                                  
+    }                                 
 
     ViewNode* CanvasManager::findViewNodeByID(UUIDv4::UUID nodeID) {
         if(viewNodes.contains(nodeID)) return viewNodes[nodeID].get();
@@ -38,78 +50,92 @@ namespace SwarmIDE::UI {
     }
 
     void CanvasManager::removeViewConnectionsForNode(UUIDv4::UUID nodeID) {
-        std::erase_if(viewLinks, [nodeID](const auto& viewLink) {
-            auto conn = viewLink->GetConnection();
-            return conn->fromNodeID == nodeID || conn->toNodeID == nodeID;
+        auto& connection_manager = Core::ConnectionManager::getInstance();
+
+        std::erase_if(viewConnections, [&](const auto& pair) {
+            auto logicConnection = connection_manager.findConnection(pair.first);
+            if(logicConnection && (logicConnection->fromNodeID == nodeID || logicConnection->toNodeID == nodeID)) {
+                connection_manager.disconnect(pair.first);
+                return true; // Удалит элемент из viewConnections
+            }
+            return false;
         });
     }
 
-    void CanvasManager::AddViewConnection(Core::Connection* conn) { 
+    void CanvasManager::AddViewConnection(UUIDv4::UUID connectionID) { 
+        try {
+            auto* conn = Core::ConnectionManager::getInstance().findConnection(connectionID);
+            if(!conn) return;
 
-        auto fromViewNode = findViewNodeByID(conn->fromNodeID);
-        auto toViewNode = findViewNodeByID(conn->toNodeID);
+            auto fromViewNode = findViewNodeByID(conn->fromNodeID);
+            auto toViewNode = findViewNodeByID(conn->toNodeID);
 
-        if(!fromViewNode || !toViewNode) return;
+            if(!fromViewNode || !toViewNode) {
+                Core::LoggingManager::Warning("Skipping view connection creation because one or both nodes were not mapped to view nodes.");
+                return;
+            }
 
-        auto sourcePin = fromViewNode->findViewPin(conn->fromPinID, Core::Direction::Output, conn->fromIndex);
-        auto targetPin = toViewNode->findViewPin(conn->toPinID, Core::Direction::Input, conn->toIndex);
-        
-        Core::LoggingManager::Info("[CREATE]: ViewConnection is create");
-        viewLinks.push_back(std::make_unique<ViewConnection>(sourcePin, targetPin, conn));
-    }
-    
-    void CanvasManager::RemoveViewConnection(Core::Connection* conn) {
-        Core::LoggingManager::Info("[DELETE]: ViewConnection is delete");
-        viewLinks.erase(
-            std::remove_if(viewLinks.begin(), viewLinks.end(),
-                [conn](const std::unique_ptr<ViewConnection>& vC) {
-                    return vC->GetConnection() == conn;
-                }), 
-            viewLinks.end()
-        );
-    }
+            auto fromPin = fromViewNode->findViewPin(conn->fromPinID);
+            auto toPin = toViewNode->findViewPin(conn->toPinID);
 
-    ViewConnection* CanvasManager::findViewConnection(Core::Connection* conn) {
-        if (!conn) return nullptr;
-        
-        for (auto& viewLink : viewLinks) {
-            if (viewLink->GetConnection() == conn) {
-                return viewLink.get();
+            if(!fromPin || !toPin) {
+                Core::LoggingManager::Warning("Skipping view connection creation because one or both pins were not found in the view layer.");
+                return;
+            }
+            
+            if(!viewConnections.contains(conn->getID())){
+                Core::LoggingManager::Info("[CREATE]: ViewConnection is create. ViewConnectionID: ", conn->getID());
+                viewConnections[conn->getID()] = std::make_unique<ViewConnection>(connectionID, fromPin, toPin);
             }
         }
+        catch (const std::exception& ex) {
+            Core::LoggingManager::Error("View connection creation failed: ", ex.what());
+        }
+        catch (...) {
+            Core::LoggingManager::Error("View connection creation failed with unknown exception.");
+        }
+    }
+    
+    void CanvasManager::RemoveViewConnection(UUIDv4::UUID connectionID) {
+        Core::LoggingManager::Info("[DELETE]: ViewConnection is delete");
+        viewConnections.erase(connectionID);
+    }
+
+    ViewConnection* CanvasManager::findViewConnectionByID(UUIDv4::UUID connectionID) {
+        if(viewConnections.contains(connectionID)) return viewConnections[connectionID].get();
         return nullptr;
     }
 
     void CanvasManager::SyncWithCoreGraph() {
-        auto& coreGraph = Core::GraphManager::getInstance();
-        const auto& coreNodes = coreGraph.getNodes();
+
+        auto& graph_manager = Core::GraphManager::getInstance();
+        const auto& logicNodes = graph_manager.getNodes();
         
-        for (auto it = viewNodes.begin(); it != viewNodes.end(); ) {
-            UUIDv4::UUID currentID = it->first;
-            
-            if (!coreGraph.findNodeByID(currentID)) {
-                removeViewConnectionsForNode(currentID);
-                it = viewNodes.erase(it);
-            } else {
-                ++it;
+        // Удаляем визуальные нodы, которых нет в логическом графе
+        for (auto& [viewNodeID, viewNode] : viewNodes) {
+            if (!graph_manager.findNodeByID(viewNodeID)) {
+                removeViewConnectionsForNode(viewNodeID);
+                viewNodes.erase(viewNodeID);
             }
         }
-
-        for (const auto& coreNode : coreNodes) {
-            UUIDv4::UUID id = coreNode->GetID();
-            if (!viewNodes.contains(id)) {
-                AddViewNode(id, glm::vec2(0.0f, 0.0f)); 
-            }
+        // Добавляем визуальные ноды для всех логических нод, которых нет в viewNodes
+        for (const auto& [nodeID, logicNode] : logicNodes) {
+            if (!viewNodes.contains(nodeID)) AddViewNode(nodeID, glm::vec2(0.0f, 0.0f)); 
         }
 
-        const auto& coreConnections = Core::ConnectionManager::getInstance().getAllConnections();
-        
-        std::erase_if(viewLinks, [&coreConnections](const std::unique_ptr<ViewConnection>& viewLink) {
-            auto* logicalConn = viewLink->GetConnection();
-            auto& allConns = Core::ConnectionManager::getInstance().getAllConnections();
-            auto it = std::find(allConns.begin(), allConns.end(), *logicalConn);
-            return it == allConns.end(); 
-        });
+        auto& connecction_manager = Core::ConnectionManager::getInstance();
+        const auto& LogicConnections = connecction_manager.getAllConnections();
+
+        // Удаляем визуальные соединения, которых нет в логическом графе
+        for(auto& [viewConnectionID, viewConnection] : viewConnections) {
+            if (!connecction_manager.findConnection(viewConnectionID)) {
+                viewConnections.erase(viewConnectionID);
+            }
+        }
+        // Добавляем визуальные соединения для всех логических соединений, которых нет в viewConnections
+        for (const auto& [logicConnectionID, logicConnection] : LogicConnections) {
+            if (!viewConnections.contains(logicConnectionID)) AddViewConnection(logicConnectionID);
+        }
     }
 
     void CanvasManager::Draw() {
@@ -118,12 +144,19 @@ namespace SwarmIDE::UI {
         grid.draw(camera);
 
         // Получаем текущий зум
-        float zoom = camera.zoomFactor; 
+        float zoom = camera.zoomFactor;
+
+        // Обновляем экранные координаты пинов до отрисовки соединений.
+        for (auto& [id, viewNode] : viewNodes) {
+            glm::vec2 worldPos = viewNode->GetWorldPos();
+            glm::vec2 screenPos = camera.worldToScreen(worldPos, windowSize);
+            for (auto& [pinID, viewPin] : viewNode->GetViewPins()) {
+                viewPin->UpdatePos(screenPos, zoom);
+            }
+        }
         
         // Проходимся сначала по всем связям, чтобы они были отрисованы под нодами.
-        for(auto& viewConn : viewLinks) {
-            viewConn->Draw(drawList, zoom);
-        }
+        for(auto& viewConn : viewConnections) viewConn.second->Draw(drawList, zoom);
 
         // Если событие мыши - проведение связи
         if (activeLinkContext.state == MouseEvents::DRAGGING_WIRE) {
@@ -131,7 +164,7 @@ namespace SwarmIDE::UI {
             ViewNode* startNode = findViewNodeByID(activeLinkContext.startNodeID);
             if (startNode) {
                 // Находим стартовый пин
-                ViewPin* startPin = startNode->findViewPin(activeLinkContext.startPinID, activeLinkContext.startPinDir, activeLinkContext.startPinIndex);
+                ViewPin* startPin = startNode->findViewPin(activeLinkContext.startPinID);
                 if (startPin) {
                     // Получаем экранные координаты пина - Начало связи
                     glm::vec2 startScreenPos = startPin->GetScreenPos();
@@ -181,10 +214,10 @@ namespace SwarmIDE::UI {
         ViewNode* hoveredViewNode = nullptr;
         
         // Проходимся по всем нодам и указываем, что они не выбраны
-        for(auto& [id, viewNode] : viewNodes) {
+        for(auto& [viewNodeID, viewNode] : viewNodes) {
             viewNode->SetHovered(false);
             // Проходимся по всем пинам ноды и указываем, что они не выбраны
-            for(auto& viewPin : viewNode->GetViewPins()) {
+            for(auto& [viewPinID, viewPin] : viewNode->GetViewPins()) {
                 viewPin->SetHovered(false);
             }
         }
@@ -192,16 +225,16 @@ namespace SwarmIDE::UI {
         // Если событие мыши - Простой
         if(activeLinkContext.state == MouseEvents::IDLE) {   
             // Проходимся по всем визуальным нодам
-            for(auto& [id, viewNode] : viewNodes) {
+            for(auto& [viewNodeID, viewNode] : viewNodes) {
                 auto& viewPins = viewNode->GetViewPins();
 
                 // Проходимся по всем визуальны пинам
-                for(auto& viewPin : viewPins) {
+                for(auto& [viewPinID, viewPin] : viewPins) {
                     if(viewPin->IsPointInside(mousePos, zoomFactor)) {
                         viewPin->SetHovered(true);
                         hoveredViewPin = viewPin.get();
-                        // Запоминаем ID родительской ноды пина
-                        hoveredPinParentNodeID = id; 
+                        // Запоминаем ID родительской нodы пина
+                        hoveredPinParentNodeID = viewNodeID; 
                         break; 
                     }
                 }
@@ -223,12 +256,8 @@ namespace SwarmIDE::UI {
                 if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
                     // Указываем событие мыши, как проведение связи
                     activeLinkContext.state = MouseEvents::DRAGGING_WIRE;
-                    // Сохраняем ID ноды выбраного пина
                     activeLinkContext.startNodeID = hoveredPinParentNodeID;
-                    // Сохраняем данные о пине (Его ID, направление и индекс)
                     activeLinkContext.startPinID = hoveredViewPin->GetPinID();
-                    activeLinkContext.startPinDir = hoveredViewPin->GetDirection();
-                    activeLinkContext.startPinIndex = hoveredViewPin->GetIndex();
                 }
             }
             // Если пользователь выбрал ноду
@@ -265,16 +294,16 @@ namespace SwarmIDE::UI {
         else if(activeLinkContext.state == MouseEvents::DRAGGING_WIRE) {
 
             // Проходимся циклом по всем визуальным нодам
-            for(auto& [id, viewNode] : viewNodes) {
+            for(auto& [viewNodeID, viewNode] : viewNodes) {
                 auto& viewPins = viewNode->GetViewPins();
                 // Проходимся циклом по всем визуальным пинам
-                for(auto& viewPin : viewPins) {
+                for(auto& [viewPinID, viewPin] : viewPins) {
                     // Если пользователь указывает на новый пин (Второй). То есть хочет создать связь
                     if(viewPin->IsPointInside(mousePos, zoomFactor)) {
                         // Сохраняем второй теперь уже выбранный пин
                         viewPin->SetHovered(true);
                         hoveredViewPin = viewPin.get();
-                        hoveredPinParentNodeID = id;
+                        hoveredPinParentNodeID = viewNodeID;
                         break;
                     }
                 }
@@ -282,20 +311,58 @@ namespace SwarmIDE::UI {
             }
 
             if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
-                // Если выбраный пин (Второй) существует, и начальный пин (Первый) не равен выбранному - строим связь  
-                if (hoveredViewPin != nullptr && hoveredViewPin->GetDirection() != activeLinkContext.startPinDir) {
-                    // Данные из первой ноды
-                    UUIDv4::UUID fromNodeID = (activeLinkContext.startPinDir == Core::Direction::Output) ? activeLinkContext.startNodeID : hoveredPinParentNodeID;
-                    Core::PinID fromPinID = (activeLinkContext.startPinDir == Core::Direction::Output) ? activeLinkContext.startPinID : hoveredViewPin->GetPinID();
-                    int fromIndex = (activeLinkContext.startPinDir == Core::Direction::Output) ? activeLinkContext.startPinIndex : hoveredViewPin->GetIndex();
+                try {
+                    // Если выбранный пин (второй) существует, и начальный пин (первый) не равен выбранному — строим связь.
+                    if (hoveredViewPin != nullptr && hoveredViewPin->GetPinID() != activeLinkContext.startPinID) {
+                        auto* startViewNode = findViewNodeByID(activeLinkContext.startNodeID);
+                        auto* startViewPin = (startViewNode != nullptr) ? startViewNode->findViewPin(activeLinkContext.startPinID) : nullptr;
 
-                    // Данные из второй ноды
-                    UUIDv4::UUID toNodeID = (activeLinkContext.startPinDir == Core::Direction::Input) ? activeLinkContext.startNodeID : hoveredPinParentNodeID;
-                    Core::PinID toPinID = (activeLinkContext.startPinDir == Core::Direction::Input) ? activeLinkContext.startPinID : hoveredViewPin->GetPinID();
-                    int toIndex = (activeLinkContext.startPinDir == Core::Direction::Input) ? activeLinkContext.startPinIndex : hoveredViewPin->GetIndex();
+                        auto* logicStartPin = (startViewPin != nullptr)
+                            ? Core::GraphManager::getInstance().findPinGlobaly(activeLinkContext.startPinID)
+                            : nullptr;
+                        auto* logicHoveredPin = Core::GraphManager::getInstance().findPinGlobaly(hoveredViewPin->GetPinID());
 
-                    auto coreConn = std::make_unique<Command::CmdCreateConnection>(fromNodeID, fromPinID, fromIndex, toNodeID, toPinID, toIndex);
-                    Command::CommandBus::getInstance().PushAndExecute(std::move(coreConn));
+                        if (logicStartPin != nullptr && logicHoveredPin != nullptr) {
+
+                            if (logicStartPin->nodeID == logicHoveredPin->nodeID) {
+                                Core::LoggingManager::Warning("Connection dropped: source and target pin belong to the same node.");
+                            }
+                            else if (logicStartPin->direction == logicHoveredPin->direction) {
+                                Core::LoggingManager::Warning("Connection dropped: pins have the same direction.");
+                            }
+                            else if (logicStartPin->dataType != logicHoveredPin->dataType || logicStartPin->type != logicHoveredPin->type) {
+                                Core::LoggingManager::Warning("Connection dropped: pin data/type mismatch.");
+                            }
+                            else if (logicStartPin->type != logicHoveredPin->type) {
+                                Core::LoggingManager::Warning("Connection dropped: pin types do not match.");
+                            }
+                            else if (logicStartPin->maxConnections != -1 && logicStartPin->GetCurrentConnections() >= logicStartPin->maxConnections) {
+                                Core::LoggingManager::Warning("Connection dropped: source pin has reached its maximum connections.");
+                            }
+                            else if (logicHoveredPin->maxConnections != -1 && logicHoveredPin->GetCurrentConnections() >= logicHoveredPin->maxConnections) {
+                                Core::LoggingManager::Warning("Connection dropped: target pin has reached its maximum connections.");
+                            }
+                            else {
+                                UUIDv4::UUID fromNodeID = (logicHoveredPin->direction == Core::Direction::Input) ? activeLinkContext.startNodeID : hoveredPinParentNodeID;
+                                UUIDv4::UUID fromPinID = (logicHoveredPin->direction == Core::Direction::Input) ? activeLinkContext.startPinID : hoveredViewPin->GetPinID();
+
+                                UUIDv4::UUID toNodeID = (logicHoveredPin->direction == Core::Direction::Output) ? activeLinkContext.startNodeID : hoveredPinParentNodeID;
+                                UUIDv4::UUID toPinID = (logicHoveredPin->direction == Core::Direction::Output) ? activeLinkContext.startPinID : hoveredViewPin->GetPinID();
+
+                                auto cmd_createConnection = std::make_unique<Command::CmdCreateConnection>(fromNodeID, fromPinID, toNodeID, toPinID);
+                                Command::CommandBus::getInstance().PushAndExecute(std::move(cmd_createConnection));
+                            }
+                        }
+                        else {
+                            Core::LoggingManager::Warning("Connection dropped: unable to resolve logical pins for the selected view pins.");
+                        }
+                    }
+                }
+                catch (const std::exception& ex) {
+                    Core::LoggingManager::Error("Connection creation path failed: ", ex.what());
+                }
+                catch (...) {
+                    Core::LoggingManager::Error("Connection creation path failed with unknown exception.");
                 }
                 // Сбрасываем состояние
                 activeLinkContext.Reset();

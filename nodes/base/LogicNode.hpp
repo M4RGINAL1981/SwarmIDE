@@ -34,7 +34,7 @@ namespace SwarmIDE::Nodes {
     public:
         /**
          * @brief Конструктор узла с начальным положением в нулевых координатах.
-         * @param[in]             name Имя отображаемого объекта на холсте.
+         * @param[in]              name Имя отображаемого объекта на холсте.
          */
         LogicNode(const std::string& name) : name(name) { MakeNewID(); }; 
         
@@ -73,47 +73,52 @@ namespace SwarmIDE::Nodes {
 
         /**
          * @brief Добавляет новый пин.
-         * @param[in] id          Идентификатор пина.
+         * @param[in] pinName     Имя пина.
+         * @param[in] type        Тип пина.
          * @param[in] dir         Направление пина (Вход / Выход).
          * @param[in] dataType    Тип данных, который ожидает или передает пин.
-         * @param[in] index       Порядковый номер (для нод с несколькими одинаковыми пинами)
          * @param[in] maxConn     Максимальное количество одновременных связей (-1 для безлимита).
          * @param[in] value       Контейнер с текущим значением данных на пине.
          */
-        void addPin(Core::PinID id, Core::Direction dir, Core::DataType dataType, int index = 0, int maxConn = 1, Core::DataVariant value = Core::DataVariant());
+        void addPin(const std::string& pinName, Core::PinType type, Core::Direction dir, Core::DataType dataType, int maxConn = 1, Core::DataVariant value = Core::DataVariant());
 
         /**
-         * @brief Получить текущее значение входного пина.
-         * @param[in] id          Идентификатор пина.
-         * @param[in] dir         Направление пина (Вход / Выход).
-         * @param[in] index       Порядковый номер пина (для нод с несколькими одинаковыми пинами).
-         *  
-         * @return                DataVariant Вариантный тип данных, содержащий текущее значение.
-         * 
+         * @brief Получить текущее значение пина.
+         * @param[in] id  ID пина.
+         * @return Core::DataVariant Вариантный тип данных, содержащий текущее значение.
          * @see Core::DataVariant
          */
-        Core::DataVariant getPinValue(Core::PinID id, Core::Direction dir, int index = 0);
+        Core::DataVariant getPinValue(UUIDv4::UUID id);
+
+        /**
+         * @brief Получить текущее значение пина по его имени.
+         * @param pinName Имя пина.
+         * @return Core::DataVariant 
+         */
+        Core::DataVariant getPinValue(const std::string& pinName);
 
         /**
          * @brief Записать значение во входной пин (обычно вызывается менеджером связей).
+         * @param[in] id         ID пина.
          * @param[in] value      Новые данные для записи.
-         * @param[in] id         Идентификатор пина.
-         * @param[in] dir        Направление пина (Вход / Выход).
-         * @param[in] index      Порядковый номер пина (для нод с несколькими одинаковыми пинами).
          */
-        void setPinValue(Core::DataVariant value, Core::PinID id, Core::Direction dir, int index = 0);
+        void setPinValue(UUIDv4::UUID id,  Core::DataVariant value);
+
+        /**
+         * @brief Записать значение во входной пин по его имени (обычно вызывается менеджером связей).
+         * @param pinName        Имя пина.
+         * @param value          Новые данные для записи.
+         */
+        void setPinValue(const std::string& pinName, Core::DataVariant value);
 
         /**
          * @brief Поиск указателя на входной пин по его ID.
-         * @param[in] id         Идентификатор пина.
-         * @param[in] dir        Направление пина (Вход / Выход).
-         * @param[in] index      Порядковый номер пина (для нод с несколькими одинаковыми пинами).
+         * @param[in] id         ID пина.
          * 
          * @return               LogicPin* Указатель на пин или nullptr, если пин не найден.
-         * 
          * @see Core::LogicPin
          */
-        Core::LogicPin* findPin(Core::PinID id, Core::Direction dir, int index = 0);
+        Core::LogicPin* findPin(UUIDv4::UUID id);
 
         /**
          * @brief Проверяет, заполнены ли все входные пины данными, необходимыми для старта.
@@ -129,9 +134,9 @@ namespace SwarmIDE::Nodes {
 
         /**
          * @brief Возвращает пины логической ноды
-         * @return std::vector<std::unique_ptr<Core::LogicPin>>& пины
+         * @return std::unordered_map<UUIDv4::UUID, std::unique_ptr<Core::LogicPin>>& пины
          */
-        std::vector<std::unique_ptr<Core::LogicPin>>& GetPins() { return pins; }
+        std::unordered_map<UUIDv4::UUID, std::unique_ptr<Core::LogicPin>>& GetPins() { return pins; }
 
         /**
          * @brief Генерирует и присваивает узлу новый уникальный UUID.
@@ -165,10 +170,12 @@ namespace SwarmIDE::Nodes {
         LogicNode& operator=(const LogicNode&) = delete;
 
     protected:
-        std::string name;                                           /**< @brief Имя объекта на сцене. */
-        UUIDv4::UUID id;                                            /**< @brief Уникальный UUID узла в рамках сессии графа. */
+        std::string name;                                                         /** @brief < Имя объекта на сцене. */
+        UUIDv4::UUID id;                                                          /** @brief < Уникальный UUID узла в рамках сессии графа. */
 
-        std::vector<std::unique_ptr<Core::LogicPin>> pins;          /**< @brief Вектор умных указателей на порты. */
-        State state = State::Idle;                                  /**< @brief Текущий статус выполнения ноды вычислительным ядром. */
+        std::unordered_map<UUIDv4::UUID, std::unique_ptr<Core::LogicPin>> pins;   /** @brief < Вектор умных указателей на порты. */
+        std::unordered_map<std::string, UUIDv4::UUID> pinNameToID;                /** @brief < Словарь для быстрого поиска пина по его имени. */
+        
+        State state = State::Idle;                                                /** @brief < Текущий статус выполнения ноды вычислительным ядром. */
     };
 }

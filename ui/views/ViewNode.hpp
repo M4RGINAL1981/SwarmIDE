@@ -8,6 +8,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include <unordered_map>
 
 namespace SwarmIDE::UI {
 
@@ -54,14 +55,12 @@ namespace SwarmIDE::UI {
         void Draw(ImDrawList* drawList, glm::vec2 screenPos, float zoom);
 
         /**
-         * @brief 
+         * @brief Поиск визуального пина по его ID
          * 
-         * @param[in] pinID  Идентификтор пина
-         * @param[in] dir    Направление пина (Вход / Выход)
-         * @param[in] index  Индекс пина, если есть пины с одинаковыми PinID
-         * @return const ViewPin& 
+         * @param[in] pinID ID пина для поиска
+         * @return ViewPin* Указатель на визуальный пин, если найден, иначе nullptr   
          */
-        ViewPin* findViewPin(Core::PinID pinID, Core::Direction dir, int index);
+        ViewPin* findViewPin(UUIDv4::UUID pinID);
 
         /**
          * @brief Опрашивает состояние ноды
@@ -121,10 +120,9 @@ namespace SwarmIDE::UI {
 
         /**
          * @brief Вернуть все визуальные пины нодыы
-         * 
-         * @return std::vector<std::unique_ptr<ViewPin>> 
+         * @return std::unordered_map<UUIDv4::UUID, std::unique_ptr<ViewPin>>& Контейнер с визуальными пинами
          */
-        std::vector<std::unique_ptr<ViewPin>>& GetViewPins() { return viewPins; }
+        std::unordered_map<UUIDv4::UUID, std::unique_ptr<ViewPin>>& GetViewPins() { return viewPins; }
 
         /**
          * @brief Обрабатывает перемещение ноды мышкой (Drag)
@@ -136,13 +134,13 @@ namespace SwarmIDE::UI {
 
         friend CanvasManager;
 
-        UUIDv4::UUID nodeID;                                             /** @brief < ID ноды. */
-        Nodes::State state = Nodes::State::Idle;                         /** @brief < Статус ноды. */
-        std::unique_ptr<SwarmIDE::UI::Shape::BaseShape> shape;           /** @brief < Указатель на фигуру/трафарет */
-        std::vector<std::unique_ptr<ViewPin>> viewPins;                  /** @brief < Визуальные пины ноды */
-        glm::vec2 worldPos;                                              /** @brief < Положение ноды на поле. */
-        glm::vec2 nodeSize;                                              /** @brief < Размер ноды. */
-        bool isSelected;                                                 /** @brief < Выбрана ли нода в данный момент. */
-        bool isHovered;                                                  /** @brief < Наведена ли мышь на хитбокс ноды. */
+        UUIDv4::UUID nodeID;                                                      /** @brief < ID ноды. */
+        Nodes::State state = Nodes::State::Idle;                                  /** @brief < Статус ноды. */
+        std::unique_ptr<SwarmIDE::UI::Shape::BaseShape> shape;                    /** @brief < Указатель на фигуру/трафарет */
+        std::unordered_map<UUIDv4::UUID, std::unique_ptr<ViewPin>> viewPins;   /** @brief < Контейнер для быстрого поиска пинов по ID. */
+        glm::vec2 worldPos;                                                       /** @brief < Положение ноды на поле. */
+        glm::vec2 nodeSize;                                                       /** @brief < Размер ноды. */
+        bool isSelected;                                                          /** @brief < Выбрана ли нода в данный момент. */
+        bool isHovered;                                                           /** @brief < Наведена ли мышь на хитбокс ноды. */
     };
 }

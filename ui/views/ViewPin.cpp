@@ -6,50 +6,57 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include <cmath>
 
 namespace SwarmIDE::UI {
 
-    ViewPin::ViewPin(Core::PinID pinID, Core::Direction dir, int index, glm::vec2 localPos, glm::vec2 normal) {
-        this->pinID = pinID;
-        this->dir = dir;
-        this->index = index;
+    ViewPin::ViewPin(UUIDv4::UUID id, glm::vec2 localPos, glm::vec2 normal) {
+        this->id = id;
         this->localPos = localPos;
         this->normal = normal;
-    }
-
-    bool ViewPin::ComplianceСheck(Core::PinID pinID, Core::Direction dir, int index) { 
-        if(this->pinID == pinID && this->dir == dir && this->index == index) return true;
-        return false;
+        this->cachedScreenPos = glm::vec2(0.0f, 0.0f);
+        this->is_hovered = false;
     }
 
     void ViewPin::Draw(ImDrawList* drawList, float zoomFactor) {
+        try {
+            if (drawList == nullptr) {
+                return;
+            }
 
-        auto& theme = ThemeManager::getInstance();
+            auto& theme = ThemeManager::getInstance();
 
-        auto colorDefault = theme.GetColorU32(ColorRole::PinDefault);
-        auto colorHover = theme.GetColorU32(ColorRole::PinHover);
+            auto colorDefault = theme.GetColorU32(ColorRole::PinDefault);
+            auto colorHover = theme.GetColorU32(ColorRole::PinHover);
 
-        auto radius = theme.GetStyleVar(StyleVarRole::PinRadius) * zoomFactor;
-        auto shapePin = theme.GetPinShape();
+            auto radius = theme.GetStyleVar(StyleVarRole::PinRadius) * zoomFactor;
+            auto shapePin = theme.GetPinShape();
 
-        if(shapePin == PinShapeType::Circle) {
-            ImVec2 center = ImVec2(cachedScreenPos.x, cachedScreenPos.y);
+            if(shapePin == PinShapeType::Circle) {
+                ImVec2 center = ImVec2(cachedScreenPos.x, cachedScreenPos.y);
 
-            if(is_hovered) drawList->AddCircleFilled(center, radius, colorHover);
-            else drawList->AddCircleFilled(center, radius, colorDefault);
-            
+                if(is_hovered) drawList->AddCircleFilled(center, radius, colorHover);
+                else drawList->AddCircleFilled(center, radius, colorDefault);
+                
+            }
+            else if (shapePin == PinShapeType::Square) {
+                ImVec2 pMin = ImVec2(cachedScreenPos.x - radius, cachedScreenPos.y - radius);
+                ImVec2 pMax = ImVec2(cachedScreenPos.x + radius, cachedScreenPos.y + radius);
+
+                if(is_hovered) drawList->AddRectFilled(pMin, pMax, colorHover);
+                else drawList->AddRectFilled(pMin, pMax, colorDefault);    
+                
+            }
+            else {
+                Core::LoggingManager::Warning("Shape Pin is not identified, skipping draw.");
+                return;
+            }
         }
-        else if (shapePin == PinShapeType::Square) {
-            ImVec2 pMin = ImVec2(cachedScreenPos.x - radius, cachedScreenPos.y - radius);
-            ImVec2 pMax = ImVec2(cachedScreenPos.x + radius, cachedScreenPos.y + radius);
-
-            if(is_hovered) drawList->AddRectFilled(pMin, pMax, colorHover);
-            else drawList->AddRectFilled(pMin, pMax, colorDefault);    
-            
+        catch (const std::exception& ex) {
+            Core::LoggingManager::Error("View pin draw failed: ", ex.what());
         }
-        else {
-            Core::LoggingManager::Fatal("Shape Pin is not identifacate");
-            throw std::runtime_error("Shape Pin is not identificate");
+        catch (...) {
+            Core::LoggingManager::Error("View pin draw failed with unknown exception.");
         }
     }
 
@@ -60,6 +67,11 @@ namespace SwarmIDE::UI {
     bool ViewPin::IsPointInside(glm::vec2 mousePos, float zoomFactor) {
         auto& theme = ThemeManager::getInstance();
         auto radius = theme.GetStyleVar(StyleVarRole::PinRadius) * zoomFactor;
+
+        if (!std::isfinite(cachedScreenPos.x) || !std::isfinite(cachedScreenPos.y) ||
+            !std::isfinite(mousePos.x) || !std::isfinite(mousePos.y)) {
+            return false;
+        }
 
         if(glm::length(mousePos - cachedScreenPos) < radius) return true;
         return false;

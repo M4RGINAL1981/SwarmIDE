@@ -6,38 +6,48 @@
 namespace SwarmIDE::Nodes {
 
 
-    void LogicNode::addPin(Core::PinID id, Core::Direction dir, Core::DataType dataType, int index, int maxConn, Core::DataVariant value) {
-        pins.push_back(std::make_unique<Core::LogicPin>(Core::LogicPin(id, dir, dataType, index, maxConn, value)));
+    void LogicNode::addPin(const std::string& pinName, Core::PinType type, Core::Direction dir, Core::DataType dataType, int maxConn, Core::DataVariant value) {
+        Core::LogicPin* pin = new Core::LogicPin(type, dir, dataType, id, maxConn, value);
+        pins[pin->GetID()] = std::unique_ptr<Core::LogicPin>(pin);
+        pinNameToID[pinName] = pin->GetID();
     }
 
-    Core::DataVariant LogicNode::getPinValue(Core::PinID id, Core::Direction dir, int index) {
-        Core::LogicPin* pin = findPin(id, dir, index);
+    Core::DataVariant LogicNode::getPinValue(UUIDv4::UUID pinID) {
+        auto pin = findPin(pinID);
         if(pin != nullptr) return pin->value;
         return Core::DataVariant();
     }
 
-    void LogicNode::setPinValue(Core::DataVariant value, Core::PinID id, Core::Direction dir, int index) {
-        Core::LogicPin* pin = findPin(id, dir, index);
+    Core::DataVariant LogicNode::getPinValue(const std::string& pinName) {
+        auto pin = findPin(pinNameToID[pinName]);
+        if(pin != nullptr) return pin->value;
+        return Core::DataVariant();
+    }
+
+    void LogicNode::setPinValue(UUIDv4::UUID pinID, Core::DataVariant value) {
+        auto pin = findPin(pinID);
         if(pin != nullptr) pin->value = value;
     }
 
-    Core::LogicPin* LogicNode::findPin(Core::PinID id, Core::Direction dir, int index) {
-        for(auto& pin : pins) {
-            if(pin->id == id && pin->direction == dir && pin->index == index) return pin.get();
-        }
-        return nullptr;
+    void LogicNode::setPinValue(const std::string& pinName, Core::DataVariant value) {
+        auto pin = findPin(pinNameToID[pinName]);
+        if(pin != nullptr) pin->value = value;
     }
 
+    Core::LogicPin* LogicNode::findPin(UUIDv4::UUID pinID) {
+        if(pins.contains(pinID)) return pins[pinID].get();
+        return nullptr;
+    }
         
     bool LogicNode::isFullInputPin() const {
-        for(const auto& pin : pins) {
+        for(const auto& [pinID, pin] : pins) {
             if(pin->value.isEmpty() && pin->direction == Core::Direction::Input) return false;
         }
         return true;
     }
 
     bool LogicNode::isFullOutputPin() const {
-        for(const auto& pin : pins) {
+        for(const auto& [pinID, pin] : pins) {
             if(pin->value.isEmpty() && pin->direction == Core::Direction::Output) return false;
         }
         return true;
@@ -45,6 +55,6 @@ namespace SwarmIDE::Nodes {
 
     void LogicNode::Reset() {
         state = State::Idle;
-        for(auto& pin : pins) pin->value.clear();
+        for(auto& [pinID, pin] : pins) pin->value.clear();
     }
 }

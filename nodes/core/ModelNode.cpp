@@ -6,14 +6,14 @@
 namespace SwarmIDE::Nodes {
 
     ModelNode::ModelNode(const std::string& nodeName) : LogicNode(nodeName) {
-        addPin(Core::PinID::Model, Core::Direction::Output, Core::DataType::STRING);
+        addPin("Model", Core::PinType::Model, Core::Direction::Output, Core::DataType::STRING);
     }
 
     ModelNode::ModelNode(const std::string& nodeName, const std::string& targetModelID) : LogicNode(nodeName) {
         modelID = targetModelID;
 
         // Подключаем выходные пины
-        addPin(Core::PinID::Model, Core::Direction::Output, Core::DataType::STRING);
+        addPin("Model", Core::PinType::Model, Core::Direction::Output, Core::DataType::STRING);
     }
   
     void ModelNode::Execute() {
@@ -28,7 +28,7 @@ namespace SwarmIDE::Nodes {
             bool result = SwarmIDE::Core::ModelManager::getInstance().loadModelToMemory(modelID);
             if(result) {
                 // Устанавливаем ID модели в выходной пин
-                setPinValue(Core::DataVariant(modelID), Core::PinID::Model, Core::Direction::Output);                    
+                setPinValue("Model", Core::DataVariant(modelID));                    
                 SetState(Success); 
 
                 Core::LoggingManager::SuccessNode("ModelNode", GetID());

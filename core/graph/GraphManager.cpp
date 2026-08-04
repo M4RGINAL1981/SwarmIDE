@@ -24,36 +24,46 @@ namespace SwarmIDE::Core {
     }
 
     void GraphManager::StartExecutionAll() {
-        std::vector<UUIDv4::UUID> allNodes;
-        for(const auto& node : nodes) allNodes.push_back(node->GetID());
-        ProcessQueueParallel(allNodes);
+        std::vector<UUIDv4::UUID> allLogicNodes;
+        for(const auto& [nodeID, logicNode] : logicNodes) allLogicNodes.push_back(nodeID);
+        ProcessQueueParallel(allLogicNodes);
     }
 
     void GraphManager::addNode(std::unique_ptr<Nodes::LogicNode> node) { 
         std::cout << "[ADDING A NODE]: Node ID: " << node->GetID() << " type Node: " << node->getTypeName() << std::endl;
-        nodes.push_back(std::move(node));
+        logicNodes[node->GetID()] = std::move(node);
     }
 
     void GraphManager::removeNode(UUIDv4::UUID nodeID) {
         ConnectionManager::getInstance().removeConnectionsForNode(nodeID);
+        logicNodes.erase(nodeID);
+    }
 
-        nodes.erase(
-            std::remove_if(nodes.begin(), nodes.end(),
-                [nodeID](const std::unique_ptr<Nodes::LogicNode>& nd) {
-                    return nd->GetID() == nodeID;
-                }), 
-            nodes.end()
-        );
+    std::unique_ptr<Nodes::LogicNode> GraphManager::extractNode(UUIDv4::UUID nodeID) {
+        ConnectionManager::getInstance().removeConnectionsForNode(nodeID);
+
+        if (logicNodes.contains(nodeID)) {
+            auto extractedNode = std::move(logicNodes.at(nodeID));
+            logicNodes.erase(nodeID);
+            return extractedNode;
+        }
+        return nullptr;
     }
 
     void GraphManager::removeAllNodes() {
         ConnectionManager::getInstance().removeAllConnections();
-        nodes.clear();
+        logicNodes.clear();
     }
 
     Nodes::LogicNode* GraphManager::findNodeByID(UUIDv4::UUID id) {
-        for(auto& node : nodes){
-            if(id == node->GetID()) return node.get();
+        if(logicNodes.contains(id)) return logicNodes.at(id).get();
+        return nullptr;
+    }
+
+    Core::LogicPin* GraphManager::findPinGlobaly(UUIDv4::UUID pinID) {
+        for(const auto& [nodeID, logicNode] : logicNodes) {
+            auto pin = logicNode->findPin(pinID);
+            if(pin != nullptr) return pin;
         }
         return nullptr;
     }
@@ -122,10 +132,10 @@ namespace SwarmIDE::Core {
                     auto node1 = findNodeByID(connect->toNodeID);    // Узел, во входной пин которого передается значение
                     auto node2 = findNodeByID(connect->fromNodeID);  // Узел, из выходного пина которого берется значение
 
-                    node1->setPinValue(node2->getPinValue(connect->fromPinID, Direction::Output, connect->fromIndex), connect->toPinID, Direction::Input, connect->toIndex);
+                    node1->setPinValue(connect->toPinID, node2->getPinValue(connect->fromPinID));
                 }
                 
-                if(flag)  {                                                                                 // Если все родительские ноды, отработали И родитель не в failedNodes
+                if(flag)  {      // Если все родительские ноды, отработали И родитель не в failedNodes
                     readyNodes.push_back(nodeID);                                           
                     LoggingManager::QueueResult(findNodeByID(nodeID)->getTypeName(), nodeID, true);
                 }
@@ -161,6 +171,14 @@ namespace SwarmIDE::Core {
                 else if (node->GetState() == Nodes::Failed) failedNodes.insert(nodeID);     // Если нода завершилась ошибкой - добавляем её в множество нод, отработавших с ошибкой
             }
             futures.clear();                                                                // Очишаем вектор талоничков
+        }
+    }
+
+    GraphManager::~GraphManager() {
+        Core::LoggingManager::Info("[GRAPH_MANAGER]: Destructor");
+        Core::LoggingManager::Info("[GRAPH_MANAGER]: LogicNodeID:");
+        for(const auto& [nodeID, logicNode] : logicNodes) {
+            Core::LoggingManager::Info("-", nodeID);
         }
     }
 }

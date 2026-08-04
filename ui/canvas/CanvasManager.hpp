@@ -35,12 +35,8 @@ namespace SwarmIDE::UI {
 
         // Данные для создания связи
         UUIDv4::UUID startNodeID;                      /** @brief < Из какой ноды тянем связь */  
-        Core::PinID startPinID;                        /** @brief < ID стартового пина */
-        Core::Direction startPinDir;                   /** @brief < Направление (Input/Output) */
-        int startPinIndex;                             /** @brief < Индекс пина */
-
-        // Временые координаты мыши для отрисовки тянущегося провода
-        glm::vec2 currentMouseWorldPos;
+        UUIDv4::UUID startPinID;                       /** @brief < Из какого пина тянем связь */
+        glm::vec2 currentMouseWorldPos;                /** @brief < Текущие координаты мыши в мире */
 
         void Reset() {                                 /** @brief < Методы для очистки контекста */
             state = MouseEvents::IDLE;
@@ -86,7 +82,7 @@ namespace SwarmIDE::UI {
          * @details Удаляет абсолютно все визуальные ноды и обнуляет хранилище. Используется при создании 
          * нового проекта или перед импортом другого графа.
          */                 
-        void removeAllViewNodes();                                     
+        void removeAllViewNodes() { RemoveAllViewConnection(); viewNodes.clear(); }                            
 
         /**
          * @brief Получить текущее количество визуальных нод на сцене холста.
@@ -116,41 +112,41 @@ namespace SwarmIDE::UI {
         void removeViewConnectionsForNode(UUIDv4::UUID nodeID);
 
         /**
-         * @brief Добавить новое соединение
+         * @brief Добавить новое визуальное соединение
          * 
-         * @param[in] conn 
+         * @param[in] connectionID ID логического соединения, для которого нужно создать визуальное соединение
          */
-        void AddViewConnection(Core::Connection* conn);
+        void AddViewConnection(UUIDv4::UUID connectionID);
 
         /**
-         * @brief Удаляет соединение по указателю
+         * @brief Удаляет соединение по ID логического соединения
          * 
-         * @param[in] conn Указатель на визуальное соединение 
+         * @param[in] connectionID ID логического соединения, которое нужно удалить
          */
-        void RemoveViewConnection(Core::Connection* conn);
+        void RemoveViewConnection(UUIDv4::UUID connectionID);
 
         /**
          * @brief Удаляетвсе визуальные соединения
          */
-        void RemoveAllViewConnection() { viewLinks.clear(); }
+        void RemoveAllViewConnection() { viewConnections.clear(); }
 
         /**
          * @brief Получить текущее количество визуальных нод на сцене холста.
          * @return int Количество активных визуальных нод.
          */
-        int getCountViewConnection() { return viewLinks.size(); }        
+        int getCountViewConnection() { return viewConnections.size(); }        
         
         /**
          * @brief Получить доступ к контейнеру со всеми визуальными соединениями.
-         * @return std::vector<std::unique_ptr<ViewNode>>& Ссылка на массив визуальных соединений.
+         * @return std::unordered_map<UUIDv4::UUID, std::unique_ptr<ViewConnection>>>& Ссылка на массив визуальных соединений.
          */   
-        std::vector<std::unique_ptr<ViewConnection>>& getViewConnections() { return viewLinks; }
+        std::unordered_map<UUIDv4::UUID, std::unique_ptr<ViewConnection>>& getViewConnections() { return viewConnections; }
 
         /**
          * @brief Найти визуальное соединение 
-         * @param[in] conn - Логическое соединение
+         * @param[in] connectionID - ID логического соединения
          */
-        ViewConnection* findViewConnection(Core::Connection* conn);
+        ViewConnection* findViewConnectionByID(UUIDv4::UUID connectionID);
 
         /**
          * @brief Синхронизация логики и визуала
@@ -190,14 +186,14 @@ namespace SwarmIDE::UI {
         friend class AppController;
 
         CanvasManager();
-        ~CanvasManager() { Core::LoggingManager::Info("[CANVAS_MANAGER]: Destructor"); }
+        ~CanvasManager();
 
-        glm::vec2 windowSize = glm::vec2(3840, 2160);                                      /** @brief < Размер окна */
+        glm::vec2 windowSize = glm::vec2(3840, 2160);                                           /** @brief < Размер окна */
 
-        Graphics::Camera camera;                                                           /** @brief < Объект камера. Для получения текущего zoomFactor. */
-        Graphics::Grid grid;                                                               /** @brief < Объект сетки. Для отрисовки сетки. */
-        std::unordered_map<UUIDv4::UUID, std::unique_ptr<ViewNode>> viewNodes;             /** @brief < Хеш-Таблица. Ключ - ID логической ноды. Значение - Визуальная нода. */
-        std::vector<std::unique_ptr<ViewConnection>> viewLinks;                            /** @brief < Вектор визуальных соединений. */
+        Graphics::Camera camera;                                                                /** @brief < Объект камера. Для получения текущего zoomFactor. */
+        Graphics::Grid grid;                                                                    /** @brief < Объект сетки. Для отрисовки сетки. */
+        std::unordered_map<UUIDv4::UUID, std::unique_ptr<ViewNode>> viewNodes;                  /** @brief < Хеш-Таблица. Ключ - ID логической ноды. Значение - Визуальная нода. */
+        std::unordered_map<UUIDv4::UUID, std::unique_ptr<ViewConnection>> viewConnections;      /** @brief < Вектор визуальных соединений. */
 
         ActiveLinkContext activeLinkContext;
     };

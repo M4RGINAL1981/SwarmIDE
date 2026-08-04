@@ -61,6 +61,14 @@ namespace SwarmIDE::Core {
         void removeNode(UUIDv4::UUID nodeID);     
 
         /**
+         * @brief Извлечь узел.
+         *
+         * @param nodeID  ID узла.
+         * @return std::unique_ptr<Nodes::LogicNode> Узел.
+         */
+        std::unique_ptr<Nodes::LogicNode> extractNode(UUIDv4::UUID nodeID);
+
+        /**
          * @brief Полностью очистить граф сцены.
          * @details Удаляет абсолютно все узлы и обнуляет хранилище. Используется при создании 
          * нового проекта или перед импортом другого графа.
@@ -71,20 +79,27 @@ namespace SwarmIDE::Core {
          * @brief Получить текущее количество узлов на сцене холста.
          * @return int Количество активных объектов в графе.
          */
-        int getCountNodes() { return nodes.size(); }        
+        int getCountLogicNodes() { return logicNodes.size(); }        
         
         /**
          * @brief Получить доступ к контейнеру со всеми узлами.
-         * @return std::vector<std::unique_ptr<Nodes::LogicNode>>& Ссылка на внутренний массив объектов графа.
+         * @return std::unordered_map<UUIDv4::UUID, std::unique_ptr<Nodes::LogicNode>>& Ссылка на внутренний контейнер с узлами.
          */   
-        std::vector<std::unique_ptr<Nodes::LogicNode>>& getNodes() { return nodes; }
+        const std::unordered_map<UUIDv4::UUID, std::unique_ptr<Nodes::LogicNode>>& getNodes() { return logicNodes; }
 
         /**
          * @brief Поиск узла на сцене по его UUID.
          * @param[in] id Уникальный идентификатор искомого узла.
          * @return Nodes::LogicNode* Указатель на найденный узел или `nullptr`, если объект не существует.
          */
-        Nodes::LogicNode* findNodeByID(UUIDv4::UUID id);                  
+        Nodes::LogicNode* findNodeByID(UUIDv4::UUID id);    
+        
+        /**
+         * @brief Поиск узла на сцене по его UUID.
+         * @param[in] pinID Уникальный идентификатор пина.
+         * @return Nodes::LogicNode* Указатель на найденный узел или `nullptr`, если объект не существует.
+         */
+        Core::LogicPin* findPinGlobaly(UUIDv4::UUID pinID);
 
         // Запрещаем копирование и перемещение синглтона
         GraphManager(const GraphManager&) = delete;
@@ -99,7 +114,7 @@ namespace SwarmIDE::Core {
 
         /** @brief Закрытый конструктор синглтона. */
         GraphManager() { Core::LoggingManager::Info("[GRAPH_MANAGER]: Constructor"); }
-        ~GraphManager() { Core::LoggingManager::Info("[GRAPH_MANAGER]: Destructor");}
+        ~GraphManager();
 
         /**
          * @brief Рекурсивно собирает все родительские узлы (построение дерева зависимостей).
@@ -122,7 +137,7 @@ namespace SwarmIDE::Core {
          */
         void ProcessQueueParallel(const std::vector<UUIDv4::UUID>& allNodes);                   
 
-        std::vector<std::unique_ptr<Nodes::LogicNode>> nodes; /**< Внутреннее изолированное хранилище всех узлов текущей сцены. */
+        std::unordered_map<UUIDv4::UUID, std::unique_ptr<Nodes::LogicNode>> logicNodes;  /** @brief < Внутреннее изолированное хранилище всех узлов текущей сцены. */
     };
 
 }

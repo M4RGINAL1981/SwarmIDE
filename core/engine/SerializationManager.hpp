@@ -76,12 +76,3 @@ namespace SwarmIDE::Core {
     };
 }
 
-namespace UUIDv4 {
-    inline void to_json(nlohmann::json& j, const UUID& uuid) {
-        j = uuid.str();
-    }
-
-    inline void from_json(const nlohmann::json& j, UUID& uuid) {
-        uuid = UUID(j.get<std::string>());
-    }
-}

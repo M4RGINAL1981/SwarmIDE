@@ -19,12 +19,11 @@ namespace SwarmIDE::UI {
         /**
          * @brief Конструктор визуального пина.
          * 
-         * @param[in] pinID    Идентификатор пина
-         * @param[in] dir      Направление пина
-         * @param[in] index    Индекс пина, если есть пины с одинаковыми PinID
-         * @param[in] localPos Локальные координаты визуального пина, относительно фигуры
+         * @param id        ID пина (совпадает с ID логического пина).
+         * @param localPos  Локальные координаты визуального пина, относительно фигуры
+         * @param normal    Вектор нормали пина
          */
-        ViewPin(Core::PinID pinID, Core::Direction dir, int index, glm::vec2 localPos, glm::vec2 normal);
+        ViewPin(UUIDv4::UUID id, glm::vec2 localPos, glm::vec2 normal);
 
         /**
          * @brief Деструктор визуального пина.
@@ -32,13 +31,12 @@ namespace SwarmIDE::UI {
         ~ViewPin() = default;
 
         /**
-         * @brief Проверка на соответствие.
-         * @param[in] pinID Идентификатор пина.
-         * @param[in] dir   Направление пина.
-         * @param[in] index Индекс пина.
-         * @return bool Соотноситься ли пин или нет.
+         * @brief Проверяет, совпадает ли ID пина с переданным.
+         * @param[in] id пина для проверки на совпадение.
+         * @return true Если ID пина совпадает с переданным.
+         * @return false Если ID пина не совпадает с переданным.
          */
-        bool ComplianceСheck(Core::PinID pinID, Core::Direction dir, int index);
+        bool ComplianceСheck(UUIDv4::UUID id) { return this->id == id; }
 
         /**
          * @brief Пересчитывание мировые координаты, отткаливаясь от коодинат своего родителя (BaseShape / ViewNode)
@@ -57,37 +55,15 @@ namespace SwarmIDE::UI {
 
         /**
          * @brief  Возвращает идентификатор пина
-         * @return Core::PinID Идентификатор пина
+         * @return UUIDv4::UUID Идентификатор пина
          */
-        Core::PinID GetPinID() { return pinID; }
+        UUIDv4::UUID GetPinID() { return id; }
         /**
          * @brief Устанавливает новый идентификатор пина
-         * @param pinID Новй идентификатор пина
+         * @param id Новй идентификатор пина
          */
-        void SetPinID(Core::PinID pinID) { this->pinID = pinID; }
+        void SetPinID(UUIDv4::UUID id) { this->id = id; }
         
-        /**
-         * @brief Возвращает направление пина
-         * @return Core::Direction Направление пина
-         */
-        Core::Direction GetDirection() { return dir; }
-        /**
-         * @brief Устанавливает новое направление пина
-         * @param dir Новое направление пина
-         */
-        void SetDirection(Core::Direction dir) { this->dir = dir; }
-
-        /**
-         * @brief Возвращает индекс пина
-         * @return int Индекс пина
-         */
-        int GetIndex() { return index; }
-        /**
-         * @brief Устанавливает новый индекс пина
-         * @param index Новый индекс пина
-         */
-        void SetIndex(int index) { this->index = index; }
-
         /**
          * @brief Возвращает локальные координаты пина
          * @return glm::vec2 Локальные координаты пина
@@ -146,9 +122,7 @@ namespace SwarmIDE::UI {
         bool IsPointInside(glm::vec2 mousePos, float zoomFactor);
 
     private:
-        Core::PinID pinID;                    /** @brief < Строковый идентификтор пина.*/
-        Core::Direction dir;                  /** @brief < Вход или Выход (enum Input/Output). */
-        int index;                            /** @brief < Индекс пина, если есть пины с одинаковыми PinID */
+        UUIDv4::UUID id;                      /** @brief < Уникальный идентификатор пина. */
         glm::vec2 localPos;                   /** @brief < Смещение относительно верхнего левого угла родительской ноды. */
         glm::vec2 normal;                     /** @brief < Вектор нормали */
         glm::vec2 cachedScreenPos;            /** @brief < Мировые экранные координаты пина (рассчитываются каждый кадр с учетом зума холста). */

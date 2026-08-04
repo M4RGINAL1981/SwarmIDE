@@ -30,13 +30,13 @@ namespace SwarmIDE::UI {
         std::vector<Core::LogicPin*> leftPins, rightPins, topPins, bottomPins;
 
         // 2. Раскидываем логические пины по правилам
-        for(auto& pin : pins) {
+        for(auto& [id, pin] : pins) {
             if(pin->direction == Core::Direction::Input) {
-                if(pin->id == Core::PinID::DataStream) leftPins.push_back(pin.get());
+                if(pin->type == Core::PinType::DataStream) leftPins.push_back(pin.get());
                 else bottomPins.push_back(pin.get());
             }
             else {
-                if(pin->id == Core::PinID::DataStream) rightPins.push_back(pin.get());
+                if(pin->type == Core::PinType::DataStream) rightPins.push_back(pin.get());
                 else topPins.push_back(pin.get());
             }
         }
@@ -64,7 +64,7 @@ namespace SwarmIDE::UI {
             glm::vec2 localPos(0.0f, yPos);
             glm::vec2 normal(-1.0f, 0.0f);
             
-            viewPins.push_back(std::make_unique<ViewPin>(pin->id, pin->direction, pin->index, localPos, normal));
+            viewPins[pin->GetID()] = (std::make_unique<ViewPin>(pin->GetID(), localPos, normal));
         }
 
         // Правая сторона
@@ -75,7 +75,7 @@ namespace SwarmIDE::UI {
             glm::vec2 localPos(nodeSize.x, yPos);
             glm::vec2 normal(1.0f, 0.0f);
             
-            viewPins.push_back(std::make_unique<ViewPin>(pin->id, pin->direction, pin->index, localPos, normal));
+            viewPins[pin->GetID()] = (std::make_unique<ViewPin>(pin->GetID(), localPos, normal));
         }
 
         // Вверхняя сторона
@@ -86,7 +86,7 @@ namespace SwarmIDE::UI {
             glm::vec2 localPos(xPos, 0.0f);
             glm::vec2 normal(0.0f, -1.0f);
             
-            viewPins.push_back(std::make_unique<ViewPin>(pin->id, pin->direction, pin->index, localPos, normal));
+            viewPins[pin->GetID()] = (std::make_unique<ViewPin>(pin->GetID(), localPos, normal));
         }
 
         // Нижняя сторона
@@ -97,7 +97,7 @@ namespace SwarmIDE::UI {
             glm::vec2 localPos(xPos, nodeSize.y);
             glm::vec2 normal(0.0f, 1.0f);
             
-            viewPins.push_back(std::make_unique<ViewPin>(pin->id, pin->direction, pin->index, localPos, normal));
+            viewPins[pin->GetID()] = (std::make_unique<ViewPin>(pin->GetID(), localPos, normal));
         }
 
         // 5. Логика определения фигуры на основе топологии
@@ -122,6 +122,7 @@ namespace SwarmIDE::UI {
     }
 
     void ViewNode::Draw(ImDrawList* drawList, glm::vec2 screenPos, float zoom) {
+        if (drawList == nullptr || shape == nullptr) return;
 
         // МАСШТАБИРУЕМ РАЗМЕР: Умножаем базовый размер ноды на зум камеры
         glm::vec2 scaledSize = nodeSize * zoom;
@@ -130,16 +131,14 @@ namespace SwarmIDE::UI {
         shape->DrawBackground(drawList, screenPos, scaledSize, zoom, state, isHovered);
 
         // Отрисовка пинов
-        for(auto& pin : viewPins) {
-            pin->UpdatePos(screenPos, zoom);
-            pin->Draw(drawList, zoom);
+        for(auto& [id, viewPin] : viewPins) {
+            viewPin->UpdatePos(screenPos, zoom);
+            viewPin->Draw(drawList, zoom);
         }   
     }
 
-    ViewPin* ViewNode::findViewPin(Core::PinID pinID, Core::Direction dir, int index) {
-        for(auto& viewPin : viewPins){
-            if(viewPin->ComplianceСheck(pinID, dir, index)) return viewPin.get();
-        }
+    ViewPin* ViewNode::findViewPin(UUIDv4::UUID pinID) {
+        if(viewPins.contains(pinID)) return viewPins[pinID].get();
         return nullptr;
     }
 }

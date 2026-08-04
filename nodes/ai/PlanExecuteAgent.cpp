@@ -10,13 +10,13 @@ namespace SwarmIDE::Nodes {
     PlanExecuteAgent::PlanExecuteAgent(const std::string& name) : BaseAgent(name) {  
         
         // Подключаем входные пины
-        addPin(Core::PinID::DataStream, Core::Direction::Input, Core::DataType::STRING);
-        addPin(Core::PinID::Model, Core::Direction::Input, Core::DataType::STRING);
-        addPin(Core::PinID::Memory, Core::Direction::Input, Core::DataType::STRING);
-        addPin(Core::PinID::Tools, Core::Direction::Input, Core::DataType::STRING);
+        addPin("Data", Core::PinType::DataStream, Core::Direction::Input, Core::DataType::STRING);
+        addPin("Model", Core::PinType::Model, Core::Direction::Input, Core::DataType::STRING);
+        addPin("Memory", Core::PinType::Memory, Core::Direction::Input, Core::DataType::STRING);
+        addPin("Tools", Core::PinType::Tools, Core::Direction::Input, Core::DataType::STRING);
 
         // Подключаем выходные пины
-        addPin(Core::PinID::DataStream, Core::Direction::Output, Core::DataType::STRING);  
+        addPin("Output", Core::PinType::DataStream, Core::Direction::Output, Core::DataType::STRING);  
     }
 
     void PlanExecuteAgent::Execute() {
@@ -24,11 +24,11 @@ namespace SwarmIDE::Nodes {
         SetState(Executing);                         
 
         // Логирование
-        Core::LoggingManager::ExecutingNode("ConversationalAgent", GetID());
+        Core::LoggingManager::ExecutingNode("PlanExecuteAgent", GetID());
 
         // 1. Читаем промпт и ID модели
-        std::string prompt = getPinValue(Core::PinID::DataStream, Core::Direction::Input).getValue<std::string>();
-        std::string targetModelID = getPinValue(Core::PinID::Model, Core::Direction::Input).getValue<std::string>();
+        std::string prompt = getPinValue("Data").getValue<std::string>();
+        std::string targetModelID = getPinValue("Model").getValue<std::string>();
 
         if(getSystemInstruction().size() == 0) setSystemInstruction("Always answer in Russian language. Всегда отвечай на русском языке. Передай привет");
 
@@ -42,7 +42,7 @@ namespace SwarmIDE::Nodes {
             Core::LoggingManager::Info( "  Ответ от Агента [", GetName(), "]:\n", result,"\n");
 
             // 3. Отдаем результат дальше по графу
-            setPinValue(Core::DataVariant(result), Core::PinID::DataStream, Core::Direction::Output);
+            setPinValue("Output", Core::DataVariant(result));
             SetState(Success);
 
             Core::LoggingManager::SuccessNode("ConversationalAgent", GetID());

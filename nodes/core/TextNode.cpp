@@ -7,14 +7,14 @@ namespace SwarmIDE::Nodes {
 
     TextNode::TextNode(const std::string& nodeName) : LogicNode(nodeName) {
         // Подключаем выходные пины
-        addPin(Core::PinID::DataStream, Core::Direction::Output, Core::DataType::STRING);
+        addPin("Output", Core::PinType::DataStream, Core::Direction::Output, Core::DataType::STRING);
     }
 
     TextNode::TextNode(const std::string& nodeName, const std::string& textContent) : LogicNode(nodeName) {
         text = textContent;
 
         // Подключаем выходные пины
-        addPin(Core::PinID::DataStream, Core::Direction::Output, Core::DataType::STRING);
+        addPin("Output", Core::PinType::DataStream, Core::Direction::Output, Core::DataType::STRING);
     }
   
     void TextNode::Execute() {
@@ -26,7 +26,7 @@ namespace SwarmIDE::Nodes {
 
 
         try {
-            setPinValue(Core::DataVariant(text), Core::PinID::DataStream, Core::Direction::Output);
+            setPinValue("Output", Core::DataVariant(text));
             SetState(Success);
             
             Core::LoggingManager::SuccessNode("TextNode", GetID()); 

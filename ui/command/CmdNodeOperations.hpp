@@ -41,12 +41,15 @@ namespace SwarmIDE::UI::Command {
         virtual void Undo() override;
 
     private:
-        std::string typeName;                             /** @brief < Тип ноды */
-        std::string nodeName;                             /** @brief < Имя ноды */
-        UUIDv4::UUID nodeID;                              /** @brief < ID ноды */
-        glm::vec2 worldPos = glm::vec2(0.0f, 0.0f);       /** @brief < Положение ноды на экране */
+        bool m_isFirstExecution = true;                              /** @brief < Первый ли это запуск */
+        
+        std::string typeName;                                        /** @brief < Тип ноды */
+        std::string nodeName;                                        /** @brief < Имя ноды */
+        UUIDv4::UUID nodeID;                                         /** @brief < ID ноды */
+        glm::vec2 worldPos = glm::vec2(0.0f, 0.0f);                  /** @brief < Положение ноды на экране */
+        std::unique_ptr<Nodes::LogicNode> cachedNode = nullptr;      /** @brief < Кэш для ноды */
 
-        std::vector<Core::Connection> connectionForNode;  /** @brief < Все соединения, что были у ноды */
+        std::vector<Core::LogicConnection> connectionForNode;        /** @brief < Все соединения, что были у ноды */
     };
 
     /**
@@ -81,12 +84,15 @@ namespace SwarmIDE::UI::Command {
         virtual void Undo() override;
 
     private:
-        std::string typeName;                             /** @brief < Тип ноды */
-        std::string nodeName;                             /** @brief < Имя ноды */
-        UUIDv4::UUID nodeID;                              /** @brief < ID ноды */
-        glm::vec2 worldPos = glm::vec2(0.0f, 0.0f);       /** @brief < Положение ноды на экране */
+        bool m_isFirstExecution = true;                              /** @brief < Первый ли это запуск */
         
-        std::vector<Core::Connection> connectionForNode;  /** @brief < Все соединения, что были у ноды */
+        std::string typeName;                                        /** @brief < Тип ноды */
+        std::string nodeName;                                        /** @brief < Имя ноды */
+        UUIDv4::UUID nodeID;                                         /** @brief < ID ноды */
+        glm::vec2 worldPos = glm::vec2(0.0f, 0.0f);                  /** @brief < Положение ноды на экране */
+        std::unique_ptr<Nodes::LogicNode> cachedNode = nullptr;      /** @brief < Кэш для ноды */
+
+        std::vector<Core::LogicConnection> connectionForNode;        /** @brief < Все соединения, что были у ноды */
     };
 
 }

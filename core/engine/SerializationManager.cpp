@@ -39,21 +39,21 @@ namespace SwarmIDE::Core {
         root["nodes"] = json::array();
         root["connections"] = json::array();
 
-        auto& nodes = GraphManager::getInstance().getNodes();
+        auto& logicNodes = GraphManager::getInstance().getNodes();
 
         // Запись в файл информацию о нодах
-        for(auto& node : nodes) root["objects"].push_back(node->serializeNode());            
+        for(auto& [id, logicNode] : logicNodes) root["nodes"].push_back(logicNode->serializeNode());            
 
-        // Запись в файл информацию о подключениях
-        auto& connection = ConnectionManager::getInstance().getAllConnections();
-        for(auto& connect : connection) {
+        // Запись в файл информации о подключениях
+        auto& logicConnections = ConnectionManager::getInstance().getAllConnections();
+        for(auto& [id, logicConnection] : logicConnections) {
             json connJson;
-            connJson["fromNodeID"] = connect.fromNodeID;
-            connJson["fromPinID"] = connect.fromPinID;
-            connJson["fromIndex"] = connect.fromIndex;
-            connJson["toNodeID"] = connect.toNodeID;
-            connJson["toPinID"] = connect.toPinID;
-            connJson["toIndex"] = connect.toIndex;
+            
+            connJson["id"] = logicConnection.getID().str();
+            connJson["fromNodeID"] = logicConnection.fromNodeID.str();
+            connJson["fromPinID"] = logicConnection.fromPinID.str();
+            connJson["toNodeID"] = logicConnection.toNodeID.str();
+            connJson["toPinID"] = logicConnection.toPinID.str();
 
             root["connections"].push_back(connJson);
         }
@@ -95,15 +95,13 @@ namespace SwarmIDE::Core {
         if(root.contains("connections")) {
             for (const auto& connJson : root["connections"]) {
 
-                UUIDv4::UUID fromNodeID = connJson["fromNodeID"];
-                PinID fromPinID = connJson["fromPinID"];
-                int fromIndex = connJson["fromIndex"];
+                // Явно конвертируем json-строку обратно в объект UUID
+                UUIDv4::UUID fromNodeID = UUIDv4::UUID(connJson["fromNodeID"].get<std::string>());
+                UUIDv4::UUID fromPinID = UUIDv4::UUID(connJson["fromPinID"].get<std::string>());
+                UUIDv4::UUID toNodeID = UUIDv4::UUID(connJson["toNodeID"].get<std::string>());
+                UUIDv4::UUID toPinID = UUIDv4::UUID(connJson["toPinID"].get<std::string>());
 
-                UUIDv4::UUID toNodeID = connJson["toNodeID"];
-                PinID toPinID = connJson["toPinID"];
-                int toIndex = connJson["toIndex"];
-
-                ConnectionManager::getInstance().connect(fromNodeID, fromPinID, fromIndex, toNodeID, toPinID, toIndex);
+                ConnectionManager::getInstance().connect(fromNodeID, fromPinID, toNodeID, toPinID);
             }
         }
 

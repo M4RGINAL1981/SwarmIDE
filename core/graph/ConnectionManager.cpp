@@ -6,162 +6,169 @@ namespace {
         if (!srcPin || !dstPin) return false;                           // Проверка на существование 
         if (srcPin->dataType != dstPin->dataType) return false;         // Проверка на Соответсвие типам данных пинов
         if (srcPin->direction == dstPin->direction) return false;       // Проверка на Соответсвие направлению пинов
-        if (srcPin->id != dstPin->id) return false;                     // Проверка на Соответсвие типам пинов (PinID)
+        if (srcPin->type != dstPin->type) return false;                 // Проверка на Соответсвие типов пинов
         return true;
     }
 }
 
 namespace SwarmIDE::Core {
 
-    bool Connection::operator==(Connection other) {
-
-        if(fromNodeID == other.fromNodeID &&
-        fromPinID == other.fromPinID &&
-        fromIndex == other.fromIndex &&
-        toNodeID == other.toNodeID &&
-        toPinID == other.toPinID &&
-        toIndex == other.toIndex) return true;
-
-        if(fromNodeID == other.toNodeID &&
-        fromPinID == other.toPinID &&
-        fromIndex == other.toIndex &&
-        toNodeID == other.fromNodeID &&
-        toPinID == other.fromPinID &&
-        toIndex == other.fromIndex) return true;
+    bool LogicConnection::operator==(const LogicConnection other) const {
+        if(fromPinID == other.fromPinID && toPinID == other.toPinID && fromNodeID == other.fromNodeID && toNodeID == other.toNodeID) return true;
+        if(fromPinID == other.toPinID && toPinID == other.fromPinID && fromNodeID == other.toNodeID && toNodeID == other.fromNodeID) return true;
         return false;
     }
 
-    Connection* ConnectionManager::connect(UUIDv4::UUID fromNodeID, PinID fromPinID, int fromIndex, 
-                                           UUIDv4::UUID toNodeID, PinID toPinID, int toIndex) {
-        
+    std::optional<UUIDv4::UUID> ConnectionManager::connect(UUIDv4::UUID fromNodeID, UUIDv4::UUID fromPinID, UUIDv4::UUID toNodeID, UUIDv4::UUID toPinID) {
+
+        if (findConnection(fromNodeID, fromPinID, toNodeID, toPinID) != nullptr) {
+            return std::nullopt; // Связь уже существует!
+        }
+
         // Убираем самосвязывание
-        if(fromNodeID == toNodeID) return nullptr; 
+        if(fromNodeID == toNodeID) return std::nullopt; 
 
         // Находим логические ноды
         Nodes::LogicNode* srcNode = GraphManager::getInstance().findNodeByID(fromNodeID);
         Nodes::LogicNode* dstNode = GraphManager::getInstance().findNodeByID(toNodeID);
 
         // Если ноды не обнаружены - возвращаем пустышку
-        if(!srcNode || !dstNode) return nullptr;
+        if(!srcNode || !dstNode) return std::nullopt;
 
         // Находим логические пины нод
-        LogicPin* srcPin = srcNode->findPin(fromPinID, Direction::Output, fromIndex);
-        LogicPin* dstPin = dstNode->findPin(toPinID, Direction::Input, toIndex);
+        LogicPin* srcPin = srcNode->findPin(fromPinID);
+        LogicPin* dstPin = dstNode->findPin(toPinID);
 
         // Проверка валидации пинов
-        if (!isValidConnection(srcPin, dstPin)) return nullptr;
+        if (!isValidConnection(srcPin, dstPin)) return std::nullopt;
 
         // Если количество подключений не соблюдено - возвращем пустышку
         if((srcPin->maxConnections != -1 && srcPin->currentConnections >= srcPin->maxConnections) || 
-           (dstPin->maxConnections != -1 && dstPin->currentConnections >= dstPin->maxConnections)) return nullptr;
+           (dstPin->maxConnections != -1 && dstPin->currentConnections >= dstPin->maxConnections)) return std::nullopt;
 
         // Увеличиваем счётчик подключений к пинам
         srcPin->currentConnections++;
         dstPin->currentConnections++;
 
         // Создаём соединение
-        Connection connect = {fromNodeID, fromPinID, fromIndex, toNodeID, toPinID, toIndex};
+        LogicConnection connect = {fromNodeID, fromPinID, toNodeID, toPinID };
 
-        // Проверяем на уже существование соединения
-        auto it = std::find(connection.begin(), connection.end(), connect);
-        if(it == connection.end()) {
-            LoggingManager::Info("[CREATE]: Connection is create");
-            connection.push_back(connect);
-            return &connection.back(); 
-        }
-        
-        return &(*it);
+        LoggingManager::Info("[CREATE]: Connection is create");
+        connections[connect.getID()] = connect;
+        return connect.getID();
     }
 
-    Connection* ConnectionManager::connect(Connection* conn){
-        if(!conn) return nullptr;
-
-        if(conn->fromNodeID == conn->toNodeID) return nullptr; 
+    std::optional<UUIDv4::UUID> ConnectionManager::connect(const LogicConnection& conn){
+        if(conn.fromNodeID == conn.toNodeID) return std::nullopt; 
 
         // Находим логические ноды
-        Nodes::LogicNode* srcNode = GraphManager::getInstance().findNodeByID(conn->fromNodeID);
-        Nodes::LogicNode* dstNode = GraphManager::getInstance().findNodeByID(conn->toNodeID);
+        Nodes::LogicNode* srcNode = GraphManager::getInstance().findNodeByID(conn.fromNodeID);
+        Nodes::LogicNode* dstNode = GraphManager::getInstance().findNodeByID(conn.toNodeID);
 
-        // Если ноды не обнаружены - возвращаем пустышку
-        if(!srcNode || !dstNode) return nullptr;
+        // Если нodы не обнаружены - возвращаем пустышку
+        if(!srcNode || !dstNode) return std::nullopt;
 
-        // Находим логические пины нод
-        LogicPin* srcPin = srcNode->findPin(conn->fromPinID, Direction::Output, conn->fromIndex);
-        LogicPin* dstPin = dstNode->findPin(conn->toPinID, Direction::Input, conn->toIndex);
+        // Находим логические пины нod
+        LogicPin* srcPin = srcNode->findPin(conn.fromPinID);
+        LogicPin* dstPin = dstNode->findPin(conn.toPinID);
 
         // Проверка валидации пинов
-        if (!isValidConnection(srcPin, dstPin)) return nullptr;
+        if (!isValidConnection(srcPin, dstPin)) return std::nullopt;
 
         // Если количество подключений не соблюдено - возвращем пустышку
         if((srcPin->maxConnections != -1 && srcPin->currentConnections >= srcPin->maxConnections) || 
-           (dstPin->maxConnections != -1 && dstPin->currentConnections >= dstPin->maxConnections)) return nullptr;
-
-        // Увеличиваем счётчик подключений к пинам
-        srcPin->currentConnections++;
-        dstPin->currentConnections++;
+           (dstPin->maxConnections != -1 && dstPin->currentConnections >= dstPin->maxConnections)) return std::nullopt;
 
         // Проверяем на уже существование соединения
-        auto it = std::find(connection.begin(), connection.end(), *conn);
-        if(it == connection.end()) {
+        if(!connections.contains(conn.getID())) {
             LoggingManager::Info("[CREATE]: Connection is create");
-            connection.push_back(*conn);
-            return &connection.back(); 
+            // Увеличиваем счётчик подключений к пинам
+            srcPin->currentConnections++;
+            dstPin->currentConnections++;
+            connections[conn.getID()] = conn;
         }
-        
-        return &(*it);
+        return conn.getID();
     } 
 
-    void ConnectionManager::disconnect(Connection* conn) {
+    void ConnectionManager::disconnect(UUIDv4::UUID connectionID) {
+        auto conn = findConnection(connectionID);
         if(!conn) return;
-        auto it = std::find(connection.begin(), connection.end(), *conn);
-        if(it != connection.end()) connection.erase(it);
 
-        LoggingManager::Info("[DELETE]: Connection is disconect");
+        if(connections.contains(connectionID)) {
+            
+            auto srcNode = GraphManager::getInstance().findNodeByID(conn->fromNodeID);
+            auto dstNode = GraphManager::getInstance().findNodeByID(conn->toNodeID);
+            
+            if (srcNode && dstNode) {
+                auto srcPin = srcNode->findPin(conn->fromPinID);
+                auto dstPin = dstNode->findPin(conn->toPinID);
+                
+                if (srcPin && srcPin->currentConnections > 0) srcPin->currentConnections--;
+                if (dstPin && dstPin->currentConnections > 0) dstPin->currentConnections--;
+            }
+
+            connections.erase(connectionID);
+            LoggingManager::Info("[DELETE]: Connection is disconect");
+        }
     }
 
-    std::vector<Connection*> ConnectionManager::getOutgoingConnectionsForNode(UUIDv4::UUID nodeID) {
-        std::vector<Connection*> outgoing;
-        for(auto& conn : connection) {
-            if(conn.fromNodeID == nodeID) {
-                outgoing.push_back(&conn);
+    std::vector<LogicConnection*> ConnectionManager::getOutgoingConnectionsForNode(UUIDv4::UUID nodeID) {
+        std::vector<LogicConnection*> outgoing;
+        for(auto& [id, connection] : connections) {
+            if(connection.fromNodeID == nodeID) {
+                outgoing.push_back(&connection);
             }
         }
         return outgoing;
     }
 
-    std::vector<Connection*> ConnectionManager::getIncomingConnectionsForNode(UUIDv4::UUID nodeID) {
-        std::vector<Connection*> incoming;
-        for(auto& conn : connection) {
-            if(conn.toNodeID == nodeID) {
-               incoming.push_back(&conn);
+    std::vector<LogicConnection*> ConnectionManager::getIncomingConnectionsForNode(UUIDv4::UUID nodeID) {
+        std::vector<LogicConnection*> incoming;
+        for(auto& [id, connection] : connections) {
+            if(connection.toNodeID == nodeID) {
+               incoming.push_back(&connection);
             }
         }
         return incoming;
     }
 
-    std::vector<Connection> ConnectionManager::getAllConnectionsForNode(UUIDv4::UUID nodeID) {
-        std::vector<Connection> result;
-        for(auto& conn : connection) {
-            if(conn.fromNodeID == nodeID || conn.toNodeID == nodeID) {
-                result.push_back(conn);
+    std::vector<Core::LogicConnection> ConnectionManager::getAllConnectionsForNode(UUIDv4::UUID nodeID) {
+        std::vector<LogicConnection> result;
+        for(auto& [id, connection] : connections) {
+            if(connection.fromNodeID == nodeID || connection.toNodeID == nodeID) {
+                result.push_back(connection);
             }
         }
         return result;
     }       
 
-    Connection* ConnectionManager::findConnection(UUIDv4::UUID fromNodeID, PinID fromPinID, int fromIndex,
-                               UUIDv4::UUID toNodeID, PinID toPinID, int toIndex) {
-        for(auto conn : connection) {
-            Connection otherConn = { fromNodeID, fromPinID, fromIndex, toNodeID, toPinID, toIndex };
-            if(conn == otherConn) {
-                return &conn;
+    LogicConnection* ConnectionManager::findConnection(UUIDv4::UUID fromNodeID, UUIDv4::UUID fromPinID, UUIDv4::UUID toNodeID, UUIDv4::UUID toPinID) {
+        for(auto& [id, connection] : connections) {
+            if((connection.fromPinID == fromPinID && connection.toPinID == toPinID) ||
+            (connection.fromPinID == toPinID && connection.toPinID == fromPinID)) {
+                return &connection;
             }
         }
         return nullptr;
     }
 
+    LogicConnection* ConnectionManager::findConnection(UUIDv4::UUID connectionID) {
+        if(connections.contains(connectionID)) return &connections[connectionID];
+        return nullptr;
+    }
+
+    std::optional<LogicConnection> ConnectionManager::extractLogicConnection(UUIDv4::UUID connectionID) {
+        if (connections.contains(connectionID)) {
+            auto conn = connections[connectionID];
+            disconnect(connectionID);
+            return conn;
+        }
+        return std::nullopt;
+    }
+
     void ConnectionManager::removeConnectionsForNode(UUIDv4::UUID nodeID) {
-        std::erase_if(connection, [nodeID](const Connection& conn) {
+        std::erase_if(connections, [nodeID](const std::pair<UUIDv4::UUID, LogicConnection>& kvp) {
+            const LogicConnection& conn = kvp.second;
             return conn.fromNodeID == nodeID || conn.toNodeID == nodeID;
         });
     }
@@ -173,7 +180,10 @@ namespace SwarmIDE::Core {
 
     ConnectionManager::~ConnectionManager() {
         Core::LoggingManager::Info("[CONNECTION_MANAGER]: Destructor"); 
-        Core::LoggingManager::Info("[CONNECTION]: Number of connections: ", connection.size());
-        connection.clear();
+        Core::LoggingManager::Info("[CONNECTION_MANAGER]: LogicConnectionID:");
+        for(auto& [id, connection] : connections) {
+            Core::LoggingManager::Info("-", id.str());
+        }
+        connections.clear();
     }
 }

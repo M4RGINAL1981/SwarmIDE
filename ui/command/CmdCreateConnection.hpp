@@ -2,6 +2,7 @@
 #include "SwarmIDE.hpp"
 #include "ui/command/Cmd.hpp"
 #include "core/graph/ConnectionManager.hpp"
+#include <optional>
 
 namespace SwarmIDE::UI::Command {
 
@@ -16,18 +17,14 @@ namespace SwarmIDE::UI::Command {
     public:
 
         /**
-         * @brief Конструктор команды, для создания нового соединения
-         * @details Иницилизирует структуру conn.
+         * @brief Конструктор команды создания связи
          * 
-         * @param[in] fromNodeID   ID ноды-источника
-         * @param[in] fromPinID    ID пина ноды-источника
-         * @param[in] fromIndex    Индекс пина ноды-источника
-         * @param[in] toNodeID     ID ноды-цели
-         * @param[in] toPinID      ID пина ноды-цели
-         * @param[in] toIndex      Индекс пина ноды-цели
+         * @param fromNodeID  ID ноды-источника
+         * @param fromPinID   ID пина ноды-источника
+         * @param toNodeID    ID ноды-цели
+         * @param toPinID     ID пина ноды-цели
          */
-        CmdCreateConnection(UUIDv4::UUID fromNodeID, Core::PinID fromPinID, int fromIndex,
-                            UUIDv4::UUID toNodeID, Core::PinID toPinID, int toIndex);
+        CmdCreateConnection(UUIDv4::UUID fromNodeID, UUIDv4::UUID fromPinID, UUIDv4::UUID toNodeID, UUIDv4::UUID toPinID);
 
         /**
          * @brief Создаёт связь между нодами
@@ -40,14 +37,16 @@ namespace SwarmIDE::UI::Command {
         virtual void Undo() override;
 
     private:
+        bool m_isFirstExecution = true;                                               /** @brief < Первый ли это запуск */
 
-        UUIDv4::UUID fromNodeID;       /** @brief < ID ноды-источника */
-        Core::PinID fromPinID;         /** @brief < ID пина ноды-источника */
-        int fromIndex;                 /** @brief < Индекс пина ноды-источника */
+        UUIDv4::UUID connectionID;                                                    /** @brief < ID соединения */
+        UUIDv4::UUID fromNodeID;                                                      /** @brief < ID ноды-источника */
+        UUIDv4::UUID fromPinID;                                                       /** @brief < ID пина ноды-источника */
+        UUIDv4::UUID toNodeID;                                                        /** @brief < ID ноды-цели */
+        UUIDv4::UUID toPinID;                                                         /** @brief < ID пина ноды-цели */
 
-        UUIDv4::UUID toNodeID;         /** @brief < ID ноды-цели */
-        Core::PinID toPinID;           /** @brief < ID пина ноды-цели */
-        int toIndex;                   /** @brief < Индекс пина ноды-цели */
+        std::optional<Core::LogicConnection>  cachedLogicConnection = std::nullopt;   /** @brief < Кэш для логического-подключения */
+        std::unique_ptr<UI::ViewConnection> cachedViewConnection = nullptr;           /** @brief < Кэш для визуального-подключения */
     };
 
 }

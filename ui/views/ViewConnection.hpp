@@ -16,11 +16,11 @@ namespace SwarmIDE::UI {
         /**
          * @brief Конструктор визуального соединения
          * 
+         * @param[in] id ID соединения (совпадает с ID логического соединения)
          * @param[in] sPin Указатель на выходной пин ноды-источника
          * @param[in] tPin Указатель на входной пин ноды-цели
-         * @param[in] conn Указатель на структуру Core::Connection
          */
-        ViewConnection(ViewPin* sPin, ViewPin* tPin, Core::Connection* conn) : sourcePin(sPin), targetPin(tPin), connection(conn) {};
+        ViewConnection(UUIDv4::UUID id, ViewPin* sPin, ViewPin* tPin) : connectionID(id), sourcePin(sPin), targetPin(tPin) {}
 
         /**
          * @brief Деструктор визуального соеднинения
@@ -35,15 +35,15 @@ namespace SwarmIDE::UI {
         void Draw(ImDrawList* drawList, float zoom);
 
         /**
-         * @brief Вернуть логическое соединение
-         * @return Core::Connection* 
+         * @brief Возвращает ID соединения
+         * @return UUIDv4::UUID ID соединения
          */
-        Core::Connection* GetConnection() { return connection; }
-
+        UUIDv4::UUID GetID() const { return connectionID; }
     private:
+
+        UUIDv4::UUID connectionID;                    /** @brief < ID соединения */
         ViewPin* sourcePin = nullptr;                 /** @brief < Указатель на выходной пин ноды-источника */
         ViewPin* targetPin = nullptr;                 /** @brief < Указатель на входной пин ноды-цели */
-        Core::Connection* connection = nullptr;       /** @brief < Информация о соединении */
     };
 
 }

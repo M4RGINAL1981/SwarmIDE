@@ -7,31 +7,67 @@ namespace SwarmIDE::Nodes {
 
     MergeNode::MergeNode(const std::string& nodeName) : LogicNode(nodeName) {
         // Установка входных пинов
-        addPin(Core::PinID::DataStream, Core::Direction::Input, Core::DataType::STRING, 0);
-        addPin(Core::PinID::DataStream, Core::Direction::Input, Core::DataType::STRING, 1);
+        addPin("Data1", Core::PinType::DataStream, Core::Direction::Input, Core::DataType::STRING);
+        addPin("Data2", Core::PinType::DataStream, Core::Direction::Input, Core::DataType::STRING);
 
         // Установка выходных пинов
-        addPin(Core::PinID::DataStream, Core::Direction::Output, Core::DataType::STRING, 0);
+        addPin("Output", Core::PinType::DataStream, Core::Direction::Output, Core::DataType::STRING);
     }
 
     void MergeNode::Execute() {
-        // Устанавливаем ноде статус Executing (Выполнение)
-        SetState(Executing);                         
+        SetState(Executing);
+        Core::LoggingManager::ExecutingNode("MergeNode", GetID());
 
-        // Логирование
-        Core::LoggingManager::ExecutingNode("MergeNode", GetID()); 
+        auto readStringValue = [&](const char* pinName) -> std::string {
+            auto pinValue = getPinValue(pinName);
+            if (pinValue.isEmpty()) {
+                Core::LoggingManager::Warning("MergeNode input pin ", pinName, " is empty.");
+                return {};
+            }
+
+            if (pinValue.isType<std::string>()) {
+                return pinValue.getValue<std::string>();
+            }
+
+            if (pinValue.isType<int>()) {
+                return std::to_string(pinValue.getValue<int>());
+            }
+
+            if (pinValue.isType<float>()) {
+                return std::to_string(pinValue.getValue<float>());
+            }
+
+            if (pinValue.isType<nlohmann::json>()) {
+                return pinValue.getValue<nlohmann::json>().dump();
+            }
+
+            Core::LoggingManager::Warning("MergeNode input pin ", pinName, " has an unsupported value type.");
+            return {};
+        };
 
         try {
-            std::string answer1 = getPinValue(Core::PinID::DataStream, Core::Direction::Input, 0).getValue<std::string>();
-            std::string answer2 = getPinValue(Core::PinID::DataStream, Core::Direction::Input, 1).getValue<std::string>();
-            setPinValue(Core::DataVariant(answer1 + answer2), Core::PinID::DataStream, Core::Direction::Output);
+            const std::string answer1 = readStringValue("Data1");
+            const std::string answer2 = readStringValue("Data2");
+            const std::string mergedValue = answer1 + answer2;
+
+            setPinValue("Output", Core::DataVariant(mergedValue));
+
+            if (mergedValue.empty()) {
+                Core::LoggingManager::Warning("MergeNode produced an empty output because no input values were available.");
+            }
 
             SetState(Success);
-            Core::LoggingManager::SuccessNode("MergeNode", GetID()); 
+            Core::LoggingManager::SuccessNode("MergeNode", GetID());
+        }
+        catch (const std::exception& e) {
+            SetState(Failed);
+            Core::LoggingManager::Error("MergeNode execution failed: ", e.what());
+            Core::LoggingManager::FailedNode("MergeNode", GetID());
         }
         catch (...) {
             SetState(Failed);
-            Core::LoggingManager::FailedNode("MergeNode", GetID()); 
+            Core::LoggingManager::Error("MergeNode execution failed with an unknown exception.");
+            Core::LoggingManager::FailedNode("MergeNode", GetID());
         }
     }
 
