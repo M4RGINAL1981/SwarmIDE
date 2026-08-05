@@ -52,15 +52,15 @@ namespace SwarmIDE::Core {
         /**
          * @brief Конструктор логического пина
          * 
-         * @param t            Тип пина
+         * @param type         Тип пина
          * @param dir          Направление пина
          * @param dT           Тип данных пина
-         * @param ind          Индекс пина (Если в ноде, есть несколько пинов с одинаковым PinID)
+         * @param nID          Индекс пина (Если в ноде, есть несколько пинов с одинаковым PinID)
          * @param maxConn      Максимальное кол-во соединений
          * @param v            Данные, которые храняться в пине
          */
-        LogicPin(PinType t, Direction dir, DataType dT, UUIDv4::UUID nID, int maxConn, DataVariant v) {
-            type = t;
+        LogicPin(PinType type, Direction dir, DataType dT, UUIDv4::UUID nID, int maxConn, DataVariant v) {
+            this->type = type;
             direction = dir;
             dataType = dT;
             nodeID = nID;

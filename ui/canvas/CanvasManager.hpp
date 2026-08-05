@@ -13,39 +13,6 @@
 namespace SwarmIDE::UI {
 
     /**
-     * @brief Указывает текущиее состояние событий мыши
-     */
-    enum class MouseEvents {
-        IDLE,                  /** @brief < Ничего не делаем / Просто водим мышкой */
-        DRAGGING_NODE,         /** @brief < Тащим ноду */
-        DRAGGING_WIRE          /** @brief < Тянем связь из пина */
-    };
-
-    /**
-     * @struct ActiveLinkContext
-     * @brief Структура, хранящая состояние сборки связи 
-     * (тянет ли пользователь провод из пина прямо сейчас, откуда тянет, где мышь).
-     */
-    struct ActiveLinkContext {
-        MouseEvents state = MouseEvents::IDLE;         /** @brief < Текущиее состояние */
-
-        // Данные для перемещения ноды
-        UUIDv4::UUID grabberNodeID;                    /** @brief < Какую ноду тащим */
-        glm::vec2 initialNodePos;                      /** @brief < Где она была до начала перетаскивания (для отмены) */
-
-        // Данные для создания связи
-        UUIDv4::UUID startNodeID;                      /** @brief < Из какой ноды тянем связь */  
-        UUIDv4::UUID startPinID;                       /** @brief < Из какого пина тянем связь */
-        glm::vec2 currentMouseWorldPos;                /** @brief < Текущие координаты мыши в мире */
-
-        void Reset() {                                 /** @brief < Методы для очистки контекста */
-            state = MouseEvents::IDLE;
-            initialNodePos = glm::vec2(0.0f, 0.0f);
-            currentMouseWorldPos = glm::vec2(0.0f, 0.0f);
-        }    
-    };
-    
-    /**
      * @class CanvasManager
      * @brief
      * 
@@ -88,7 +55,7 @@ namespace SwarmIDE::UI {
          * @brief Получить текущее количество визуальных нод на сцене холста.
          * @return int Количество активных визуальных нод.
          */
-        int getCountViewNodes() { return viewNodes.size(); }        
+        int getCountViewNodes() const { return viewNodes.size(); }        
         
         /**
          * @brief Получить доступ к контейнеру со всеми узлами.
@@ -134,7 +101,7 @@ namespace SwarmIDE::UI {
          * @brief Получить текущее количество визуальных нод на сцене холста.
          * @return int Количество активных визуальных нод.
          */
-        int getCountViewConnection() { return viewConnections.size(); }        
+        int getCountViewConnection() const { return viewConnections.size(); }        
         
         /**
          * @brief Получить доступ к контейнеру со всеми визуальными соединениями.
@@ -158,16 +125,15 @@ namespace SwarmIDE::UI {
          */
         void Draw();
 
-        /**
-         * @brief Клик по пустому месту, выделение рамкой (Box Selection),
-         * панорамирование холста средней кнопкой мыши.
-         * @param[in] zoomFactor - текущий зум.
-         */
-        void HandleCanvasInputs(float zoomFactor);
-
         Graphics::Camera& GetCamera() { return camera; }
         Graphics::Grid& GetGrid() { return grid; }
         void Update(float deltaTime) { camera.update(deltaTime); }
+
+        /**
+         * @brief Получить текущий размер окна
+         * @return glm::vec2 Текущий размер окна
+         */
+        glm::vec2 GetWindowSize() const { return windowSize; }
 
         /**
          * @brief Установить размер окна
@@ -177,6 +143,21 @@ namespace SwarmIDE::UI {
          */
         void SetWindowSize(int width, int height) { windowSize = glm::vec2((float)width, (float)height); }
 
+        /**
+         * @brief Установить состояние временного провода
+         * @param[in] nodeID   ID ноды
+         * @param[in] pinID    ID пина
+         * @param[in] mousePos Текущее положение мыши на экране
+         */
+        void SetTempWire(const UUIDv4::UUID& nodeID, const UUIDv4::UUID& pinID, const glm::vec2& mousePos) {
+            tempWire = {nodeID, pinID, mousePos};
+        }
+
+        /**
+         * @brief Очистить состояние временного провода
+         */
+        void ClearTempWire() { tempWire = std::nullopt; }
+
         // Блокируем копирование и перемещение менеджера
         CanvasManager(const CanvasManager&) = delete;
         CanvasManager& operator=(const CanvasManager&) = delete;
@@ -184,6 +165,17 @@ namespace SwarmIDE::UI {
         CanvasManager& operator=(CanvasManager&&) = delete;
     private:
         friend class AppController;
+
+        /**
+         * @struct TempWireContext 
+         * @brief Состояние временного провода
+         */
+        struct TempWireContext {
+            UUIDv4::UUID startNodeID;
+            UUIDv4::UUID startPinID;
+            glm::vec2 currentMouseWorldPos;
+        };
+        std::optional<TempWireContext> tempWire = std::nullopt;
 
         CanvasManager();
         ~CanvasManager();
@@ -194,7 +186,5 @@ namespace SwarmIDE::UI {
         Graphics::Grid grid;                                                                    /** @brief < Объект сетки. Для отрисовки сетки. */
         std::unordered_map<UUIDv4::UUID, std::unique_ptr<ViewNode>> viewNodes;                  /** @brief < Хеш-Таблица. Ключ - ID логической ноды. Значение - Визуальная нода. */
         std::unordered_map<UUIDv4::UUID, std::unique_ptr<ViewConnection>> viewConnections;      /** @brief < Вектор визуальных соединений. */
-
-        ActiveLinkContext activeLinkContext;
     };
 }

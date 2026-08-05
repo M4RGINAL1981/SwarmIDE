@@ -158,19 +158,19 @@ namespace SwarmIDE::UI {
         // Проходимся сначала по всем связям, чтобы они были отрисованы под нодами.
         for(auto& viewConn : viewConnections) viewConn.second->Draw(drawList, zoom);
 
-        // Если событие мыши - проведение связи
-        if (activeLinkContext.state == MouseEvents::DRAGGING_WIRE) {
+        // Если идёт событие проведение связи
+        if (tempWire.has_value()) {
             // Находим стартовую ноду
-            ViewNode* startNode = findViewNodeByID(activeLinkContext.startNodeID);
+            ViewNode* startNode = findViewNodeByID(tempWire->startNodeID);
             if (startNode) {
                 // Находим стартовый пин
-                ViewPin* startPin = startNode->findViewPin(activeLinkContext.startPinID);
+                ViewPin* startPin = startNode->findViewPin(tempWire->startPinID);
                 if (startPin) {
                     // Получаем экранные координаты пина - Начало связи
                     glm::vec2 startScreenPos = startPin->GetScreenPos();
                     glm::vec2 startNormalPin = startPin->GetNormal();
                     // Получаем координаты мыши - Конец связи
-                    glm::vec2 endScreenPos = camera.worldToScreen(activeLinkContext.currentMouseWorldPos, windowSize);
+                    glm::vec2 endScreenPos = camera.worldToScreen(tempWire->currentMouseWorldPos, windowSize);
 
                     auto& theme = ThemeManager::getInstance();
                     float strength = theme.GetStyleVar(StyleVarRole::ConnectionStrength);
@@ -178,13 +178,12 @@ namespace SwarmIDE::UI {
                     // Отрисовываем кубическую кривую Безье
                     drawList->AddBezierCubic(
 
-                        ImVec2(startScreenPos.x, startScreenPos.y),                                                                             // Начало связи
-                        ImVec2(startScreenPos.x + startNormalPin.x * zoom * strength, startScreenPos.y + startNormalPin.y * zoom * strength),   // Первая направляющая/конечная точка
-                        ImVec2(endScreenPos.x - startNormalPin.x * zoom * strength, endScreenPos.y - startNormalPin.y * zoom * strength),       // Вторая направляющая/Конечная точка
-                        ImVec2(endScreenPos.x, endScreenPos.y),                                                                                 // Конец связи
+                        ImVec2(startScreenPos.x, startScreenPos.y),                                                                                   // Начало связи
+                        ImVec2(startScreenPos.x + startNormalPin.x * zoom * strength, startScreenPos.y + startNormalPin.y * zoom * strength),         // Первая направляющая/конечная точка
+                        ImVec2(endScreenPos.x - startNormalPin.x * zoom * strength, endScreenPos.y - startNormalPin.y * zoom * strength),             // Вторая направляющая/Конечная точка
+                        ImVec2(endScreenPos.x, endScreenPos.y),                                                                                       // Конец связи
                         /** @todo Передача цвета должна происходить через ThemeManger. Хотя не обязательно, раз это проведение, а не построение. */
                         IM_COL32(200, 200, 200, 255), 
-                        // Вообще не понял - какого хуя тут умножение
                         2.0f * zoom
                     );
                 }
@@ -200,173 +199,4 @@ namespace SwarmIDE::UI {
         }
     }
 
-    void CanvasManager::HandleCanvasInputs(float zoomFactor) {
-        ImGuiIO& io = ImGui::GetIO();
-        // Получаем текущее положение мыши
-        glm::vec2 mousePos = glm::vec2(io.MousePos.x, io.MousePos.y);
-        // Сохраняем коодринаты мыши
-        activeLinkContext.currentMouseWorldPos = camera.screenToWorld(mousePos, windowSize);
-
-        // Объекты, что были выбраны пользоваелем (Визуальный пин и нода)
-        ViewPin* hoveredViewPin = nullptr;
-        // Будем фиксировать ID ноды, которой принадлежит пин
-        UUIDv4::UUID hoveredPinParentNodeID; 
-        ViewNode* hoveredViewNode = nullptr;
-        
-        // Проходимся по всем нодам и указываем, что они не выбраны
-        for(auto& [viewNodeID, viewNode] : viewNodes) {
-            viewNode->SetHovered(false);
-            // Проходимся по всем пинам ноды и указываем, что они не выбраны
-            for(auto& [viewPinID, viewPin] : viewNode->GetViewPins()) {
-                viewPin->SetHovered(false);
-            }
-        }
-
-        // Если событие мыши - Простой
-        if(activeLinkContext.state == MouseEvents::IDLE) {   
-            // Проходимся по всем визуальным нодам
-            for(auto& [viewNodeID, viewNode] : viewNodes) {
-                auto& viewPins = viewNode->GetViewPins();
-
-                // Проходимся по всем визуальны пинам
-                for(auto& [viewPinID, viewPin] : viewPins) {
-                    if(viewPin->IsPointInside(mousePos, zoomFactor)) {
-                        viewPin->SetHovered(true);
-                        hoveredViewPin = viewPin.get();
-                        // Запоминаем ID родительской нodы пина
-                        hoveredPinParentNodeID = viewNodeID; 
-                        break; 
-                    }
-                }
-
-                // Если пользователь не выбрал пин, проверям выбрал ли пользователь ноду.
-                if(hoveredViewPin == nullptr) {
-                    glm::vec2 screenPos = camera.worldToScreen(viewNode->worldPos, windowSize);
-                    if(viewNode->shape->isPointInside(mousePos, screenPos, viewNode->nodeSize, zoomFactor)) {
-                        viewNode->isHovered = true;
-                        hoveredViewNode = viewNode.get();
-                        break;
-                    }
-                }
-            }
-
-            // Если пользователь указывает на пин
-            if(hoveredViewPin != nullptr) {
-                // Если пользователь кликнул на пин
-                if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                    // Указываем событие мыши, как проведение связи
-                    activeLinkContext.state = MouseEvents::DRAGGING_WIRE;
-                    activeLinkContext.startNodeID = hoveredPinParentNodeID;
-                    activeLinkContext.startPinID = hoveredViewPin->GetPinID();
-                }
-            }
-            // Если пользователь выбрал ноду
-            else if(hoveredViewNode != nullptr) {
-                // Если пользователь кликнул на ноду
-                if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                    // Указываем событие мыши, как перетаскивание ноды
-                    activeLinkContext.state = MouseEvents::DRAGGING_NODE;
-                    activeLinkContext.grabberNodeID = hoveredViewNode->nodeID;
-                    activeLinkContext.initialNodePos = hoveredViewNode->GetWorldPos();
-                }
-            }
-        }
-        // Если событие мыши - перетаскивание ноды
-        else if(activeLinkContext.state == MouseEvents::DRAGGING_NODE) {
-            if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
-                // Находим смещение мыши (Дельту)
-                glm::vec2 worldDelta = glm::vec2(io.MouseDelta.x, io.MouseDelta.y) / camera.zoomFactor;
-                ViewNode* draggedNode = findViewNodeByID(activeLinkContext.grabberNodeID);
-                if (draggedNode) {
-                    /** @todo Здесь должна быть команда по перемещению ноды. CmdMoveNode */
-
-                    // Смешаем ноду на дельту
-                    draggedNode->MoveBy(worldDelta);
-                }
-            }
-            
-            // Если пользователь отпустил мышь - Reset (Сброс события мыши в IDLE)
-            if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-                activeLinkContext.Reset();
-            }
-        }
-        // Если собитие мыши - проведение связи
-        else if(activeLinkContext.state == MouseEvents::DRAGGING_WIRE) {
-
-            // Проходимся циклом по всем визуальным нодам
-            for(auto& [viewNodeID, viewNode] : viewNodes) {
-                auto& viewPins = viewNode->GetViewPins();
-                // Проходимся циклом по всем визуальным пинам
-                for(auto& [viewPinID, viewPin] : viewPins) {
-                    // Если пользователь указывает на новый пин (Второй). То есть хочет создать связь
-                    if(viewPin->IsPointInside(mousePos, zoomFactor)) {
-                        // Сохраняем второй теперь уже выбранный пин
-                        viewPin->SetHovered(true);
-                        hoveredViewPin = viewPin.get();
-                        hoveredPinParentNodeID = viewNodeID;
-                        break;
-                    }
-                }
-                if(hoveredViewPin) break;
-            }
-
-            if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
-                try {
-                    // Если выбранный пин (второй) существует, и начальный пин (первый) не равен выбранному — строим связь.
-                    if (hoveredViewPin != nullptr && hoveredViewPin->GetPinID() != activeLinkContext.startPinID) {
-                        auto* startViewNode = findViewNodeByID(activeLinkContext.startNodeID);
-                        auto* startViewPin = (startViewNode != nullptr) ? startViewNode->findViewPin(activeLinkContext.startPinID) : nullptr;
-
-                        auto* logicStartPin = (startViewPin != nullptr)
-                            ? Core::GraphManager::getInstance().findPinGlobaly(activeLinkContext.startPinID)
-                            : nullptr;
-                        auto* logicHoveredPin = Core::GraphManager::getInstance().findPinGlobaly(hoveredViewPin->GetPinID());
-
-                        if (logicStartPin != nullptr && logicHoveredPin != nullptr) {
-
-                            if (logicStartPin->nodeID == logicHoveredPin->nodeID) {
-                                Core::LoggingManager::Warning("Connection dropped: source and target pin belong to the same node.");
-                            }
-                            else if (logicStartPin->direction == logicHoveredPin->direction) {
-                                Core::LoggingManager::Warning("Connection dropped: pins have the same direction.");
-                            }
-                            else if (logicStartPin->dataType != logicHoveredPin->dataType || logicStartPin->type != logicHoveredPin->type) {
-                                Core::LoggingManager::Warning("Connection dropped: pin data/type mismatch.");
-                            }
-                            else if (logicStartPin->type != logicHoveredPin->type) {
-                                Core::LoggingManager::Warning("Connection dropped: pin types do not match.");
-                            }
-                            else if (logicStartPin->maxConnections != -1 && logicStartPin->GetCurrentConnections() >= logicStartPin->maxConnections) {
-                                Core::LoggingManager::Warning("Connection dropped: source pin has reached its maximum connections.");
-                            }
-                            else if (logicHoveredPin->maxConnections != -1 && logicHoveredPin->GetCurrentConnections() >= logicHoveredPin->maxConnections) {
-                                Core::LoggingManager::Warning("Connection dropped: target pin has reached its maximum connections.");
-                            }
-                            else {
-                                UUIDv4::UUID fromNodeID = (logicHoveredPin->direction == Core::Direction::Input) ? activeLinkContext.startNodeID : hoveredPinParentNodeID;
-                                UUIDv4::UUID fromPinID = (logicHoveredPin->direction == Core::Direction::Input) ? activeLinkContext.startPinID : hoveredViewPin->GetPinID();
-
-                                UUIDv4::UUID toNodeID = (logicHoveredPin->direction == Core::Direction::Output) ? activeLinkContext.startNodeID : hoveredPinParentNodeID;
-                                UUIDv4::UUID toPinID = (logicHoveredPin->direction == Core::Direction::Output) ? activeLinkContext.startPinID : hoveredViewPin->GetPinID();
-
-                                auto cmd_createConnection = std::make_unique<Command::CmdCreateConnection>(fromNodeID, fromPinID, toNodeID, toPinID);
-                                Command::CommandBus::getInstance().PushAndExecute(std::move(cmd_createConnection));
-                            }
-                        }
-                        else {
-                            Core::LoggingManager::Warning("Connection dropped: unable to resolve logical pins for the selected view pins.");
-                        }
-                    }
-                }
-                catch (const std::exception& ex) {
-                    Core::LoggingManager::Error("Connection creation path failed: ", ex.what());
-                }
-                catch (...) {
-                    Core::LoggingManager::Error("Connection creation path failed with unknown exception.");
-                }
-                // Сбрасываем состояние
-                activeLinkContext.Reset();
-            }
-        }
-    }
 }

@@ -14,29 +14,9 @@
 unsigned int SCR_WIDTH = 3840;
 unsigned int SCR_HEIGHT = 2160;
 
-namespace {
-    void HandleShortcutCommands(SwarmIDE::UI::Command::CommandBus& command_bus) {
-        ImGuiIO& io = ImGui::GetIO();
-
-        // Проверяем, что зажат Ctrl (поддерживает и левый, и правый)
-        bool ctrlPressed = io.KeyCtrl; 
-
-        // Отлавливаем Ctrl + Z
-        if (ctrlPressed && ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
-            // Вызываем вашу команду отмены действия
-            command_bus.Undo();
-        }
-
-        // Отлавливаем Ctrl + Y
-        if (ctrlPressed && ImGui::IsKeyPressed(ImGuiKey_Y, false)) {
-            command_bus.Redo();
-        }
-    }
-}
-
 namespace SwarmIDE::UI {
     
-    AppController::AppController() : window(nullptr), canvas_manager(UI::CanvasManager::getInstance()) {
+    AppController::AppController() : window(nullptr), canvas_manager(CanvasManager::getInstance()), canvas_input_controller(CanvasInputController::getInstance()) {
         Core::LoggingManager::Info("[APP_CONTROLER]: AppController is begin constructor");
 
         if (!glfwInit()) {
@@ -142,6 +122,11 @@ namespace SwarmIDE::UI {
 
         canvas_manager.grid.init();
 
+        // Связи
+
+        canvas_input_controller.SetCamera(&canvas_manager.GetCamera());
+        canvas_input_controller.SetCanvasManager(&canvas_manager);
+
         Core::LoggingManager::Info("[APP_CONTROLER]: AppController is end constructor");
     }
     
@@ -177,10 +162,7 @@ namespace SwarmIDE::UI {
             lastFrame = currentFrame;
             
             canvas_manager.Update(deltaTime);
-            canvas_manager.HandleCanvasInputs(camera.zoomFactor);
-
-            // Отлавливаем горячие клавиши
-            HandleShortcutCommands(command_bus);
+            canvas_input_controller.ProcessInput();
 
             // Очищаем экран ДО отрисовки чего-либо
             glm::vec3 colorBackground = ThemeManager::getInstance().GetColorVec3(ColorRole::GridBackground);

@@ -1,6 +1,7 @@
 #pragma once
 #include "SwarmIDE.hpp"
 #include "ui/canvas/CanvasManager.hpp"
+#include "ui/canvas/CanvasInputController.hpp"
 
 namespace SwarmIDE::UI {
 
@@ -32,10 +33,11 @@ namespace SwarmIDE::UI {
         void run();
 
     private:
-        GLFWwindow* window;                              /**< Системный указатель на окно программы, управляемое библиотекой GLFW. */
-        CanvasManager& canvas_manager;
+        GLFWwindow* window;                              /** @brief Системный указатель на окно программы, управляемое библиотекой GLFW. */
+        CanvasManager& canvas_manager;                   /** @brief Ссылка на менеджер холста. */
+        CanvasInputController& canvas_input_controller;  /** @brief Ссылка на контроллер ввода холста. */
         
-        glm::vec2 lastMousePos = glm::vec2(0.0f);        /**< Координаты последнего зарегистрированного положения курсора мыши (используется для панорамирования). */
-        bool isPanning = false;                          /**< Флаг, указывающий, зажата ли кнопка мыши для перемещения (скролла) по холсту. */
+        glm::vec2 lastMousePos = glm::vec2(0.0f);        /** @brief Координаты последнего зарегистрированного положения курсора мыши (используется для панорамирования). */
+        bool isPanning = false;                          /** @brief Флаг, указывающий, зажата ли кнопка мыши для перемещения (скролла) по холсту. */
     };
 }

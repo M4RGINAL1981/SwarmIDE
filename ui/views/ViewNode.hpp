@@ -132,7 +132,8 @@ namespace SwarmIDE::UI {
 
     private:
 
-        friend CanvasManager;
+        friend class CanvasManager;
+        friend class CanvasInputController;
 
         UUIDv4::UUID nodeID;                                                      /** @brief < ID ноды. */
         Nodes::State state = Nodes::State::Idle;                                  /** @brief < Статус ноды. */
