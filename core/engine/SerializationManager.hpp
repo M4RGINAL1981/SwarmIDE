@@ -17,6 +17,9 @@ namespace SwarmIDE::Core {
      * @details Вызывается через Menu и сохраняет, загружает или очищает сцену
      * взависимости от нажатой кнопки на TopBar.
      * 
+     * @todo Нужно доделать - Сейчас не работает полностью.
+     * @warning ВООБЩЕ НЕ РАБОТАЕТ. НЕ ИСПОЛЬЗОВАТЬ ПОКА НЕ ИСПРАВЛЮ.
+     * 
      * @note Класс спроектирован синглтон.
      * @see SwarmIDE::UI::Menu
      */
@@ -27,7 +30,6 @@ namespace SwarmIDE::Core {
          * @return SerializationManager& Ссылка на синглтон генератора идентификаторов.
          */
         static SerializationManager& getInstance();
-
 
         /**
          * @brief Сохраняет JSON файл со сценой

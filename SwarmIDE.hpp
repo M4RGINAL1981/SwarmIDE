@@ -42,8 +42,10 @@ namespace SwarmIDE {
         class GraphManager;            
         class ConnectionManager;       
         class GraphRegistry;           
-        class DataVariant;          
-        struct LogicPin;           
+        class DataVariant;     
+             
+        struct LogicPin;    
+        struct LogicConnection;       
 
         // Системы управления моделями
 

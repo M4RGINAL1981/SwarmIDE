@@ -86,6 +86,13 @@ namespace SwarmIDE::UI {
                     }
                 }
 
+                // Парсим Уведомления
+                if(theme.contains("Notification")) {
+                    currentColorsHex[ColorRole::NotificationInfo] = theme["Notification"].value("NotificationInfo", "#00CCCC80");
+                    currentColorsHex[ColorRole::NotificationWarning] = theme["Notification"].value("NotificationWarning", "#F3E60080");
+                    currentColorsHex[ColorRole::NotificationError] = theme["Notification"].value("NotificationError", "#B5352C80");
+                }
+
                 // Парсим Пины
                 if (theme.contains("Pin")) {
                     currentStyleVars[StyleVarRole::PinRadius] = theme["Pin"].value("Radius", 5.0f);
@@ -166,5 +173,18 @@ namespace SwarmIDE::UI {
         style.WindowRounding = GetStyleVar(StyleVarRole::MenuRounding);
         style.Colors[ImGuiCol_WindowBg] = ImGui::ColorConvertU32ToFloat4(GetColorU32(ColorRole::MenuBackground));
         style.Colors[ImGuiCol_Border] = ImGui::ColorConvertU32ToFloat4(GetColorU32(ColorRole::MenuBorder));
+    }
+
+
+    void ThemeManager::LoadFonts(ImGuiIO& io, float dpiScale) {
+        const ImWchar* cyrillicRanges = io.Fonts->GetGlyphRangesCyrillic();
+
+        float baseRegularSize = 18.0f;
+        float baseBoldSize = 22.0f;
+
+        fontRegular = io.Fonts->AddFontFromFileTTF("resources/fonts/ttf/JetBrainsMonoNL-Regular.ttf", baseRegularSize * dpiScale, nullptr, cyrillicRanges);
+        fontBold = io.Fonts->AddFontFromFileTTF("resources/fonts/ttf/JetBrainsMonoNL-Bold.ttf", baseBoldSize * dpiScale, nullptr, cyrillicRanges);
+        
+        ImGui::GetStyle().ScaleAllSizes(dpiScale);
     }
 }

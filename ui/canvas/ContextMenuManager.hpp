@@ -9,6 +9,7 @@ namespace SwarmIDE::UI {
      * @class ContextMenuManager
      * @brief Контекстный менеджер
      * 
+     * @todo Нужно доделать в будущих версиях
      */
     class ContextMenuManager {
     public:

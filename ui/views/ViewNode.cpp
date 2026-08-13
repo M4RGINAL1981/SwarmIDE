@@ -127,6 +127,8 @@ namespace SwarmIDE::UI {
         // МАСШТАБИРУЕМ РАЗМЕР: Умножаем базовый размер ноды на зум камеры
         glm::vec2 scaledSize = nodeSize * zoom;
 
+        state = Core::GraphManager::getInstance().findNodeByID(nodeID)->GetState();
+
         // Передаем scaledSize вместо статичного nodeSize
         shape->DrawBackground(drawList, screenPos, scaledSize, zoom, state, isHovered);
 

@@ -28,6 +28,11 @@ namespace SwarmIDE::UI {
         NodeStateSuccess,                 /** @brief < Цвет ноды при успешном завершении работы. */
         NodeStateFailed,                  /** @brief < Цвет ноды при возникновении ошибки. */
 
+        // --- Уведомления ---
+        NotificationInfo,                 /** @brief < Цвет информирующего уведомления. */
+        NotificationWarning,              /** @brief < Цвет уведомления о предупреждении. */
+        NotificationError,                 /** @brief < Цвет уведомления об ошибке. */
+
         // --- Пины (Входы / Выходы) ---
         PinDefault,                       /** @brief < Стандартный цвет пина. */
         PinHover,                         /** @brief < Цвет пина при наведении курсора или попытке соединения. */

@@ -11,7 +11,7 @@ namespace SwarmIDE::UI {
     /**
      * @class PropertyInspector
      * @brief 
-     * 
+     * @todo Нужно доделать в будущих версиях
      */
     class PropertyInspector {
     public:

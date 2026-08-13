@@ -15,8 +15,6 @@ namespace SwarmIDE::UI::Command {
      * @brief Комманда для создания ноды
      * @see Core::GraphRegistry 
      * @see Core::GraphManager
-     * 
-     * @todo При удалении ноды - нужно удалять и все подключения, что есть у ноды. А при отмене опять их создавать.
      */
     class CmdCreateNode : public Cmd {
     public:
@@ -26,10 +24,11 @@ namespace SwarmIDE::UI::Command {
          * @details Данная команда, создаёт новый объект через GraphRegistry
          * и добаляет его в GraphManager, через метод std::unique_ptr<Nodes::LogicNode.
          * 
-         * @param[in] typeName Тип ноды
-         * @param[in] nodeName Имя для создания новой ноды через GraphRegistry
+         * @param[in] typeName Тип ноды.
+         * @param[in] nodeName Имя для создания новой ноды через GraphRegistry.
+         * @param[in] worldPos Положение ноды на экране.
          */
-        CmdCreateNode(const std::string& typeName, const std::string& nodeName);
+        CmdCreateNode(const std::string& typeName, const std::string& nodeName, const glm::vec2& worldPos);
 
         /**
          * @brief Создаёт ноду
@@ -56,8 +55,6 @@ namespace SwarmIDE::UI::Command {
      * @brief Комманда для удаления ноды
      * @see Core::GraphManager
      * @see Core::ConnectionManager
-     * 
-     * @todo При удалении ноды - нужно удалять и все подключения, что есть у ноды. А при отмене опять их создавать.
      */
     class CmdDeleteNode : public Cmd {
     public:

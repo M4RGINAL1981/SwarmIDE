@@ -3,6 +3,7 @@
 #include "core/graph/ConnectionManager.hpp"
 #include "ui/command/CommandBus.hpp"
 #include "ui/canvas/CanvasManager.hpp"
+#include "graphics/Camera.hpp"
 
 namespace {
 
@@ -23,7 +24,7 @@ namespace {
 
 namespace SwarmIDE::UI::Command {
 
-    CmdCreateNode::CmdCreateNode(const std::string& typeName, const std::string& nodeName) : typeName(typeName), nodeName(nodeName) {}
+    CmdCreateNode::CmdCreateNode(const std::string& typeName, const std::string& nodeName, const glm::vec2& worldPosNode) : typeName(typeName), nodeName(nodeName), worldPos(worldPosNode) {}
 
     void CmdCreateNode::Execute() {
         Core::LoggingManager::Info("[CREATE]: Node create.");
