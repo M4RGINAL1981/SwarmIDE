@@ -67,11 +67,8 @@ namespace {
         bool hovered = ImGui::IsItemHovered();
 
         ImU32 bgColor;
-        if (isRunning) {
-            bgColor = ImGui::ColorConvertFloat4ToU32(hovered ? ImVec4(0.9f, 0.1f, 0.1f, 0.8f) : ImVec4(0.1f, 0.8f, 0.1f, 0.8f));
-        } else {
-            bgColor = ImGui::ColorConvertFloat4ToU32(hovered ? ImVec4(1.0f, 1.0f, 1.0f, 0.2f) : ImGui::GetStyleColorVec4(ImGuiCol_MenuBarBg));
-        }
+        if (isRunning) bgColor = ImGui::ColorConvertFloat4ToU32(hovered ? ImVec4(0.9f, 0.1f, 0.1f, 0.8f) : ImVec4(0.1f, 0.8f, 0.1f, 0.8f));
+        else bgColor = ImGui::ColorConvertFloat4ToU32(hovered ? ImVec4(1.0f, 1.0f, 1.0f, 0.2f) : ImGui::GetStyleColorVec4(ImGuiCol_MenuBarBg));
 
         ImGui::GetWindowDrawList()->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y), bgColor);
 
@@ -108,10 +105,12 @@ namespace SwarmIDE::UI {
             // --- ВКЛАДКА FILE ---
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("Save", "Ctrl + S")) { 
+                    std::string nextAvailableName = Core::SerializationManager::getInstance().GetNextAvailableFileName("topology");
+
                     // Вызов проводника сохранения через pfd
                     auto destination = pfd::save_file(
                         "Сохранить топологию графа",
-                        "topology.json",
+                        nextAvailableName,
                         { "Файлы топологии (*.json)", "*.json", "Все файлы (*)", "*" }
                     ).result();
                     

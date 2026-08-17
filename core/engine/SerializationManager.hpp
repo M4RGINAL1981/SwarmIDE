@@ -3,6 +3,7 @@
 #include "core/graph/GraphManager.hpp"
 #include "core/graph/ConnectionManager.hpp"
 #include "core/models/ModelManager.hpp"
+#include "ui/canvas/CanvasManager.hpp"
 #include "core/engine/LoggingManager.hpp"
 #include <filesystem>
 #include <string>
@@ -13,56 +14,47 @@ namespace SwarmIDE::Core {
 
     /**
      * @class SerializationManager
-     * @brief Менеджер сохранения и загрузки JSON файлов со сценами (Синглтон).
+     * @brief Менеджер сохранения и загрузки JSON файлов со сцены (Синглтон).
      * @details Вызывается через Menu и сохраняет, загружает или очищает сцену
-     * взависимости от нажатой кнопки на TopBar.
+     * в зависимости от выбранного действия. Обеспечивает целостность данных
+     * при переходе между файлами.
      * 
-     * @todo Нужно доделать - Сейчас не работает полностью.
-     * @warning ВООБЩЕ НЕ РАБОТАЕТ. НЕ ИСПОЛЬЗОВАТЬ ПОКА НЕ ИСПРАВЛЮ.
-     * 
-     * @note Класс спроектирован синглтон.
+     * @note Класс спроектирован как синглтон.
      * @see SwarmIDE::UI::Menu
      */
     class SerializationManager {
     public:
         /**
          * @brief Глобальная точка доступа к единственному экземпляру SerializationManager.
-         * @return SerializationManager& Ссылка на синглтон генератора идентификаторов.
+         * @return SerializationManager& Ссылка на инстанс менеджера.
          */
         static SerializationManager& getInstance();
 
         /**
-         * @brief Сохраняет JSON файл со сценой
-         * @details Собирает данные из менеджеров и пишет JSON
-         * 
-         * @param filepath 
+         * @brief Сохраняет текущий граф в указанный путь.
+         * @param filepath Путь к файлу .json
          */
         void SaveGraph(const std::string& filepath); 
 
         /**
-         * @brief Загружает JSON файл со сценой
-         * @details Парсит JSON, чистит сцену и воссоздаёт граф
-         * 
-         * @param filepath 
+         * @brief Загружает граф из файла, выполняя двухэтапную валидацию нод и связей.
+         * @param filepath Путь к исходному файлу.
          */
         void LoadGraph(const std::string& filepath);      
 
         /**
-         * @brief Очищает граф
-         * @details Удаляет все подключения между нодами,
-         * а затем удаляет сами ноды
+         * @brief Полностью очищает текущую сессию (ноды и связи).
          */
         void ClearGraph();                                    
 
         /**
-         * @brief Получить объект «Следующее доступное имя файла»
-         * 
-         * @param[in] baseName 
-         * @return std::string 
+         * @brief Генерирует уникальное имя файла для сохранения.
+         * @param baseName Базовое имя (без расширения)
+         * @return std::string Путь к новому файлу.
          */
         std::string GetNextAvailableFileName(const std::string& baseName); 
 
-        // Блокируем копирование и перемещение менеджера
+        // Запрет копирования и перемещения
         SerializationManager(const SerializationManager&) = delete;
         SerializationManager& operator=(const SerializationManager&) = delete;
         SerializationManager(SerializationManager&&) = delete;
@@ -73,8 +65,7 @@ namespace SwarmIDE::Core {
         friend ConnectionManager;
         friend ModelManager;
 
-        SerializationManager() { Core::LoggingManager::Info("[SERIALIZATION_MANAGER]: Constructor"); }
-        ~SerializationManager() { Core::LoggingManager::Info("[SERIALIZATION_MANAGER]: Destructor");}
+        SerializationManager() { LoggingManager::Info("[SERIALIZATION_MANAGER]: Constructor"); }
+        ~SerializationManager() { LoggingManager::Info("[SERIALIZATION_MANAGER]: Destructor");}
     };
 }
-

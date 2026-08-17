@@ -56,25 +56,15 @@ namespace SwarmIDE::Nodes {
     }
 
     json ToolsAgent::serializeNode() {
-
-        json nodeJson;
-
-        nodeJson["id"] = GetID().str();
-        nodeJson["name"] = GetName();
-            
-        nodeJson["type"] = getTypeName(); 
-        nodeJson["state"] = GetState();
-        nodeJson["SystemInstrucion"] = getSystemInstruction();
+        json nodeJson = LogicNode::serializeNode();
+        nodeJson["SystemInstruction"] = getSystemInstruction();
         
         return nodeJson;
     }
 
     void ToolsAgent::deserializeNode(json nodeJson) {
-        
-        SetID(UUIDv4::UUID(nodeJson["id"].get<std::string>()));
-        SetName(nodeJson["name"]);
-        SetState(nodeJson["state"]);
-        setSystemInstruction(nodeJson["SystemInstrucion"]);
+        LogicNode::deserializeNode(nodeJson);
+        setSystemInstruction(nodeJson["SystemInstruction"]);
     }
 
     void ToolsAgent::ApplyDefaultSettings() {

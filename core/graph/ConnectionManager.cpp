@@ -13,10 +13,32 @@ namespace {
 
 namespace SwarmIDE::Core {
 
-    bool LogicConnection::operator==(const LogicConnection other) const {
+    bool LogicConnection::operator==(const LogicConnection& other) const {
         if(fromPinID == other.fromPinID && toPinID == other.toPinID && fromNodeID == other.fromNodeID && toNodeID == other.toNodeID) return true;
         if(fromPinID == other.toPinID && toPinID == other.fromPinID && fromNodeID == other.toNodeID && toNodeID == other.fromNodeID) return true;
         return false;
+    }
+
+
+    json LogicConnection::serializeLogicConnection() const {
+        json jsonLogicConnection;
+
+        jsonLogicConnection["id"] = id.str();
+
+        jsonLogicConnection["fromPinID"] = fromPinID.str();
+        jsonLogicConnection["toPinID"] = toPinID.str();
+        jsonLogicConnection["fromNodeID"] = fromNodeID.str();
+        jsonLogicConnection["toNodeID"] = toNodeID.str();
+        
+        return jsonLogicConnection;
+    }
+
+    void LogicConnection::deserializeLogicConnection(json jsonLogicConnection) {
+        id = UUIDv4::UUID(jsonLogicConnection["id"].get<std::string>());
+        fromPinID = UUIDv4::UUID(jsonLogicConnection["fromPinID"].get<std::string>());
+        toPinID = UUIDv4::UUID(jsonLogicConnection["toPinID"].get<std::string>());
+        fromNodeID = UUIDv4::UUID(jsonLogicConnection["fromNodeID"].get<std::string>());
+        toNodeID = UUIDv4::UUID(jsonLogicConnection["toNodeID"].get<std::string>());
     }
 
     std::optional<UUIDv4::UUID> ConnectionManager::connect(UUIDv4::UUID fromNodeID, UUIDv4::UUID fromPinID, UUIDv4::UUID toNodeID, UUIDv4::UUID toPinID) {

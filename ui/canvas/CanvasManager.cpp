@@ -112,12 +112,14 @@ namespace SwarmIDE::UI {
         const auto& logicNodes = graph_manager.getNodes();
         
         // Удаляем визуальные нodы, которых нет в логическом графе
-        for (auto& [viewNodeID, viewNode] : viewNodes) {
+        std::erase_if(viewNodes, [this, &graph_manager](const auto& item) {
+            const auto& [viewNodeID, viewNode] = item;
             if (!graph_manager.findNodeByID(viewNodeID)) {
                 removeViewConnectionsForNode(viewNodeID);
-                viewNodes.erase(viewNodeID);
+                return true; 
             }
-        }
+            return false; 
+        });
         // Добавляем визуальные ноды для всех логических нод, которых нет в viewNodes
         for (const auto& [nodeID, logicNode] : logicNodes) {
             if (!viewNodes.contains(nodeID)) AddViewNode(nodeID, glm::vec2(0.0f, 0.0f)); 

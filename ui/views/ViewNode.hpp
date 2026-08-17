@@ -130,6 +130,18 @@ namespace SwarmIDE::UI {
          */
         void HandleInteraction();
 
+        /**
+         * @brief Загрузка визуальной ноды в json
+         * @return json 
+         */
+        json serializeViewNode() const;
+
+        /**
+         * @brief Загрузка визуальной ноды из json
+         * @param[in] jsonNode
+         */
+        void deserializeViewNode(json jsonNode);
+
     private:
 
         friend class CanvasManager;
@@ -138,7 +150,7 @@ namespace SwarmIDE::UI {
         UUIDv4::UUID nodeID;                                                      /** @brief < ID ноды. */
         Nodes::State state = Nodes::State::Idle;                                  /** @brief < Статус ноды. */
         std::unique_ptr<SwarmIDE::UI::Shape::BaseShape> shape;                    /** @brief < Указатель на фигуру/трафарет */
-        std::unordered_map<UUIDv4::UUID, std::unique_ptr<ViewPin>> viewPins;   /** @brief < Контейнер для быстрого поиска пинов по ID. */
+        std::unordered_map<UUIDv4::UUID, std::unique_ptr<ViewPin>> viewPins;      /** @brief < Контейнер для быстрого поиска пинов по ID. */
         glm::vec2 worldPos;                                                       /** @brief < Положение ноды на поле. */
         glm::vec2 nodeSize;                                                       /** @brief < Размер ноды. */
         bool isSelected;                                                          /** @brief < Выбрана ли нода в данный момент. */

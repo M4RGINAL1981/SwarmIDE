@@ -9,6 +9,8 @@
 #include "ui/windows/TopBar.hpp"
 #include "ui/windows/NotificationMenu.hpp"
 
+#include "stb_image.h"
+
 #include <iostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -36,7 +38,18 @@ namespace SwarmIDE::UI {
         if (window == NULL) {
             Core::LoggingManager::Error("[ERROR]: Failed to create GLFW window");
             glfwTerminate();
-            return;
+            throw std::runtime_error("Failed to create GLFW window");
+        }
+
+        GLFWimage window_icon;
+        window_icon.pixels = stbi_load("SwarmIDE_icon_32_x_32.png", &window_icon.width, &window_icon.height, 0, 4);
+
+        if (window_icon.pixels != nullptr) {
+            glfwSetWindowIcon(window, 1, &window_icon);
+            
+            stbi_image_free(window_icon.pixels);
+        } else {
+            Core::LoggingManager::Warning("Failed to load window SwarmIDE_icon_32_x_32.png");
         }
 
         GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
@@ -103,6 +116,7 @@ namespace SwarmIDE::UI {
             
             canvas_manager.Update(deltaTime);                                   // Обновление камеры
             canvas_input_controller.ProcessInput();                             // Отлавливание взаимодействия с нодами
+            Command::ShortcutManager::Process(window);                          // Отлавливание горячих клавиш
 
             // Очищаем экран ДО отрисовки чего-либо
             glm::vec3 colorBackground = ThemeManager::getInstance().GetColorVec3(ColorRole::GridBackground);
@@ -114,7 +128,7 @@ namespace SwarmIDE::UI {
             glfwGetWindowSize(window, &currentWidth, &currentHeight);
             glm::vec2 dynamicWindowSize((float)currentWidth, (float)currentHeight);
 
-            Command::ShortcutManager::Process(window);                          // Отлавливание горячих клавиш
+            canvas_manager.SetWindowSize(currentWidth, currentHeight);
 
             if (drag_window.needsResize) {
                 glfwSetWindowSize(window, drag_window.targetWidth, drag_window.targetHeight);

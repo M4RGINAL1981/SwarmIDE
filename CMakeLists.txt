@@ -30,8 +30,10 @@ file(GLOB_RECURSE SOURCE_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/oi/*.c"
 )
 
-# Явно добавляем только ВАШ корневой main.cpp, чтобы CMake не хватал main.cpp из примеров ImGui
 list(APPEND SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
+if(WIN32)
+    list(APPEND SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/resource.rc")
+endif()
 
 # Собираем заголовочные файлы (.hpp, .h) строго из ваших папок
 file(GLOB_RECURSE HEADER_FILES 
@@ -187,3 +189,9 @@ endif()
 if(TARGET doc_swarmide)
     add_dependencies(SwarmIDE doc_swarmide)
 endif()
+
+add_custom_command(TARGET SwarmIDE POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/SwarmIDE_icon_32_x_32.png"
+    "$<TARGET_FILE_DIR:SwarmIDE>/SwarmIDE_icon_32_x_32.png"
+)

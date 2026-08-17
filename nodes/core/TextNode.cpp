@@ -39,24 +39,14 @@ namespace SwarmIDE::Nodes {
     }
 
     json TextNode::serializeNode() {
-
-        json nodeJson;
-
-        nodeJson["id"] = GetID().str();
-        nodeJson["name"] = GetName();
-                
-        nodeJson["type"] = getTypeName(); 
-        nodeJson["state"] = GetState();
+        json nodeJson = LogicNode::serializeNode();
         nodeJson["text"] = getText();
             
         return nodeJson;
     }
 
     void TextNode::deserializeNode(json nodeJson) {
-        
-        SetID(UUIDv4::UUID(nodeJson["id"].get<std::string>()));
-        SetName(nodeJson["name"]);
-        SetState(nodeJson["state"]);
+        LogicNode::deserializeNode(nodeJson);
         setText(nodeJson["text"]);
     }
 

@@ -3,6 +3,8 @@
 #include "core/graph/LogicPin.hpp"
 #include "core/graph/DataVariant.hpp"
 
+#include <unordered_map>
+
 namespace SwarmIDE::Nodes {
 
 
@@ -56,5 +58,55 @@ namespace SwarmIDE::Nodes {
     void LogicNode::Reset() {
         state = State::Idle;
         for(auto& [pinID, pin] : pins) pin->value.clear();
+    }
+
+    json LogicNode::serializeNode() {
+        json jsonLogicNode;
+
+        jsonLogicNode["id"] = id.str();
+        jsonLogicNode["type"] = getTypeName();
+        jsonLogicNode["name"] = name;
+        jsonLogicNode["state"] = state;
+
+        jsonLogicNode["pins"] = json::object();
+        for(const auto& [pinName, pinID] : pinNameToID) {
+            jsonLogicNode["pins"][pinName] = pinID.str();
+        }
+
+        return jsonLogicNode;
+    }
+
+    void LogicNode::deserializeNode(json jsonLogicNode) {
+        id = UUIDv4::UUID(jsonLogicNode["id"].get<std::string>());
+        name = jsonLogicNode["name"];
+        state = jsonLogicNode["state"];
+
+        std::unordered_map<UUIDv4::UUID, std::unique_ptr<Core::LogicPin>> newPinsMap;
+
+        for(auto& [pinName, oldIDStr] : jsonLogicNode["pins"].items()) {
+            UUIDv4::UUID oldPinID(oldIDStr.get<std::string>());
+
+            // Ищем свежесозданный пин по его имени
+            if (pinNameToID.contains(pinName)) {
+                UUIDv4::UUID currentWrongID = pinNameToID[pinName];
+
+                if (pins.contains(currentWrongID)) {
+                    // Забираем ownership у старого пина
+                    auto pinPtr = std::move(pins[currentWrongID]);
+
+                    // ВАЖНО: Добавь метод SetID в LogicPin, если его там нет!
+                    pinPtr->SetID(oldPinID); 
+
+                    // Вставляем пин по правильному (старому) ключу
+                    newPinsMap[oldPinID] = std::move(pinPtr);
+                    
+                    // Обновляем мапу имен
+                    pinNameToID[pinName] = oldPinID;
+                }
+            }
+        }
+        
+        // Заменяем сломанную мапу на починенную
+        pins = std::move(newPinsMap);
     }
 }

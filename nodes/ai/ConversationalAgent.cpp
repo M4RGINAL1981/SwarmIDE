@@ -54,25 +54,14 @@ namespace SwarmIDE::Nodes {
     }
 
     json ConversationalAgent::serializeNode() {
-
-        json nodeJson;
-
-        nodeJson["id"] = GetID().str();
-        nodeJson["name"] = GetName();
-            
-        nodeJson["type"] = getTypeName(); 
-        nodeJson["state"] = GetState();
-
+        json nodeJson = LogicNode::serializeNode();
         nodeJson["SystemInstruction"] = getSystemInstruction();
         
         return nodeJson;
     }
 
     void ConversationalAgent::deserializeNode(json nodeJson) {
-        
-        SetID(UUIDv4::UUID(nodeJson["id"].get<std::string>()));
-        SetName(nodeJson["name"]);
-        SetState(nodeJson["state"]);
+        LogicNode::deserializeNode(nodeJson);
         setSystemInstruction(nodeJson["SystemInstruction"]);
     }
 

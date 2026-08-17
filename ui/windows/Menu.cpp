@@ -104,7 +104,7 @@ namespace SwarmIDE::UI {
         });
         ImGui::Separator();
 
-        // --- КАТЕГОРИЯ 2: MODELS ---
+        // --- КАТЕГОРИЯ 3: MODELS ---
         auto& allAssets = model_manager.getAllAssets();
         std::vector<std::string> modelNames;
         for (const auto& asset : allAssets) {

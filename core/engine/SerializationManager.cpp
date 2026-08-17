@@ -3,6 +3,8 @@
 #include "nodes/base/LogicNode.hpp"
 #include "nodes/core/TextNode.hpp"
 #include "nodes/core/ModelNode.hpp"
+#include "ui/command/CommandBus.hpp"
+
 #include <json.hpp>
 #include <fstream>
 #include <iostream>
@@ -31,90 +33,92 @@ namespace SwarmIDE::Core {
     }
    
     void SerializationManager::SaveGraph(const std::string& filepath) {
-
-        LoggingManager::Info("The graph is saved");
+        LoggingManager::Info("Saving graph to: " + filepath);
 
         json root;
+        root["nodes"] = json::array();       /** @brief Массив узлов. Каждая запись связывает логический узел с его визуальным представлением. */
+        root["connections"] = json::array(); /** @brief Массив связей. Каждая запись содержит логическое соединение и его визуальное отображение. */
 
-        root["nodes"] = json::array();
-        root["connections"] = json::array();
+        auto& viewNodes = UI::CanvasManager::getInstance().getViewNodes();
 
-        auto& logicNodes = GraphManager::getInstance().getNodes();
+        // Первый проход при сохранении: собираем данные всех нод
+        for(auto const& [id, viewNode] : viewNodes) root["nodes"].push_back(viewNode->serializeViewNode());
 
-        // Запись в файл информацию о нодах
-        for(auto& [id, logicNode] : logicNodes) root["nodes"].push_back(logicNode->serializeNode());            
-
-        // Запись в файл информации о подключениях
+        // Второй проход при сохранении: собираем все существующие связи
         auto& logicConnections = ConnectionManager::getInstance().getAllConnections();
-        for(auto& [id, logicConnection] : logicConnections) {
-            json connJson;
-            
-            connJson["id"] = logicConnection.getID().str();
-            connJson["fromNodeID"] = logicConnection.fromNodeID.str();
-            connJson["fromPinID"] = logicConnection.fromPinID.str();
-            connJson["toNodeID"] = logicConnection.toNodeID.str();
-            connJson["toPinID"] = logicConnection.toPinID.str();
-
-            root["connections"].push_back(connJson);
-        }
+        for(auto const& [id, logicConnection] : logicConnections) root["connections"].push_back(logicConnection.serializeLogicConnection());
 
         std::ofstream file(filepath);
-        if (!file.is_open()) {
-            LoggingManager::Error("Save Graph", std::strerror(errno), " (Path: ", filepath, ")");
-            return;
-        }
+        if (!file.is_open()) { LoggingManager::Error("Save Error", std::strerror(errno), " (Path: " + filepath + ")"); return;}
         file << root.dump(4);
         file.close();
 
-        LoggingManager::Info("The graph has been preserved.");
+        LoggingManager::Info("Graph successfully saved.");
     }
 
     void SerializationManager::LoadGraph(const std::string& filepath) {
-
-        LoggingManager::Info("The Graph is loading.");
+        LoggingManager::Info("Loading graph from: " + filepath);
 
         std::ifstream file(filepath);
-        if (!file.is_open()) {
-            LoggingManager::Error("LoadGraph Error: ", std::strerror(errno), " (Path: ", filepath, ")");
-            return;
-        }
+        if (!file.is_open()) { LoggingManager::Error("Load Error", std::strerror(errno), " (Path: " + filepath + ")"); return; }
 
         json root;
-        file >> root;
-        
-        // Очистка графа перед загрузкой
-        SerializationManager::ClearGraph();
+        try { file >> root;} 
+        catch (const std::exception& e) { LoggingManager::Error("Parse Error", e.what(), ""); return;}
 
-        if(root.contains("nodes")) {
+        // Очистка старой сцены перед загрузкой новой
+        ClearGraph();
+
+        // Первый проход: Загрузка нод. 
+        // Мы сначала создаем все объекты, чтобы их ID стали доступны в системе.
+        if(root.contains("nodes") && root["nodes"].is_array()) {
             for (const auto& nodeJson : root["nodes"]) {
-                std::unique_ptr<Nodes::LogicNode> newNode = GraphRegistry::getInstance().createNode(nodeJson["type"]);
-                newNode->deserializeNode(nodeJson);
+                if (nodeJson.contains("type")) {
+                    UUIDv4::UUID nodeID = UUIDv4::UUID(nodeJson["id"].get<std::string>());
+                    glm::vec2 spawnPos = glm::vec2(nodeJson["worldPosX"], nodeJson["worldPosY"]);
+
+                    std::unique_ptr<Nodes::LogicNode> newNode = GraphRegistry::getInstance().createNode(nodeJson["type"]);
+                    newNode->deserializeNode(nodeJson);
+
+                    GraphManager::getInstance().addNode(std::move(newNode));                        /** @note Создаём логическую ноду. */
+                    UI::CanvasManager::getInstance().AddViewNode(nodeID, spawnPos);                 /** @note Создаём визуальную ноду. */
+                }
             }
         }
 
-        if(root.contains("connections")) {
+        // Второй проход: Установка связей.
+        // Теперь, когда все ноды гарантированно существуют в памяти, мы соединяем их по ID.
+        if(root.contains("connections") && root["connections"].is_array()) {
             for (const auto& connJson : root["connections"]) {
-
-                // Явно конвертируем json-строку обратно в объект UUID
-                UUIDv4::UUID fromNodeID = UUIDv4::UUID(connJson["fromNodeID"].get<std::string>());
-                UUIDv4::UUID fromPinID = UUIDv4::UUID(connJson["fromPinID"].get<std::string>());
-                UUIDv4::UUID toNodeID = UUIDv4::UUID(connJson["toNodeID"].get<std::string>());
-                UUIDv4::UUID toPinID = UUIDv4::UUID(connJson["toPinID"].get<std::string>());
-
-                ConnectionManager::getInstance().connect(fromNodeID, fromPinID, toNodeID, toPinID);
+                try {
+                    LogicConnection logicConnection;
+                    logicConnection.deserializeLogicConnection(connJson);
+                    ConnectionManager::getInstance().connect(logicConnection);                      /** @note Создаём логическое соединение. */
+                    UI::CanvasManager::getInstance().AddViewConnection(logicConnection.getID());    /** @note Создаём визуальное соединение. */
+                } catch (...) {
+                    LoggingManager::Warning("Connection skip", "Failed to resolve IDs for a connection during load.", "");
+                }
             }
         }
 
-        LoggingManager::Info("The Graph has been loaded.");
+        UI::CanvasManager::getInstance().SyncWithCoreGraph();                                       /** @note Производим синхронизацию. */
+        LoggingManager::Info("Graph successfully loaded.");
     }
 
     void SerializationManager::ClearGraph() {
+        LoggingManager::Info("Clearing current graph...");
 
-        LoggingManager::Info("The Graph is cleaning.");
+        /** @note Удаление комманд */
+        UI::Command::CommandBus::getInstance().Clear();
 
+        /** @note Удаление визуальных и логических соединений. */
+        UI::CanvasManager::getInstance().RemoveAllViewConnection();
         ConnectionManager::getInstance().removeAllConnections();
+
+        /** @note Удаление визуальных и логических нод. */
+        UI::CanvasManager::getInstance().removeAllViewNodes();
         GraphManager::getInstance().removeAllNodes();
-        
-        LoggingManager::Info("The Graph has been cleaned.");
+
+        LoggingManager::Info("Graph cleared.");
     }
 }

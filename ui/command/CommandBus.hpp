@@ -51,13 +51,7 @@ namespace SwarmIDE::UI::Command {
          * @note Вызвается Ctrl + Y
          */
         void Redo();
-
-        /**
-         * @brief Проверяет нажатия клавиш каждую итерацию кадра
-         * @note Пока не ясно, зачем нужен данный метод
-         */
-        //void ProcessKeybindings();
-
+        
         /**
          * @brief Полностью очищает все списки команд
          * @details Очищает undoStack и redoStack

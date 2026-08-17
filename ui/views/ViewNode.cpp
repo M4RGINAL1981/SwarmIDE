@@ -143,4 +143,26 @@ namespace SwarmIDE::UI {
         if(viewPins.contains(pinID)) return viewPins[pinID].get();
         return nullptr;
     }
+
+    json ViewNode::serializeViewNode() const {
+        json jsonNode;
+
+        auto logicNode = Core::GraphManager::getInstance().findNodeByID(nodeID);
+
+        jsonNode["worldPosX"] = worldPos.x;
+        jsonNode["worldPosY"] = worldPos.y;
+
+        jsonNode.update(logicNode->serializeNode());
+
+        return jsonNode;
+    }
+
+    void ViewNode::deserializeViewNode(json jsonNode) {
+        worldPos = glm::vec2(jsonNode["worldPosX"], jsonNode["worldPosY"]);
+        nodeID = UUIDv4::UUID(jsonNode["id"].get<std::string>());
+
+        // Заполняем данными логическую ноду
+        auto logicNode = Core::GraphManager::getInstance().findNodeByID(nodeID);
+        logicNode->deserializeNode(jsonNode);
+    }
 }

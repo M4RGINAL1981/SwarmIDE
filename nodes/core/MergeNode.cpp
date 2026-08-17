@@ -71,26 +71,6 @@ namespace SwarmIDE::Nodes {
         }
     }
 
-    json MergeNode::serializeNode() {
-
-        json nodeJson;
-
-        nodeJson["id"] = GetID().str();
-        nodeJson["name"] = GetName();
-            
-        nodeJson["type"] = getTypeName(); 
-        nodeJson["state"] = GetState();
-        
-        return nodeJson;
-    }
-
-    void MergeNode::deserializeNode(json nodeJson) {
-        
-        SetID(UUIDv4::UUID(nodeJson["id"].get<std::string>()));
-        SetName(nodeJson["name"]);
-        SetState(nodeJson["state"]);
-    }
-
     void MergeNode::ApplyDefaultSettings() {
         SetName("MergeNode");
     }

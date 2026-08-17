@@ -48,6 +48,17 @@ namespace SwarmIDE::Core {
         UUIDv4::UUID getID() const { return id; } 
 
         /**
+         * @brief Загрузка соединения в JSON
+         */
+        json serializeLogicConnection() const;
+        
+        /**
+         * @brief Загрузка соединения из JSON
+         * @param[in] jsonLogicConnection JSON файл с логическим соединением
+         */
+        void deserializeLogicConnection(json jsonLogicConnection);
+
+        /**
          * @brief Оператор сравнения двух соединений.
          * @details Используется для поиска конкретной связи в векторе при её удалении или валидации.
          * Связи считаются идентичными, если совпадают оба ID пинов. 
@@ -57,7 +68,7 @@ namespace SwarmIDE::Core {
          * @return          true Если соединения полностью совпадают или является зеркальным.
          * @return          false Если есть хотя бы одно различие.
          */
-        bool operator==(const LogicConnection other) const;
+        bool operator==(const LogicConnection& other) const;
     
     private:
         UUIDv4::UUID id; /** @brief < Внутренний уникальный идентификатор соединения. Используется для сериализации и отрисовки. */

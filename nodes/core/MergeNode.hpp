@@ -35,13 +35,13 @@ namespace SwarmIDE::Nodes {
          * @brief Выгрузка ноды в json
          * @return json 
          */
-        virtual json serializeNode() override;
+        virtual json serializeNode() override { return LogicNode::serializeNode(); }
 
         /**
          * @brief Загрузка ноды из json
          * @param[in] jsonNode 
          */
-        virtual void deserializeNode(json jsonNode) override;
+        virtual void deserializeNode(json jsonNode) override { LogicNode::deserializeNode(jsonNode); }
         
         /**
          * @brief Вернуть строковый тип ноды
