@@ -3,7 +3,6 @@
 #include "ui/command/Cmd.hpp"
 #include "ui/command/CmdCreateConnection.hpp"
 #include "ui/command/CmdDeleteAllConnectionForPin.hpp"
-#include "ui/command/CmdMoveNode.hpp"
 #include "ui/command/CmdNodeOperations.hpp"
 #include "core/engine/LoggingManager.hpp"
 #include <vector>

@@ -7,6 +7,8 @@
 #include "graphics/Grid.hpp"
 #include "graphics/Camera.hpp"
 #include "uuid_v4/uuid_v4.h"
+
+#include <unordered_set>
 #include <unordered_map>
 #include <vector>
 
@@ -149,14 +151,58 @@ namespace SwarmIDE::UI {
          * @param[in] pinID    ID пина
          * @param[in] mousePos Текущее положение мыши на экране
          */
-        void SetTempWire(const UUIDv4::UUID& nodeID, const UUIDv4::UUID& pinID, const glm::vec2& mousePos) {
-            tempWire = {nodeID, pinID, mousePos};
-        }
+        void SetTempWire(const UUIDv4::UUID& nodeID, const UUIDv4::UUID& pinID, const glm::vec2& mousePos) { tempWire = {nodeID, pinID, mousePos};}
 
         /**
          * @brief Очистить состояние временного провода
          */
         void ClearTempWire() { tempWire = std::nullopt; }
+
+        /**
+         * @brief Установить параметры рамки выделения
+         */
+        void SetSelectionRect(glm::vec2 minScreenPos, glm::vec2 maxScreenPos, bool visible = true) { selectionRect = { minScreenPos, maxScreenPos, visible };}
+
+        /**
+         * @brief Очистить рамку выделения
+         */
+        void ClearSelectionRect() { selectionRect.visible = false; }
+
+        /**
+         * @brief Выбрать ноду.
+         * @param nodeID ID выбранной ноды.
+         */
+        void SelectNode(UUIDv4::UUID nodeID) { selectedNodesID.insert(nodeID); }
+
+        /**
+         * @brief Убрать ноду из выбранных.
+         * @param nodeID ID выбранной ноды.
+         */
+        void DeselectNode(UUIDv4::UUID nodeID) { selectedNodesID.erase(nodeID); }
+
+        /**
+         * @brief Очистить все выбранные ноды.
+         */
+        void ClearSelection() { selectedNodesID.clear(); }
+
+        /**
+         * @brief Является ли нода выбранной?
+         * @param nodeID ID проверяемой ноды.
+         * @return true  Да, является.
+         * @return false Нет, не является.
+         */
+        bool IsNodeSelected(UUIDv4::UUID nodeID) { return selectedNodesID.contains(nodeID); }
+
+        /**
+         * @brief Получить список ID всех выбранных нод.
+         * @return const std::unordered_set<UUIDv4::UUID>&
+         */
+        const std::unordered_set<UUIDv4::UUID>& GetSelectedNodesID() const { return selectedNodesID; }
+
+        /**
+         * @brief Получить ID первой выбранной ноды.
+         */
+        std::optional<UUIDv4::UUID> GetPrimarySelectedNode() const { if(selectedNodesID.empty()) { return std::nullopt; } return *selectedNodesID.begin(); }
 
         // Блокируем копирование и перемещение менеджера
         CanvasManager(const CanvasManager&) = delete;
@@ -175,16 +221,30 @@ namespace SwarmIDE::UI {
             UUIDv4::UUID startPinID;
             glm::vec2 currentMouseWorldPos;
         };
+
+        /**
+         * @struct SelectionRectContext
+         * @brief Состояние рамки выделения
+         */
+        struct SelectionRectContext {
+            glm::vec2 minScreenPos{0.0f, 0.0f};
+            glm::vec2 maxScreenPos{0.0f, 0.0f};
+            bool visible = false;
+        };
+
         std::optional<TempWireContext> tempWire = std::nullopt;
+        SelectionRectContext selectionRect;
 
         CanvasManager();
         ~CanvasManager();
 
         glm::vec2 windowSize = glm::vec2(3840, 2160);                                           /** @brief < Размер окна */
 
-        Graphics::Camera camera;                                                                /** @brief < Объект камера. Для получения текущего zoomFactor. */
-        Graphics::Grid grid;                                                                    /** @brief < Объект сетки. Для отрисовки сетки. */
-        std::unordered_map<UUIDv4::UUID, std::unique_ptr<ViewNode>> viewNodes;                  /** @brief < Хеш-Таблица. Ключ - ID логической ноды. Значение - Визуальная нода. */
-        std::unordered_map<UUIDv4::UUID, std::unique_ptr<ViewConnection>> viewConnections;      /** @brief < Вектор визуальных соединений. */
+        Graphics::Camera camera;                                                                /** @brief < Объект камера. */
+        Graphics::Grid grid;                                                                    /** @brief < Объект сетки. */
+        std::unordered_map<UUIDv4::UUID, std::unique_ptr<ViewNode>> viewNodes;                  /** @brief < Визуальные ноды. */
+        std::unordered_map<UUIDv4::UUID, std::unique_ptr<ViewConnection>> viewConnections;      /** @brief < Визуальные соединения. */
+
+        std::unordered_set<UUIDv4::UUID> selectedNodesID;                                       /** @brief < Множество выделенных нод. */
     };
 }

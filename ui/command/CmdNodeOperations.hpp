@@ -15,6 +15,7 @@ namespace SwarmIDE::UI::Command {
      * @brief Комманда для создания ноды
      * @see Core::GraphRegistry 
      * @see Core::GraphManager
+     * @see UI::CanvasManager
      */
     class CmdCreateNode : public Cmd {
     public:
@@ -55,6 +56,7 @@ namespace SwarmIDE::UI::Command {
      * @brief Комманда для удаления ноды
      * @see Core::GraphManager
      * @see Core::ConnectionManager
+     * @see UI::CanvasManager
      */
     class CmdDeleteNode : public Cmd {
     public:
@@ -86,4 +88,70 @@ namespace SwarmIDE::UI::Command {
         std::vector<Core::LogicConnection> connectionForNode;        /** @brief < Все соединения, что были у ноды */
     };
 
-}
+    /**
+     * @class CmdDuplicateNode
+     * @brief Команда для дублирования ноды
+     * 
+     * @see Core::GraphManager
+     * @see UI::CanvasManager
+     */
+    class CmdDuplicateNode : public Cmd {
+    public:
+
+        /**
+         * @brief Конструктор команды, для удаления ноды
+         * @details Данная команда, удаляет объект через GraphManager
+         * 
+         * @param[in] nodeID ID ноды, что нужно удалить
+         */
+        CmdDuplicateNode(std::optional<UUIDv4::UUID> nodeID);
+
+        /**
+         * @brief Дублирует ноду
+         */
+        virtual void Execute() override;
+
+        /**
+         * @brief Удаляет дублированную ноду
+         */
+        virtual void Undo() override;
+
+    private:
+        bool m_isFirstExecution = true;                              /** @brief Первй ли это запуск. */
+
+        std::optional<UUIDv4::UUID> nodeID = std::nullopt;           /** @brief ID скопированной ноды. */
+        UUIDv4::UUID newNodeID;                                      /** @brief ID для нового дубликата. */
+
+        std::string nodeName = "";                                   /** @brief Имя скопированной ноды. */
+        std::string nodeTypeName = "";                               /** @brief Тип скопированной ноды. */
+
+        glm::vec2 worldPos = glm::vec2(0.0f, 0.0f);                  /** @brief Координаты скопированной ноды. */
+        std::unique_ptr<Nodes::LogicNode> cachedNode = nullptr;      /** @brief Кеш нового дубликата. */
+    };
+
+
+    class CmdMoveNode : public Cmd {
+    public:
+        /**
+         * @brief Конструктор команды для перемещения ноды
+         * 
+         * @param[in] nodeID ID ноды, которую перемещаем.
+         * @param[in] delta  Дельта между старой и новой позицей ноды.
+         */
+        CmdMoveNode(UUIDv4::UUID nodeID, const glm::vec2& delta);
+
+        /**
+         * @brief Перемещает ноду в новую позицию
+         */
+        virtual void Execute() override;
+
+        /**
+         * @brief Возвращает ноду на старую позицию
+         */
+        virtual void Undo() override;
+    private:
+        UUIDv4::UUID nodeID;
+        glm::vec2 delta;
+    };
+
+}// namespace SwarmIDE::UI::Command

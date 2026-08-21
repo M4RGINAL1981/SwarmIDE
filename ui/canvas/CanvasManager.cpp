@@ -111,7 +111,7 @@ namespace SwarmIDE::UI {
         auto& graph_manager = Core::GraphManager::getInstance();
         const auto& logicNodes = graph_manager.getNodes();
         
-        // Удаляем визуальные нodы, которых нет в логическом графе
+        // Удаляем визуальные ноды, которых нет в логическом графе
         std::erase_if(viewNodes, [this, &graph_manager](const auto& item) {
             const auto& [viewNodeID, viewNode] = item;
             if (!graph_manager.findNodeByID(viewNodeID)) {
@@ -120,6 +120,7 @@ namespace SwarmIDE::UI {
             }
             return false; 
         });
+
         // Добавляем визуальные ноды для всех логических нод, которых нет в viewNodes
         for (const auto& [nodeID, logicNode] : logicNodes) {
             if (!viewNodes.contains(nodeID)) AddViewNode(nodeID, glm::vec2(0.0f, 0.0f)); 
@@ -129,15 +130,10 @@ namespace SwarmIDE::UI {
         const auto& LogicConnections = connecction_manager.getAllConnections();
 
         // Удаляем визуальные соединения, которых нет в логическом графе
-        for(auto& [viewConnectionID, viewConnection] : viewConnections) {
-            if (!connecction_manager.findConnection(viewConnectionID)) {
-                viewConnections.erase(viewConnectionID);
-            }
-        }
+        std::erase_if(viewConnections, [&connecction_manager](const auto& item) { return !connecction_manager.findConnection(item.first); });
+
         // Добавляем визуальные соединения для всех логических соединений, которых нет в viewConnections
-        for (const auto& [logicConnectionID, logicConnection] : LogicConnections) {
-            if (!viewConnections.contains(logicConnectionID)) AddViewConnection(logicConnectionID);
-        }
+        for (const auto& [logicConnectionID, logicConnection] : LogicConnections) { if (!viewConnections.contains(logicConnectionID)) AddViewConnection(logicConnectionID); }
     }
 
     void CanvasManager::Draw() {
@@ -179,12 +175,10 @@ namespace SwarmIDE::UI {
 
                     // Отрисовываем кубическую кривую Безье
                     drawList->AddBezierCubic(
-
                         ImVec2(startScreenPos.x, startScreenPos.y),                                                                                   // Начало связи
                         ImVec2(startScreenPos.x + startNormalPin.x * zoom * strength, startScreenPos.y + startNormalPin.y * zoom * strength),         // Первая направляющая/конечная точка
                         ImVec2(endScreenPos.x - startNormalPin.x * zoom * strength, endScreenPos.y - startNormalPin.y * zoom * strength),             // Вторая направляющая/Конечная точка
                         ImVec2(endScreenPos.x, endScreenPos.y),                                                                                       // Конец связи
-                        /** @todo Передача цвета должна происходить через ThemeManger. Хотя не обязательно, раз это проведение, а не построение. */
                         IM_COL32(200, 200, 200, 255), 
                         2.0f * zoom
                     );
@@ -192,12 +186,24 @@ namespace SwarmIDE::UI {
             }
         }
         
-        // Теперь проходимся по нодам и отрисовываем их
+        // Отрисовываем ноды
         for(auto& [id, viewNode] : viewNodes) {
             glm::vec2 worldPos = viewNode->GetWorldPos();
             glm::vec2 screenPos = camera.worldToScreen(worldPos, windowSize);
 
             viewNode->Draw(drawList, screenPos, zoom);
+        }
+
+        // Отрисовка рамки выделения (Lasso/Marquee)
+        if (selectionRect.visible) {
+            ImVec2 pMin(selectionRect.minScreenPos.x, selectionRect.minScreenPos.y);
+            ImVec2 pMax(selectionRect.maxScreenPos.x, selectionRect.maxScreenPos.y);
+
+            /** @todo Нужно чтобы данные были получены через ThemeManager. */
+            // Полупрозрачная заливка выделения
+            drawList->AddRectFilled(pMin, pMax, IM_COL32(0, 122, 204, 35));
+            // Контур рамки
+            drawList->AddRect(pMin, pMax, IM_COL32(0, 122, 204, 255), 0.0f, 0, 1.5f);
         }
     }
 

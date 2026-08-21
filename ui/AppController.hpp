@@ -2,6 +2,7 @@
 #include "SwarmIDE.hpp"
 #include "ui/canvas/CanvasManager.hpp"
 #include "ui/canvas/CanvasInputController.hpp"
+#include "ui/canvas/ContextMenuManager.hpp"
 
 namespace SwarmIDE::UI {
 
@@ -40,6 +41,7 @@ namespace SwarmIDE::UI {
         GLFWwindow* window;                                                 /** @brief Системный указатель на окно программы, управляемое библиотекой GLFW. */
         CanvasManager& canvas_manager;                                      /** @brief Ссылка на менеджер холста. */
         CanvasInputController& canvas_input_controller;                     /** @brief Ссылка на контроллер ввода холста. */
+        ContextMenuManager& context_menu_manager;                           /** @brief Ссылка на контекстное меню. */
         
         glm::vec2 lastMousePos = glm::vec2(0.0f);                           /** @brief Координаты последнего зарегистрированного положения курсора мыши (используется для панорамирования). */
         bool isPanning = false;                                             /** @brief Флаг, указывающий, зажата ли кнопка мыши для перемещения (скролла) по холсту. */

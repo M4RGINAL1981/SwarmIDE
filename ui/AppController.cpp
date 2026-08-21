@@ -8,6 +8,7 @@
 #include "ui/windows/Menu.hpp"
 #include "ui/windows/TopBar.hpp"
 #include "ui/windows/NotificationMenu.hpp"
+#include "ui/canvas/ContextMenuManager.hpp"
 
 #include "stb_image.h"
 
@@ -25,7 +26,9 @@ glm::vec2 windowSize = glm::vec2((float)SCR_WIDTH, (float)SCR_HEIGHT);
 
 namespace SwarmIDE::UI {
     
-    AppController::AppController() : window(nullptr), canvas_manager(CanvasManager::getInstance()), canvas_input_controller(CanvasInputController::getInstance()) {
+    AppController::AppController() : window(nullptr), canvas_manager(CanvasManager::getInstance()), 
+    canvas_input_controller(CanvasInputController::getInstance()), context_menu_manager(ContextMenuManager::getInstance()) {
+
         Core::LoggingManager::Info("[APP_CONTROLER]: AppController is begin constructor");
 
         if (!glfwInit()) { Core::LoggingManager::Error("[ERROR]: Failed to initialize GLFW"); return; }
@@ -91,19 +94,22 @@ namespace SwarmIDE::UI {
         canvas_manager.grid.init();
         canvas_input_controller.SetCamera(&canvas_manager.GetCamera());
         canvas_input_controller.SetCanvasManager(&canvas_manager);
+
         Core::LoggingManager::Info("[APP_CONTROLER]: AppController is end constructor");
     }
 
     
     void AppController::run() {
 
-        auto& command_bus = Command::CommandBus::getInstance();                 // Иницилизация Менеджера
-        auto& camera = UI::CanvasManager::getInstance().GetCamera();            // Иницилизация камеры
-        auto& grid = UI::CanvasManager::getInstance().GetGrid();                // Иницилизация сетки
+        auto& command_bus = Command::CommandBus::getInstance();                 // Иницилизация Менеджера комманд.
+        context_menu_manager.SetCommandBus(&command_bus);                       // Установка связи с Менеджером комманд.
 
-        auto& menu = Menu::getInstance();                                       // Иницилизация Меню создания нод
-        auto& top_bar = TopBar::getInstance();                                  // Иницилизация Верхней Меню-строки
-        auto& notification_menu = NotificationMenu::getInstance();              // Иницилизация Меню уведомлений
+        auto& camera = UI::CanvasManager::getInstance().GetCamera();            // Иницилизация камеры.
+        auto& grid = UI::CanvasManager::getInstance().GetGrid();                // Иницилизация сетки.
+
+        auto& menu = Menu::getInstance();                                       // Иницилизация Меню создания нод.
+        auto& top_bar = TopBar::getInstance();                                  // Иницилизация Верхней Меню-строки.
+        auto& notification_menu = NotificationMenu::getInstance();              // Иницилизация Меню уведомлений.
 
         Core::LoggingManager::Info("[APP_CONTROLER]: GameLoop is begin");
         while (!glfwWindowShouldClose(window)) {
@@ -149,6 +155,7 @@ namespace SwarmIDE::UI {
             menu.Draw(&camera);
             top_bar.Draw(window, &camera, &grid);
             notification_menu.Draw(deltaTime);
+            ContextMenuManager::getInstance().Draw();
 
             canvas_manager.Draw();
             

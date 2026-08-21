@@ -1,4 +1,4 @@
-#pragma once
+#pragma once 
 #include "SwarmIDE.hpp"
 #include "core/graph/GraphManager.hpp"
 #include "ui/command/CommandBus.hpp"
@@ -6,6 +6,7 @@
 #include "graphics/Grid.hpp"
 #include "core/engine/LoggingManager.hpp"
 #include <optional>
+#include <unordered_set>
 
 namespace SwarmIDE::UI {
 
@@ -13,33 +14,32 @@ namespace SwarmIDE::UI {
      * @brief Указывает текущиее состояние событий мыши
      */
     enum class MouseEvents {
-        IDLE,                  /** @brief < Ничего не делаем / Просто водим мышкой */
-        DRAGGING_NODE,         /** @brief < Тащим ноду */
-        DRAGGING_WIRE          /** @brief < Тянем связь из пина */
+        IDLE,                  /** @brief < Ничего не делаем / Просто водим мышкой. */
+        DRAGGING_NODE,         /** @brief < Тащим ноду. */
+        DRAGGING_WIRE,         /** @brief < Тянем связь из пина. */
+        DRAGGING_SELECTION     /** @brief < Рамка выделения. */
     };
 
     /**
      * @struct ActiveLinkContext
-     * @brief Структура, хранящая состояние сборки связи 
-     * (тянет ли пользователь провод из пина прямо сейчас, откуда тянет, где мышь).
+     * @brief Хранит состояние сборки связи или группового перетаскивания нод.
      */
     struct ActiveLinkContext {
-        MouseEvents state = MouseEvents::IDLE;         /** @brief < Текущиее состояние */
+        MouseEvents state = MouseEvents::IDLE;         
 
-        // Данные для перемещения ноды
-        UUIDv4::UUID grabberNodeID;                    /** @brief < Какую ноду тащим */
-        glm::vec2 initialNodePos;                      /** @brief < Где она была до начала перетаскивания (для отмены) */
+        // Начальные позиции всех перетаскиваемых нод: Key = NodeID, Value = InitialWorldPos
+        std::unordered_map<UUIDv4::UUID, glm::vec2> initialNodePositions;
 
         // Данные для создания связи
-        UUIDv4::UUID startNodeID;                      /** @brief < Из какой ноды тянем связь */  
-        UUIDv4::UUID startPinID;                       /** @brief < Из какого пина тянем связь */
-        glm::vec2 currentMouseWorldPos;                /** @brief < Текущие координаты мыши в мире */
+        UUIDv4::UUID startNodeID;                      
+        UUIDv4::UUID startPinID;                       
+        glm::vec2 currentMouseWorldPos;                
 
-        void Reset() {                                 /** @brief < Методы для очистки контекста */
+        void Reset() {                                 
             state = MouseEvents::IDLE;
-            initialNodePos = glm::vec2(0.0f, 0.0f);
+            initialNodePositions.clear();
             currentMouseWorldPos = glm::vec2(0.0f, 0.0f);
-        }    
+        }
     };
 
     /**
@@ -112,9 +112,14 @@ namespace SwarmIDE::UI {
         Graphics::Camera* camera = nullptr;                                     /** @brief < Камера */
         Command::CommandBus& command_bus;                                       /** @brief < Командный менеджер */
 
-        std::optional<UUIDv4::UUID> selectedNodeID = std::nullopt;              /** @brief < ID выбранной нodы (для удаления) */
         std::optional<UUIDv4::UUID> lastHoveredPin = std::nullopt;              /** @brief < ID Последний наведенный пин */
         std::optional<UUIDv4::UUID> NodehasLastHoveredPin = std::nullopt;       /** @brief < ID Нода, которой принадлежит последний наведенный пин */
         std::optional<UUIDv4::UUID> lastHoveredNode = std::nullopt;             /** @brief < ID Последняя наведенная нода */
+    
+        // Поля для рамки выделения (Lasso Selection)
+        glm::vec2 selectionStartScreenPos{0.0f, 0.0f};                          /** @brief < Начальная точка зажатия мыши на экране */
+        glm::vec2 selectionCurrentScreenPos{0.0f, 0.0f};                        /** @brief < Текущая точка мыши на экране */
+        std::unordered_set<UUIDv4::UUID> initialSelectedNodesBeforeBox;         /** @brief < Ранее выделенные ноды до начала растягивания рамки */
     };
-}
+
+} // SwarmIDE::UI

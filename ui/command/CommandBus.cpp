@@ -10,7 +10,7 @@ namespace SwarmIDE::UI::Command {
     }
     
     void CommandBus::PushAndExecute(std::unique_ptr<Cmd> cmd) {
-        Core::LoggingManager::Fatal("[PUSH_AND_EXECUTE]: Count undo: ", undoStack.size());
+        Core::LoggingManager::Info("[PUSH_AND_EXECUTE]: Count undo: ", undoStack.size());
         if(!cmd) return;
 
         // Выполняем команду
@@ -23,9 +23,7 @@ namespace SwarmIDE::UI::Command {
         redoStack.clear();
 
         // Следим за переполненостью вектора.
-        if(undoStack.size() > MAX_HISTORY_SIZE) {
-            undoStack.erase(undoStack.begin());
-        } 
+        if(undoStack.size() > MAX_HISTORY_SIZE) undoStack.erase(undoStack.begin());
     }
 
     void CommandBus::Undo() {

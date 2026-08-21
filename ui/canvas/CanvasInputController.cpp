@@ -1,6 +1,9 @@
 #include "SwarmIDE.hpp"
 #include "ui/canvas/CanvasInputController.hpp"
 #include "ui/canvas/CanvasManager.hpp"
+#include "ui/command/CmdNodeOperations.hpp"
+#include "ui/command/CmdBatch.hpp"
+#include "ui/canvas/ContextMenuManager.hpp"
 
 namespace SwarmIDE::UI {
 
@@ -23,18 +26,15 @@ namespace SwarmIDE::UI {
 
     void CanvasInputController::HandleMouseLeftClick(glm::vec2 mousePos) {
         ImGuiIO& io = ImGui::GetIO();
-        // Сохраняем коодринаты мыши
         activeLinkContext.currentMouseWorldPos = camera->screenToWorld(mousePos, canvas_manager->GetWindowSize());
 
-        // Объекты, что были выбраны пользоваелем (Визуальный пин и нода)
         ViewPin* hoveredViewPin = nullptr;
-        // Будем фиксировать ID ноды, которой принадлежит пин
         UUIDv4::UUID hoveredPinParentNodeID; 
         ViewNode* hoveredViewNode = nullptr;
 
         auto& viewNodes = canvas_manager->getViewNodes();
 
-        // Указываем, что прошлые ноды и пины должны перестать быть наведены.
+        // Снимаем подсвечивание наведения (Hover)
         if (lastHoveredPin != std::nullopt && NodehasLastHoveredPin != std::nullopt) {
             if (auto* pastNode = canvas_manager->findViewNodeByID(NodehasLastHoveredPin.value())) {
                 if (auto* pastPin = pastNode->findViewPin(lastHoveredPin.value())) {
@@ -49,30 +49,23 @@ namespace SwarmIDE::UI {
             }
         }
 
-        // Если событие мыши - Простой
         if(activeLinkContext.state == MouseEvents::IDLE) {   
-            // Проходимся по всем визуальным нодам
             for(auto& [viewNodeID, viewNode] : viewNodes) {
                 auto& viewPins = viewNode->GetViewPins();
 
-                // Проходимся по всем визуальны пинам
                 for(auto& [viewPinID, viewPin] : viewPins) {
                     if(viewPin->IsPointInside(mousePos, camera->zoomFactor)) {
                         viewPin->SetHovered(true);
                         hoveredViewPin = viewPin.get();
-                        // Запоминаем ID родительской нodы пина
                         hoveredPinParentNodeID = viewNodeID; 
-                        
-                        // Запоминаем ID визуального пина, для снятия выделения и ID ноды, которая имеет данный пин.
                         lastHoveredPin = hoveredViewPin->GetPinID();
                         NodehasLastHoveredPin = viewNodeID;
                         break; 
                     }
                 }
 
-                // Если пользователь не выбрал пин, проверям выбрал ли пользователь ноду.
                 if(hoveredViewPin == nullptr) {
-                    glm::vec2 screenPos = camera->worldToScreen(viewNode->worldPos, canvas_manager->GetWindowSize());
+                    glm::vec2 screenPos = camera->worldToScreen(viewNode->GetWorldPos(), canvas_manager->GetWindowSize());
                     if(viewNode->shape->isPointInside(mousePos, screenPos, viewNode->nodeSize, camera->zoomFactor)) {
                         viewNode->isHovered = true;
                         hoveredViewNode = viewNode.get();
@@ -82,62 +75,174 @@ namespace SwarmIDE::UI {
                 }
             }
 
-            // Если пользователь указывает на пин
-            if(hoveredViewPin != nullptr) {
-                // Если пользователь кликнул на пин
+            // Клик по холсту (в пустое место) -> Старт рамки выделения
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && hoveredViewPin == nullptr && hoveredViewNode == nullptr) {
+                bool isModifierPressed = io.KeyCtrl || io.KeyShift;
+
+                if (!isModifierPressed) {
+                    canvas_manager->ClearSelection();
+                    for (auto& [id, node] : viewNodes) {
+                        node->SetSelected(false);
+                    }
+                }
+
+                activeLinkContext.state = MouseEvents::DRAGGING_SELECTION;
+                selectionStartScreenPos = mousePos;
+                selectionCurrentScreenPos = mousePos;
+                initialSelectedNodesBeforeBox = canvas_manager->GetSelectedNodesID();
+            }
+
+            // Клик по пину
+            else if(hoveredViewPin != nullptr) {
                 if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                    // Указываем событие мыши, как проведение связи
                     activeLinkContext.state = MouseEvents::DRAGGING_WIRE;
                     activeLinkContext.startNodeID = hoveredPinParentNodeID;
                     activeLinkContext.startPinID = hoveredViewPin->GetPinID();
                 }
             }
-            // Если пользователь выбрал ноду
+            // Клик по ноде
             else if(hoveredViewNode != nullptr) {
-                // Если пользователь кликнул на ноду
                 if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                    // Указываем событие мыши, как перетаскивание ноды
-                    activeLinkContext.state = MouseEvents::DRAGGING_NODE;
-                    activeLinkContext.grabberNodeID = hoveredViewNode->nodeID;
-                    activeLinkContext.initialNodePos = hoveredViewNode->GetWorldPos();
+                    bool isModifierPressed = io.KeyCtrl || io.KeyShift;
 
-                    // Сохраняем ID ноды, чтобы пользователь мог удалить её
-                    selectedNodeID = hoveredViewNode->nodeID;
+                    if (isModifierPressed) {
+                        // Тоглим выделение конкретной ноды
+                        if (canvas_manager->IsNodeSelected(hoveredViewNode->nodeID)) {
+                            canvas_manager->DeselectNode(hoveredViewNode->nodeID);
+                            hoveredViewNode->SetSelected(false);
+                        } else {
+                            hoveredViewNode->SetSelected(true);
+                            canvas_manager->SelectNode(hoveredViewNode->nodeID);
+                        }
+                    } else {
+                        // Если кликнули по ноде, которая не была выделена — делаем её единственной выделенной
+                        if (!canvas_manager->IsNodeSelected(hoveredViewNode->nodeID)) {
+                            canvas_manager->ClearSelection();
+                            for (auto& [id, node] : viewNodes) {
+                                node->SetSelected(false);
+                            }
+                            hoveredViewNode->SetSelected(true);
+                            canvas_manager->SelectNode(hoveredViewNode->nodeID);
+                        }
+                    }
+
+                    // Переходим в режим перетаскивания всех выбранных нод
+                    activeLinkContext.state = MouseEvents::DRAGGING_NODE;
+                    activeLinkContext.initialNodePositions.clear();
+
+                    for (const auto& nodeID : canvas_manager->GetSelectedNodesID()) {
+                        if (auto* node = canvas_manager->findViewNodeByID(nodeID)) {
+                            activeLinkContext.initialNodePositions[nodeID] = node->GetWorldPos();
+                        }
+                    }
                 }
             }
         }
-        // Если событие мыши - перетаскивание ноды
-        else if(activeLinkContext.state == MouseEvents::DRAGGING_NODE) {
-            if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
-                // Находим смещение мыши (Дельту)
-                glm::vec2 worldDelta = glm::vec2(io.MouseDelta.x, io.MouseDelta.y) / camera->zoomFactor;
-                ViewNode* draggedNode = canvas_manager->findViewNodeByID(activeLinkContext.grabberNodeID);
+        // Растягивание рамки выделения
+        else if (activeLinkContext.state == MouseEvents::DRAGGING_SELECTION) {
+            selectionCurrentScreenPos = mousePos;
 
-                if (draggedNode) {
-                    /** @todo Здесь должна быть команда по перемещению ноды. CmdMoveNode */
+            // Вычисляем прямоугольник выделения в экранных координатах
+            glm::vec2 selectMinScreen = glm::min(selectionStartScreenPos, selectionCurrentScreenPos);
+            glm::vec2 selectMaxScreen = glm::max(selectionStartScreenPos, selectionCurrentScreenPos);
 
-                    // Смешаем ноду на дельту
-                    draggedNode->MoveBy(worldDelta);
+            // Передаем данные в CanvasManager для отрисовки
+            canvas_manager->SetSelectionRect(selectMinScreen, selectMaxScreen, true);
+
+            // Переводим границы рамки в мировые координаты для проверки коллизий нод
+            glm::vec2 w1 = camera->screenToWorld(selectMinScreen, canvas_manager->GetWindowSize());
+            glm::vec2 w2 = camera->screenToWorld(selectMaxScreen, canvas_manager->GetWindowSize());
+            glm::vec2 selectMinWorld = glm::min(w1, w2);
+            glm::vec2 selectMaxWorld = glm::max(w1, w2);
+
+            bool isModifierPressed = io.KeyCtrl || io.KeyShift;
+
+            // Проверяем пересечение AABB прямоугольника рамки с каждой нодой
+            for (auto& [nodeID, viewNode] : viewNodes) {
+                glm::vec2 nodeMinWorld = viewNode->GetWorldPos();
+                glm::vec2 nodeMaxWorld = nodeMinWorld + viewNode->nodeSize;
+
+                bool intersects = !(nodeMaxWorld.x < selectMinWorld.x || nodeMinWorld.x > selectMaxWorld.x ||
+                                    nodeMaxWorld.y < selectMinWorld.y || nodeMinWorld.y > selectMaxWorld.y);
+
+                bool wasSelectedBefore = initialSelectedNodesBeforeBox.contains(nodeID);
+
+                if (isModifierPressed) {
+                    if (wasSelectedBefore || intersects) {
+                        canvas_manager->SelectNode(nodeID);
+                        viewNode->SetSelected(true);
+                    } else {
+                        canvas_manager->DeselectNode(nodeID);
+                        viewNode->SetSelected(false);
+                    }
+                } else {
+                    if (intersects) {
+                        canvas_manager->SelectNode(nodeID);
+                        viewNode->SetSelected(true);
+                    } else {
+                        canvas_manager->DeselectNode(nodeID);
+                        viewNode->SetSelected(false);
+                    }
                 }
             }
-            
-            // Если пользователь отпустил мышь - Reset (Сброс события мыши в IDLE)
-            if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+
+            // Завершение выделения по отпусканию LKM
+            if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+                canvas_manager->ClearSelectionRect();
+                initialSelectedNodesBeforeBox.clear();
                 activeLinkContext.Reset();
             }
         }
-        // Если собитие мыши - проведение связи
+        // Завершение перетаскивания группы нод
+        else if(activeLinkContext.state == MouseEvents::DRAGGING_NODE) {
+            
+            // ДОБАВЛЕНО: Визуально сдвигаем ноды при удерживании ЛКМ и движении
+            if (ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0.0f)) {
+                // Конвертируем дельту экрана в мировую
+                glm::vec2 dragDeltaWorld = glm::vec2(io.MouseDelta.x, io.MouseDelta.y) / camera->zoomFactor;
+                
+                for (const auto& nodeID : canvas_manager->GetSelectedNodesID()) {
+                    if (auto* node = canvas_manager->findViewNodeByID(nodeID)) {
+                        node->MoveBy(dragDeltaWorld);
+                    }
+                }
+            }
+
+            // Отпускание ЛКМ: фиксация позиции и создание команд
+            if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+                auto batchCmd = std::make_unique<Command::CmdBatch>();
+
+                for (const auto& [nodeID, oldPos] : activeLinkContext.initialNodePositions) {
+                    if (auto* node = canvas_manager->findViewNodeByID(nodeID)) {
+                        glm::vec2 finalPos = node->GetWorldPos();
+                        if (finalPos != oldPos) {
+                            glm::vec2 delta = finalPos - oldPos;
+                            
+                            // ВАЖНО: Отменяем визуальный сдвиг, так как PushAndExecute 
+                            // вызовет Execute(), который сам сместит ноду через MoveBy(delta).
+                            // Без этого нода улетит на двойное расстояние.
+                            node->MoveBy(-delta);
+                            
+                            batchCmd->AddCommand(std::make_unique<Command::CmdMoveNode>(nodeID, delta));
+                        }
+                    }
+                }
+
+                if (!batchCmd->IsEmpty()) {
+                    command_bus.PushAndExecute(std::move(batchCmd));
+                }
+
+                activeLinkContext.Reset();
+            }
+        }
+        // Завершение создания связи
         else if(activeLinkContext.state == MouseEvents::DRAGGING_WIRE) {
             canvas_manager->SetTempWire(activeLinkContext.startNodeID, activeLinkContext.startPinID, activeLinkContext.currentMouseWorldPos);
 
-            // Проходимся циклом по всем визуальным нодам
             for(auto& [viewNodeID, viewNode] : viewNodes) {
                 auto& viewPins = viewNode->GetViewPins();
-                // Проходимся циклом по всем визуальным пинам
                 for(auto& [viewPinID, viewPin] : viewPins) {
-                    // Если пользователь указывает на новый пин (Второй). То есть хочет создать связь
                     if(viewPin->IsPointInside(mousePos, camera->zoomFactor)) {
-                        // Сохраняем второй теперь уже выбранный пин
                         viewPin->SetHovered(true);
                         hoveredViewPin = viewPin.get();
                         hoveredPinParentNodeID = viewNodeID;
@@ -149,7 +254,6 @@ namespace SwarmIDE::UI {
 
             if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
                 try {
-                    // Если выбранный пин (второй) существует, и начальный пин (первый) не равен выбранному — строим связь.
                     if (hoveredViewPin != nullptr && hoveredViewPin->GetPinID() != activeLinkContext.startPinID) {
                         auto* startViewNode = canvas_manager->findViewNodeByID(activeLinkContext.startNodeID);
                         auto* startViewPin = (startViewNode != nullptr) ? startViewNode->findViewPin(activeLinkContext.startPinID) : nullptr;
@@ -160,7 +264,6 @@ namespace SwarmIDE::UI {
                         auto* logicHoveredPin = Core::GraphManager::getInstance().findPinGlobaly(hoveredViewPin->GetPinID());
 
                         if (logicStartPin != nullptr && logicHoveredPin != nullptr) {
-
                             if (logicStartPin->nodeID == logicHoveredPin->nodeID) {
                                 Core::LoggingManager::Warning("Connection dropped: source and target pin belong to the same node.");
                             }
@@ -169,9 +272,6 @@ namespace SwarmIDE::UI {
                             }
                             else if (logicStartPin->dataType != logicHoveredPin->dataType || logicStartPin->type != logicHoveredPin->type) {
                                 Core::LoggingManager::Warning("Connection dropped: pin data/type mismatch.");
-                            }
-                            else if (logicStartPin->type != logicHoveredPin->type) {
-                                Core::LoggingManager::Warning("Connection dropped: pin types do not match.");
                             }
                             else if (logicStartPin->maxConnections != -1 && logicStartPin->GetCurrentConnections() >= logicStartPin->maxConnections) {
                                 Core::LoggingManager::Warning("Connection dropped: source pin has reached its maximum connections.");
@@ -187,56 +287,112 @@ namespace SwarmIDE::UI {
                                 UUIDv4::UUID toPinID = (logicHoveredPin->direction == Core::Direction::Output) ? activeLinkContext.startPinID : hoveredViewPin->GetPinID();
 
                                 auto cmd_createConnection = std::make_unique<Command::CmdCreateConnection>(fromNodeID, fromPinID, toNodeID, toPinID);
-                                Command::CommandBus::getInstance().PushAndExecute(std::move(cmd_createConnection));
+                                command_bus.PushAndExecute(std::move(cmd_createConnection));
                             }
-                        }
-                        else {
-                            Core::LoggingManager::Warning("Connection dropped: unable to resolve logical pins for the selected view pins.");
                         }
                     }
                 }
                 catch (const std::exception& ex) {
                     Core::LoggingManager::Error("Connection creation path failed: ", ex.what());
                 }
-                catch (...) {
-                    Core::LoggingManager::Error("Connection creation path failed with unknown exception.");
-                }
-                // Сбрасываем состояние
+
                 activeLinkContext.Reset();
                 canvas_manager->ClearTempWire();
             }
         }
-    }
+    } // CanvasInputController::HandleMouseLeftClick(glm::vec2 mousePos)
 
     void CanvasInputController::HandleMouseRightClick(glm::vec2 mousePos) {
-        /** @todo Нужно будет доделать метод, сейчас тут нет реализации, так как нет контекстного меню. */
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+            std::optional<UUIDv4::UUID> hoveredNodeID = std::nullopt;
+            
+            // Ищем, не кликнули ли мы по какой-то ноде
+            for (auto& [id, viewNode] : canvas_manager->getViewNodes()) {
+                glm::vec2 screenPos = camera->worldToScreen(viewNode->GetWorldPos(), canvas_manager->GetWindowSize());
+                if (viewNode->shape->isPointInside(mousePos, screenPos, viewNode->nodeSize, camera->zoomFactor)) {
+                    hoveredNodeID = id;
+                    break;
+                }
+            }
+            
+            // Вызываем меню. Если hoveredNodeID пустой, откроются настройки холста
+            ContextMenuManager::getInstance().RequestMenu(mousePos, hoveredNodeID);
+        }
     }
 
     void CanvasInputController::HandleKeyboardInputs() {
         ImGuiIO& io = ImGui::GetIO();
+        if (io.WantTextInput) return; 
 
-        // Проверяем, что зажат Ctrl (поддерживает и левый, и правый)
-        bool ctrlPressed = io.KeyCtrl; 
+        bool ctrlPressed = io.KeyCtrl;
 
-        // Отлавливаем Ctrl + Z
-        if (ctrlPressed && ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
-            // Вызываем вашу команду отмены действия
-            command_bus.Undo();
-        }
+        if (ctrlPressed && ImGui::IsKeyPressed(ImGuiKey_Z, false)) command_bus.Undo();
+        if (ctrlPressed && ImGui::IsKeyPressed(ImGuiKey_Y, false)) command_bus.Redo();
 
-        // Отлавливаем Ctrl + Y
-        if (ctrlPressed && ImGui::IsKeyPressed(ImGuiKey_Y, false)) {
-            command_bus.Redo();
-        }
+        const auto& selectedNodes = canvas_manager->GetSelectedNodesID();
 
-        if(ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
-            if(selectedNodeID != std::nullopt) {
-                auto cmd_deleteNode = std::make_unique<Command::CmdDeleteNode>(selectedNodeID);
-                command_bus.PushAndExecute(std::move(cmd_deleteNode));
+        // Ctrl + D (Групповое дублирование со связями)
+        if (ctrlPressed && ImGui::IsKeyPressed(ImGuiKey_D, false)) {
+            if (!selectedNodes.empty()) {
+                auto batchCmd = std::make_unique<Command::CmdBatch>();
+                
+                // 1. Словари для связи старых ID с новыми
+                std::unordered_map<UUIDv4::UUID, UUIDv4::UUID> oldToNewNode;
+                std::unordered_map<UUIDv4::UUID, UUIDv4::UUID> oldToNewPin;
 
-                // Сбрасываем ноду, чтобы не удалять одну и ту же по нескольку раз
-                selectedNodeID = std::nullopt;
+                // 2. Копируем ноды (тут тебе потребуется метод в Core::GraphManager, который дублирует ноду и возвращает ее новую копию)
+                for (const auto& oldNodeID : selectedNodes) {
+                    // ПСЕВДОКОД: auto newNode = GraphManager.CloneNode(oldNodeID);
+                    // ПСЕВДОКОД: oldToNewNode[oldNodeID] = newNode->GetID();
+                    
+                    // Запоминаем соответствие старых пинов новым (например, по их типу и направлению)
+                    // ПСЕВДОКОД: oldToNewPin[oldPinID] = newPinID;
+                    
+                    // Сдвигаем новую ноду визуально, чтобы она не сливалась со старой
+                    // batchCmd->AddCommand(MoveNode...);
+                }
+
+                // 3. Ищем связи между выделенными нодами
+                auto& connManager = Core::ConnectionManager::getInstance();
+                for (const auto& [connID, conn] : connManager.getAllConnections()) {
+                    // Если ОБЕ ноды из этого соединения были скопированы (они есть в нашем словаре)
+                    if (oldToNewNode.contains(conn.fromNodeID) && oldToNewNode.contains(conn.toNodeID)) {
+                        
+                        UUIDv4::UUID newFromNode = oldToNewNode[conn.fromNodeID];
+                        UUIDv4::UUID newToNode = oldToNewNode[conn.toNodeID];
+                        
+                        UUIDv4::UUID newFromPin = oldToNewPin[conn.fromPinID];
+                        UUIDv4::UUID newToPin = oldToNewPin[conn.toPinID];
+
+                        // Создаем команду на прокладку провода между новыми нодами!
+                        batchCmd->AddCommand(std::make_unique<Command::CmdCreateConnection>(
+                            newFromNode, newFromPin, newToNode, newToPin
+                        ));
+                    }
+                }
+
+                command_bus.PushAndExecute(std::move(batchCmd));
             }
         }
-    }
-}
+
+        if (ctrlPressed && ImGui::IsKeyPressed(ImGuiKey_A, false)) {
+            for (auto& [id, viewNode] : canvas_manager->getViewNodes()) { 
+                canvas_manager->SelectNode(id);
+                viewNode->SetSelected(true);
+            }
+        }
+
+        // Delete (Групповое удаление)
+        if (ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
+            if (!selectedNodes.empty()) {
+                auto batchCmd = std::make_unique<Command::CmdBatch>();
+                for (const auto& nodeID : selectedNodes) {
+                    batchCmd->AddCommand(std::make_unique<Command::CmdDeleteNode>(nodeID));
+                }
+                command_bus.PushAndExecute(std::move(batchCmd));
+                canvas_manager->ClearSelection();
+            }
+        }
+    } // CanvasInputController::HandleKeyboardInputs()
+
+} // SwarmIDE::UI
