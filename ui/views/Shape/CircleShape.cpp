@@ -4,7 +4,7 @@
 
 namespace SwarmIDE::UI::Shape {
 
-void CircleShape::DrawBackground(ImDrawList* drawList, glm::vec2 pos, glm::vec2 size, float zoom, Nodes::State state, bool isHovered) {
+void CircleShape::DrawBackground(ImDrawList* drawList, glm::vec2 pos, glm::vec2 size, float zoom, Nodes::State state, bool isHovered, bool isSelected) {
         // 1. Вычисляем координаты углов
         ImVec2 center = ImVec2(pos.x + (size.x / 2.0f), pos.y + (size.y / 2.0f));
         float radius = (size.x / 2.0f);
@@ -32,9 +32,9 @@ void CircleShape::DrawBackground(ImDrawList* drawList, glm::vec2 pos, glm::vec2 
         }
 
         // 5. ОПРЕДЕЛЯЕМ ЦВЕТ РАМКИ В ЗАВИСИМОСТИ ОТ НАВЕДЕНИЯ МЫШИ
-        ImU32 borderColor = isHovered ? 
+        ImU32 borderColor = (isHovered || isSelected) ? 
             theme.GetColorU32(ColorRole::NodeHover) : 
-            theme.GetColorU32(ColorRole::NodeBorder);
+            theme.GetColorU32(ColorRole::NodeBorder);        
 
         // 6. Рисуем подложку
         drawList->AddCircleFilled(center, radius, bgColor);

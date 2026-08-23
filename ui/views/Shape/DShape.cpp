@@ -7,7 +7,7 @@
 
 namespace SwarmIDE::UI::Shape {
 
-    void DShape::DrawBackground(ImDrawList* drawList, glm::vec2 pos, glm::vec2 size, float zoom, Nodes::State state, bool isHovered) {
+    void DShape::DrawBackground(ImDrawList* drawList, glm::vec2 pos, glm::vec2 size, float zoom, Nodes::State state, bool isHovered, bool isSelected) {
         ImVec2 pMin = ImVec2(pos.x, pos.y);
         ImVec2 pMax = ImVec2(pos.x + size.x, pos.y + size.y);
 
@@ -30,7 +30,7 @@ namespace SwarmIDE::UI::Shape {
                 bgColor = theme.GetColorU32(ColorRole::NodeStateIdle); break;
         }
 
-        ImU32 borderColor = isHovered ? 
+        ImU32 borderColor = (isHovered || isSelected) ? 
             theme.GetColorU32(ColorRole::NodeHover) : 
             theme.GetColorU32(ColorRole::NodeBorder);
 

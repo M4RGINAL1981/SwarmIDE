@@ -130,7 +130,7 @@ namespace SwarmIDE::UI {
         state = Core::GraphManager::getInstance().findNodeByID(nodeID)->GetState();
 
         // Передаем scaledSize вместо статичного nodeSize
-        shape->DrawBackground(drawList, screenPos, scaledSize, zoom, state, isHovered);
+        shape->DrawBackground(drawList, screenPos, scaledSize, zoom, state, isHovered, isSelected);
 
         // Отрисовка пинов
         for(auto& [id, viewPin] : viewPins) {

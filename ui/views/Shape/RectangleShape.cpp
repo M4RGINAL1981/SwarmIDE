@@ -4,7 +4,7 @@
 
 namespace SwarmIDE::UI::Shape {
 
-    void RectangleShape::DrawBackground(ImDrawList* drawList, glm::vec2 pos, glm::vec2 size, float zoom, Nodes::State state, bool isHovered) {
+    void RectangleShape::DrawBackground(ImDrawList* drawList, glm::vec2 pos, glm::vec2 size, float zoom, Nodes::State state, bool isHovered, bool isSelected) {
         // 1. Вычисляем координаты углов
         ImVec2 pMin = ImVec2(pos.x, pos.y);
         ImVec2 pMax = ImVec2(pos.x + size.x, pos.y + size.y);
@@ -33,7 +33,7 @@ namespace SwarmIDE::UI::Shape {
         }
 
         // 5. ОПРЕДЕЛЯЕМ ЦВЕТ РАМКИ В ЗАВИСИМОСТИ ОТ НАВЕДЕНИЯ МЫШИ
-        ImU32 borderColor = isHovered ? 
+        ImU32 borderColor = (isHovered || isSelected) ? 
             theme.GetColorU32(ColorRole::NodeHover) : 
             theme.GetColorU32(ColorRole::NodeBorder);
 

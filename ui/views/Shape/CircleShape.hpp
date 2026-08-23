@@ -23,14 +23,15 @@ namespace SwarmIDE::UI::Shape {
         /**
          * @brief Отрисовка самой геометрии (подложки ноды)
          * 
-         * @param[in] drawList  Список отрисовки главного окна холста
-         * @param[in] pos       Координаты фигуры
-         * @param[in] size      Размер фигуры
-         * @param[in] zoom      Текущий зум на холсте
-         * @param[in] state     Текущий статус работы логической ноды (Idle, Executing и т.д.)
-         * @param[in] isHovered Наведена ли мышь на ноду
+         * @param[in] drawList   Список отрисовки главного окна холста
+         * @param[in] pos        Координаты фигуры
+         * @param[in] size       Размер фигуры
+         * @param[in] zoom       Текущий зум на холсте
+         * @param[in] state      Текущий статус работы логической ноды (Idle, Executing и т.д.)
+         * @param[in] isHovered  Наведена ли мышь на ноду
+         * @param[in] isSelected Выбрана ли нода 
          */
-        virtual void DrawBackground(ImDrawList* drawList, glm::vec2 pos, glm::vec2 size, float zoom, Nodes::State state, bool isHovered) override;
+        virtual void DrawBackground(ImDrawList* drawList, glm::vec2 pos, glm::vec2 size, float zoom, Nodes::State state, bool isHovered, bool isSelected) override;
 
         /**
          * @brief Проверят наведена ли мышь на фигуру или нет
