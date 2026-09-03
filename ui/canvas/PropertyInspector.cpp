@@ -1,39 +1,12 @@
 #include "ui/canvas/PropertyInspector.hpp"
-#include "nodes/core/TextNode.hpp"
 #include "imgui.h"
 #include <cstring>
 
 namespace SwarmIDE::UI {
 
-    PropertyInspector::PropertyInspector() { 
-        RegisterDrawers(); 
-    }
-
     void PropertyInspector::OpenForNode(UUIDv4::UUID nodeID) {
         activeNodeID = nodeID;
         openTrigger = true;
-    }
-
-    void PropertyInspector::RegisterDrawers() {
-        drawers["TextNode"] = [this](Nodes::LogicNode* baseNode, bool& applyChanges) {
-            auto* textNode = static_cast<Nodes::TextNode*>(baseNode);
-            if (!textNode) return;
-
-            if (!applyChanges) {
-                // Заполняем буфер при первом появлении окна
-                if (ImGui::IsWindowAppearing()) {
-                    std::string text = textNode->getText();
-                    strncpy(textBuffer, text.c_str(), sizeof(textBuffer) - 1);
-                    textBuffer[sizeof(textBuffer) - 1] = '\0';
-                }
-
-                ImGui::InputTextMultiline("##text_content", textBuffer, sizeof(textBuffer), 
-                                          ImVec2(-FLT_MIN, -FLT_MIN));
-            } else {
-                // Ветка применения изменений по нажатию кнопки Apply
-                textNode->setText(std::string(textBuffer));
-            }
-        };
     }
 
     void PropertyInspector::Draw() {
@@ -53,7 +26,6 @@ namespace SwarmIDE::UI {
         if (ImGui::BeginPopupModal("Edit Node Data", nullptr, flags)) {
             if (activeNodeID) {
                 auto node = Core::GraphManager::getInstance().findNodeByID(activeNodeID.value());
-                bool applyChanges = false;
                 
                 if (node) {
                     ImGui::Text("Editing: %s", node->GetName().c_str());
@@ -61,9 +33,6 @@ namespace SwarmIDE::UI {
 
                     ImGui::BeginChild("EditorRegion", ImVec2(0, -35), true);
                     std::string typeName = node->getTypeName();
-                    if (drawers.contains(typeName)) {
-                        drawers[typeName](node, applyChanges);
-                    }
                     ImGui::EndChild();
 
                     // Кнопки управления
@@ -74,10 +43,6 @@ namespace SwarmIDE::UI {
                     }
                     ImGui::SameLine();
                     if (ImGui::Button("Apply", ImVec2(100, 0))) {
-                        applyChanges = true;
-                        if (drawers.contains(typeName)) { 
-                            drawers[typeName](node, applyChanges); 
-                        }
                         ImGui::CloseCurrentPopup();
                         activeNodeID = std::nullopt;
                     }

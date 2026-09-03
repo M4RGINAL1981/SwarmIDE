@@ -23,14 +23,6 @@ namespace SwarmIDE::UI {
             static PropertyInspector instance;
             return instance;
         }
-
-        /**
-         * @brief Функция отрисовки/применения свойств ноды.
-         * @param[in,out] node Указатель на логическую ноду.
-         * @param[in,out] applyChanges Флаг, указывающий режим: false — отрисовка UI, true — сохранение данных.
-         */
-        using NodeUIDrawer = std::function<void(Nodes::LogicNode*, bool&)>;
-
         /**
          * @brief Открыть инспектор для указанной ноды.
          */
@@ -47,16 +39,12 @@ namespace SwarmIDE::UI {
         PropertyInspector(PropertyInspector&&) = delete;
         PropertyInspector& operator=(PropertyInspector&&) = delete;
     private:
-        PropertyInspector();
+        PropertyInspector() = default;
         ~PropertyInspector() = default;
 
-        void RegisterDrawers();
-
-        std::unordered_map<std::string, NodeUIDrawer> drawers;
         std::optional<UUIDv4::UUID> activeNodeID = std::nullopt;
+        std::unordered_map<std::string, std::string> editBuffers;
         bool openTrigger = false;
-        
-        char textBuffer[2048] = ""; 
     };
 
 } // SwarmIDE::UI
