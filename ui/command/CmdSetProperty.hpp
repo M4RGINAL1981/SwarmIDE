@@ -27,6 +27,7 @@ namespace SwarmIDE::UI::Command {
         std::string key;                   /** @brief < Что именно за поле будет изменяться. */
         Core::DataVariant oldValue;        /** @brief < Старое значение для ноды. */
         Core::DataVariant newValue;        /** @brief < Новое значение для ноды. */
+        bool hasOldValue = false;
     };
 
 }

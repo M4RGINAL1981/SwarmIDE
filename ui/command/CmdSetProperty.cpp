@@ -13,13 +13,31 @@ namespace SwarmIDE::UI::Command {
 
     void CmdSetProperty::Execute() {
         auto logicNode = Core::GraphManager::getInstance().findNodeByID(nodeID);
-        /** @todo find node → find descriptor by key → сохранить old → set(new) */
+        if (!logicNode) return;
+
+        for (auto& property : logicNode->properties()) {
+            if (property.key == key) {
+                if (!hasOldValue) {
+                    oldValue = property.get();
+                    hasOldValue = true;
+                }
+                property.set(newValue);
+                return;
+            }
+        }
     }
 
 
     void CmdSetProperty::Undo() {
-        Core::GraphManager::getInstance().findNodeByID(nodeID);
-        /** @todo set(old). */
+        auto logicNode = Core::GraphManager::getInstance().findNodeByID(nodeID);
+        if (!logicNode) return;
+
+        for (auto& property : logicNode->properties()) {
+            if (property.key == key) {
+                property.set(oldValue);
+                return;
+            }
+        }
     }
 
 }

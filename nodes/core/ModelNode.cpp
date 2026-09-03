@@ -48,7 +48,11 @@ namespace SwarmIDE::Nodes {
     }
 
     std::vector<Core::PropertyDescriptor> ModelNode::properties() { 
-        return { Prop("modelID", "Model", Core::PropertyKind::ModelRef, modelID) };
+        auto property = Prop("modelID", "Model", Core::PropertyKind::ModelRef, modelID);
+        for (const auto& asset : Core::ModelManager::getInstance().getAllAssets()) {
+            property.enumOptions.push_back(asset->id);
+        }
+        return { std::move(property) };
     }
 
     void ModelNode::ApplyDefaultSettings() {

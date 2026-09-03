@@ -4,6 +4,8 @@
 #include "nodes/base/LogicNode.hpp"
 #include "ui/windows/ThemeManager.hpp"
 #include "ui/command/CommandBus.hpp"
+#include "ui/command/CmdBatch.hpp"
+#include "ui/command/CmdSetProperty.hpp"
 #include "uuid_v4/uuid_v4.h"
 
 #include <string>
