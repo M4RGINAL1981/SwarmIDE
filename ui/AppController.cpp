@@ -135,8 +135,6 @@ namespace SwarmIDE::UI {
             lastFrame = currentFrame;
             
             canvas_manager.Update(deltaTime);                                   // Обновление камеры
-            canvas_input_controller.ProcessInput();                             // Отлавливание взаимодействия с нодами
-            Command::ShortcutManager::Process(window);                          // Отлавливание горячих клавиш
 
             // Очищаем экран ДО отрисовки чего-либо
             glm::vec3 colorBackground = ThemeManager::getInstance().GetColorVec3(ColorRole::GridBackground);
@@ -165,6 +163,9 @@ namespace SwarmIDE::UI {
             ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
             ImGui::Begin("Canvas", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus);
+
+            canvas_input_controller.ProcessInput();                             // Отлавливание взаимодействия с нодами
+            Command::ShortcutManager::Process(window);                          // Отлавливание горячих клавиш
 
             // Отрисовка всех элементов программы.
             menu.Draw(&camera);
