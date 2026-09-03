@@ -1,8 +1,11 @@
 #pragma once
 #include "SwarmIDE.hpp"
+
 #include "core/graph/LogicPin.hpp"
 #include "core/graph/GraphRegistry.hpp"
 #include "core/engine/GenerateIDManager.hpp"
+#include "core/graph/PropertyDescriptor.hpp"
+
 #include <optional>
 #include <vector>
 #include <memory>
@@ -48,20 +51,29 @@ namespace SwarmIDE::Nodes {
         virtual void Execute() = 0;
 
         /**
+         * @brief 
+         * 
+         * @return std::vector<Core::PropertyDescriptor> 
+         */
+        virtual std::vector<Core::PropertyDescriptor> properties() { return {}; }
+
+        /**
          * @brief Выгрузка ноды в json.
          * @details Берёт все поля в ноде и загружает их в json.
+         * base-поля + for each p: json[p.key] = p.get()
          * 
          * @return                json 
          */
-        virtual json serializeNode() = 0; 
+        json serializeNode(); 
 
         /**
          * @brief Загрузка ноды из json.
          * @details Берёт объект json, проходиться по всем его полям и загружает ноду.
+         * base + for each p: if contains(p.key) p.set(...)
          * 
          * @param[in]             nodeJson объект json, который хранит все поля ноды.
          */
-        virtual void deserializeNode(json nodeJson) = 0;
+        void deserializeNode(const json& nodeJson);
 
         /**
          * @brief Возвращает строковый тип узла.
@@ -119,6 +131,13 @@ namespace SwarmIDE::Nodes {
          * @see Core::LogicPin
          */
         Core::LogicPin* findPin(UUIDv4::UUID id);
+
+        template<typename T>
+        Core::PropertyDescriptor Prop(std::string key, std::string label, Core::PropertyKind kind, T& field) {
+            return { key, label, kind,
+                    [&field]{ return Core::DataVariant(field); },
+                    [&field](const Core::DataVariant& v){ field = v.getValue<T>(); } };
+        }
 
         /**
          * @brief Проверяет, заполнены ли все входные пины данными, необходимыми для старта.

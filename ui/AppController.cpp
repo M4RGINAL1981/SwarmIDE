@@ -9,6 +9,7 @@
 #include "ui/windows/TopBar.hpp"
 #include "ui/windows/NotificationMenu.hpp"
 #include "ui/canvas/ContextMenuManager.hpp"
+#include "ui/canvas/PropertyInspector.hpp"
 
 #include "stb_image.h"
 
@@ -95,9 +96,22 @@ namespace SwarmIDE::UI {
         canvas_input_controller.SetCamera(&canvas_manager.GetCamera());
         canvas_input_controller.SetCanvasManager(&canvas_manager);
 
+        // Иницилизируем курсоры при старте приложения (один раз).
+        drag_window.cursorNWSE    = glfwCreateStandardCursor(GLFW_RESIZE_NWSE_CURSOR);
+        drag_window.cursorNESW    = glfwCreateStandardCursor(GLFW_RESIZE_NESW_CURSOR);
+        drag_window.cursorHResize = glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR);
+        drag_window.cursorVResize = glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR);
+
         Core::LoggingManager::Info("[APP_CONTROLER]: AppController is end constructor");
     }
 
+    AppController::~AppController() {
+        // Уничтожаем курсоры перед закрытием приложения, чтобы очистить ресурсы ОС.
+        glfwDestroyCursor(drag_window.cursorNWSE);
+        glfwDestroyCursor(drag_window.cursorNESW);
+        glfwDestroyCursor(drag_window.cursorHResize);
+        glfwDestroyCursor(drag_window.cursorVResize);
+    }
     
     void AppController::run() {
 
@@ -152,10 +166,12 @@ namespace SwarmIDE::UI {
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
             ImGui::Begin("Canvas", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
+            // Отрисовка всех элементов программы.
             menu.Draw(&camera);
             top_bar.Draw(window, &camera, &grid);
             notification_menu.Draw(deltaTime);
             ContextMenuManager::getInstance().Draw();
+            PropertyInspector::getInstance().Draw();
 
             canvas_manager.Draw();
             

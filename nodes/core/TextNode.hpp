@@ -54,16 +54,10 @@ namespace SwarmIDE::Nodes {
         virtual std::string getTypeName() override { return "TextNode"; }
           
         /**
-         * @brief Выгрузка ноды в json
-         * @return json 
+         * @brief 
+         * @return std::vector<Core::PropertyDescriptor> 
          */
-        virtual json serializeNode() override;
-
-        /**
-         * @brief Загрузка ноды из json
-         * @param[in] jsonNode 
-         */
-        virtual void deserializeNode(json jsonNode) override;
+        virtual std::vector<Core::PropertyDescriptor> properties() override;
 
         /**
          * @brief Возвращает текущее текстовое содержимое узла.

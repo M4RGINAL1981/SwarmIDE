@@ -45,29 +45,16 @@ namespace SwarmIDE::Nodes {
             setPinValue("Output", Core::DataVariant(result));
             SetState(Success);
 
-            Core::LoggingManager::SuccessNode("ConversationalAgent", GetID());
+            Core::LoggingManager::SuccessNode("PlanExecuteAgent", GetID());
 
         } catch (const std::exception& e) {
             std::cerr << "Agent Generation Error: " << e.what() << std::endl;
             SetState(Failed);
 
-            Core::LoggingManager::FailedNode("ConversationalAgent", GetID());
+            Core::LoggingManager::FailedNode("PlanExecuteAgent", GetID());
         }
     }
 
-    json PlanExecuteAgent::serializeNode() {
-        json nodeJson = LogicNode::serializeNode();
-        nodeJson["SystemInstruction"] = getSystemInstruction();
-        
-        return nodeJson;
-    }
-
-    void PlanExecuteAgent::deserializeNode(json nodeJson) {
-        LogicNode::deserializeNode(nodeJson);
-        setSystemInstruction(nodeJson["SystemInstruction"]);
-    }
-
-    
     void PlanExecuteAgent::ApplyDefaultSettings() {
         SetName("PlanExecuteAgent");
         setSystemInstruction("You are Alpha-Agent. Write down your instructions here...");

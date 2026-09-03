@@ -51,7 +51,7 @@ namespace SwarmIDE::UI {
     void WindowEventHandler::CursorPosCallback(GLFWwindow* w, double xpos, double ypos) {
         auto* app = static_cast<AppController*>(glfwGetWindowUserPointer(w));
 
-        // ИСПРАВЛЕНИЕ 1: Восстанавливаем логику панорамирования (Middle Mouse)
+        // Восстанавливаем логику панорамирования (Middle Mouse)
         if (app->isPanning) {
             double dx = xpos - app->lastMousePos.x;
             double dy = ypos - app->lastMousePos.y;
@@ -66,7 +66,7 @@ namespace SwarmIDE::UI {
         double currentScrX = winX + xpos;
         double currentScrY = winY + ypos;
 
-        // ИСПРАВЛЕНИЕ 2: Изменение размера окна
+        // Изменение размера окна
         if (app->drag_window.isResizingWindow) {
             double dx = currentScrX - app->drag_window.dragStartX;
             double dy = currentScrY - app->drag_window.dragStartY;
@@ -103,7 +103,7 @@ namespace SwarmIDE::UI {
             return;
         }
 
-        // ИСПРАВЛЕНИЕ 3: Плавное перетаскивание окна
+        // Плавное перетаскивание окна
         if (app->drag_window.isDraggingWindow) {
             double dx = currentScrX - app->drag_window.dragStartX;
             double dy = currentScrY - app->drag_window.dragStartY;
@@ -111,7 +111,6 @@ namespace SwarmIDE::UI {
             return;
         }
 
-        // ИСПРАВЛЕНИЕ 4: Решаем конфликт курсоров с ImGui
         ImGuiIO& io = ImGui::GetIO();
         app->drag_window.resizeEdgeFlags = AppController::ResizeFlags::NONE;
         const int border = 8; 
@@ -124,16 +123,21 @@ namespace SwarmIDE::UI {
         GLFWcursor* cursor = nullptr;
         uint8_t flags = app->drag_window.resizeEdgeFlags;
 
+        // ИСПРАВЛЕНО: Теперь берем готовые сохраненные курсоры
         if ((flags & AppController::ResizeFlags::LEFT && flags & AppController::ResizeFlags::TOP) || 
-            (flags & AppController::ResizeFlags::RIGHT && flags & AppController::ResizeFlags::BOTTOM))
-            cursor = glfwCreateStandardCursor(GLFW_RESIZE_NWSE_CURSOR);
+            (flags & AppController::ResizeFlags::RIGHT && flags & AppController::ResizeFlags::BOTTOM)) {
+            cursor = app->drag_window.cursorNWSE;
+        }
         else if ((flags & AppController::ResizeFlags::LEFT && flags & AppController::ResizeFlags::BOTTOM) || 
-                 (flags & AppController::ResizeFlags::RIGHT && flags & AppController::ResizeFlags::TOP))
-            cursor = glfwCreateStandardCursor(GLFW_RESIZE_NESW_CURSOR);
-        else if (flags & AppController::ResizeFlags::LEFT || flags & AppController::ResizeFlags::RIGHT)
-            cursor = glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR);
-        else if (flags & AppController::ResizeFlags::TOP || flags & AppController::ResizeFlags::BOTTOM)
-            cursor = glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR);
+                (flags & AppController::ResizeFlags::RIGHT && flags & AppController::ResizeFlags::TOP)) {
+            cursor = app->drag_window.cursorNESW;
+        }
+        else if (flags & AppController::ResizeFlags::LEFT || flags & AppController::ResizeFlags::RIGHT) {
+            cursor = app->drag_window.cursorHResize;
+        }
+        else if (flags & AppController::ResizeFlags::TOP || flags & AppController::ResizeFlags::BOTTOM) {
+            cursor = app->drag_window.cursorVResize;
+        }
 
         if (cursor) {
             glfwSetCursor(w, cursor);

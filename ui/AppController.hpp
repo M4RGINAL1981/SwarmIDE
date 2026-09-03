@@ -12,8 +12,6 @@ namespace SwarmIDE::UI {
      * @details Этот класс инициализирует графический контекст OpenGL, окно GLFW и интерфейс ImGui. 
      * Он собирает в себе ссылки на все ключевые менеджеры ядра и координирует их совместную работу, 
      * обеспечивая связь между вычислительной логикой (Core) и визуальным слоем (UI/Graphics).
-     * 
-     * @todo Нужно будет вынести все лямбда-фукнции в отдельный файл. Также конструктор сейчас занимается слишком большим кол-вом действий.
      */
     class AppController {
     public:
@@ -24,6 +22,11 @@ namespace SwarmIDE::UI {
          * (например, прокидывает указатель в `ConnectionManager::SetGraphManager()`).
          */
         AppController();
+
+        /**
+         * @brief Деструктор контроллера приложения. 
+         */
+        ~AppController();
         
         /**
          * @brief Запуск главного цикла приложения (Main Render Loop).
@@ -72,6 +75,11 @@ namespace SwarmIDE::UI {
             int targetWidth = 0, targetHeight = 0;
             int targetX = 0, targetY = 0;
             bool needsResize = false;
+
+            GLFWcursor* cursorNWSE = nullptr;
+            GLFWcursor* cursorNESW = nullptr;
+            GLFWcursor* cursorHResize = nullptr;
+            GLFWcursor* cursorVResize = nullptr;
 
             void Reset() { 
                 isDraggingWindow = false;

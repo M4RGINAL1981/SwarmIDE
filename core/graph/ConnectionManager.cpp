@@ -189,6 +189,7 @@ namespace SwarmIDE::Core {
     }
 
     void ConnectionManager::removeConnectionsForNode(UUIDv4::UUID nodeID) {
+        /** @todo Нужно уменьшать currentConnections у пинов сосодей. */
         std::erase_if(connections, [nodeID](const std::pair<UUIDv4::UUID, LogicConnection>& kvp) {
             const LogicConnection& conn = kvp.second;
             return conn.fromNodeID == nodeID || conn.toNodeID == nodeID;

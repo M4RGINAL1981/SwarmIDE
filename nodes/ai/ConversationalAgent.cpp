@@ -53,18 +53,6 @@ namespace SwarmIDE::Nodes {
         }
     }
 
-    json ConversationalAgent::serializeNode() {
-        json nodeJson = LogicNode::serializeNode();
-        nodeJson["SystemInstruction"] = getSystemInstruction();
-        
-        return nodeJson;
-    }
-
-    void ConversationalAgent::deserializeNode(json nodeJson) {
-        LogicNode::deserializeNode(nodeJson);
-        setSystemInstruction(nodeJson["SystemInstruction"]);
-    }
-
     void ConversationalAgent::ApplyDefaultSettings() {
         SetName("ConversationalAgent");
         setSystemInstruction("You are Alpha-Agent. Write down your instructions here...");

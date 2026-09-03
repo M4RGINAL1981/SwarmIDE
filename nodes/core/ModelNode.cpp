@@ -47,16 +47,8 @@ namespace SwarmIDE::Nodes {
         }
     }
 
-    json ModelNode::serializeNode() {
-        json nodeJson = LogicNode::serializeNode();
-        nodeJson["ModelID"] = getTargetModelID();
-        
-        return nodeJson;
-    }
-
-    void ModelNode::deserializeNode(json nodeJson) {
-        LogicNode::deserializeNode(nodeJson);
-        setTargetModelID(nodeJson["ModelID"]);
+    std::vector<Core::PropertyDescriptor> ModelNode::properties() { 
+        return { Prop("modelID", "Model", Core::PropertyKind::ModelRef, modelID) };
     }
 
     void ModelNode::ApplyDefaultSettings() {

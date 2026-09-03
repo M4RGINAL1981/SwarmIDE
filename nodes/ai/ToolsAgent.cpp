@@ -55,18 +55,6 @@ namespace SwarmIDE::Nodes {
         }
     }
 
-    json ToolsAgent::serializeNode() {
-        json nodeJson = LogicNode::serializeNode();
-        nodeJson["SystemInstruction"] = getSystemInstruction();
-        
-        return nodeJson;
-    }
-
-    void ToolsAgent::deserializeNode(json nodeJson) {
-        LogicNode::deserializeNode(nodeJson);
-        setSystemInstruction(nodeJson["SystemInstruction"]);
-    }
-
     void ToolsAgent::ApplyDefaultSettings() {
         SetName("ToolsAgent");
         setSystemInstruction("You are Alpha-Agent. Write down your instructions here...");

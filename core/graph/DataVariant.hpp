@@ -56,7 +56,7 @@ namespace SwarmIDE::Core {
          * - `nlohmann::json` — Сложные структуры (ответы от Jira, Telegram, конфигурации).
          * - `void*` — Сырой указатель для передачи специфичных системных объектов.
          */
-        using VariantType = std::variant<std::monostate, int, float, std::string, nlohmann::json, void*>;
+        using VariantType = std::variant<std::monostate, int, float, bool, std::string, nlohmann::json, void*>;
 
         /**
          * @brief Конструктор по умолчанию. Инициализирует контейнер в состоянии "пусто" (std::monostate).
@@ -80,7 +80,7 @@ namespace SwarmIDE::Core {
          * @see isType()
          */
         template<typename T>
-        T getValue() { // Извлечение значения
+        T getValue() const { // Извлечение значения
             if(!std::holds_alternative<T>(data)) {
                 throw VariantTypeMismatchException(typeid(data), "Type mismatch in DataVariant");
             }
@@ -94,7 +94,7 @@ namespace SwarmIDE::Core {
          * @return false Если тип отличается.
          */
         template<typename T>
-        bool isType() { // Проверка типа значения
+        bool isType() const { // Проверка типа значения
             if(!std::holds_alternative<T>(data)) return false;
             return true;
         }
@@ -104,7 +104,7 @@ namespace SwarmIDE::Core {
          * @return true Если контейнер пуст (`std::monostate`).
          * @return false Если внутри лежат валидные данные любого другого типа.
          */
-        bool isEmpty() { 
+        bool isEmpty() const { 
             if(!std::holds_alternative<std::monostate>(data)) return false;
             return true;
         }

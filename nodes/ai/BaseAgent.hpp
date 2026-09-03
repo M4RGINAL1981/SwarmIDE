@@ -36,6 +36,15 @@ namespace SwarmIDE::Nodes {
          */
         void setSystemInstruction(std::string system_instruction) { systemInstruction = system_instruction; }
 
+        /**
+         * @brief 
+         * @return std::vector<Core::PropertyDescriptor> 
+         */
+        virtual std::vector<Core::PropertyDescriptor> properties() override;
+
+        json serializeNode();          
+        void deserializeNode(const json&);
+
     private:
         std::string systemInstruction; /** @brief < Системные настройки агента */
     };

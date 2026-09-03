@@ -28,19 +28,7 @@ namespace SwarmIDE::Nodes {
          * @brief Выдать строковый тип ноды
          * @return std::string Строковый тип ноды
          */
-        std::string getTypeName() override { return "ToolsAgent"; };
-
-        /**
-         * @brief Выгрузка ноды в json
-         * @return json 
-         */
-        virtual json serializeNode() override;
-
-        /**
-         * @brief Загрузка ноды из json
-         * @param[in] jsonNode 
-         */
-        virtual void deserializeNode(json jsonNode) override;
+        std::string getTypeName() override { return "PlanExecuteAgent"; };
         
         /**
          * @brief Устанвоить стандартные настройки ноды

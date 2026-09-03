@@ -29,19 +29,7 @@ namespace SwarmIDE::Nodes {
          * @return std::string Строковый тип ноды
          */
         std::string getTypeName() override { return "ConversationalAgent"; }
-
-        /**
-         * @brief Выгрузка ноды в json
-         * @return json 
-         */
-        virtual json serializeNode() override;
-
-        /**
-         * @brief Загрузка ноды из json
-         * @param[in] jsonNode 
-         */
-        virtual void deserializeNode(json jsonNode) override;
-
+        
         /**
          * @brief Установить стандартные настройки ноды
          */

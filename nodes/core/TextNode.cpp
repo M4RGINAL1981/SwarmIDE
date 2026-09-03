@@ -37,17 +37,9 @@ namespace SwarmIDE::Nodes {
             Core::LoggingManager::FailedNode("TextNode", GetID()); 
         }
     }
-
-    json TextNode::serializeNode() {
-        json nodeJson = LogicNode::serializeNode();
-        nodeJson["text"] = getText();
-            
-        return nodeJson;
-    }
-
-    void TextNode::deserializeNode(json nodeJson) {
-        LogicNode::deserializeNode(nodeJson);
-        setText(nodeJson["text"]);
+    
+    std::vector<Core::PropertyDescriptor> TextNode::properties() { 
+        return { Prop("text", "Text", Core::PropertyKind::MultilineText, text) };
     }
 
     void TextNode::ApplyDefaultSettings() {

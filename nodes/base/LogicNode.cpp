@@ -76,10 +76,13 @@ namespace SwarmIDE::Nodes {
         return jsonLogicNode;
     }
 
-    void LogicNode::deserializeNode(json jsonLogicNode) {
-        id = UUIDv4::UUID(jsonLogicNode["id"].get<std::string>());
-        name = jsonLogicNode["name"];
-        state = jsonLogicNode["state"];
+    void LogicNode::deserializeNode(const json& jsonLogicNode) {
+
+        if(jsonLogicNode.contains("id")) id = UUIDv4::UUID(jsonLogicNode.at("id").get<std::string>());
+        else MakeNewID(); 
+
+        name = jsonLogicNode.value("name", "Unknown Name"); 
+        state = jsonLogicNode.value("state", State::Idle);
 
         std::unordered_map<UUIDv4::UUID, std::unique_ptr<Core::LogicPin>> newPinsMap;
 

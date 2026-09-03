@@ -228,10 +228,7 @@ namespace SwarmIDE::UI {
                     }
                 }
 
-                if (!batchCmd->IsEmpty()) {
-                    command_bus.PushAndExecute(std::move(batchCmd));
-                }
-
+                if (!batchCmd->IsEmpty()) command_bus.PushAndExecute(std::move(batchCmd));
                 activeLinkContext.Reset();
             }
         }
@@ -371,7 +368,7 @@ namespace SwarmIDE::UI {
                     }
                 }
 
-                command_bus.PushAndExecute(std::move(batchCmd));
+                if (!batchCmd->IsEmpty()) command_bus.PushAndExecute(std::move(batchCmd));
             }
         }
 
