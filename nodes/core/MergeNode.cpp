@@ -76,5 +76,5 @@ namespace SwarmIDE::Nodes {
     }
 
     // РЕГИСТРАЦИЯ НОДЫ В ФАБРИКЕ
-    REGISTER_NODE(MergeNode, "MergeNode");
+    REGISTER_NODE(MergeNode, "MergeNode", "Merge", "CORE");
 }

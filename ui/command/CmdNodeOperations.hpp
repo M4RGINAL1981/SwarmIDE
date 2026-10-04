@@ -29,7 +29,8 @@ namespace SwarmIDE::UI::Command {
          * @param[in] nodeName Имя для создания новой ноды через GraphRegistry.
          * @param[in] worldPos Положение ноды на экране.
          */
-        CmdCreateNode(const std::string& typeName, const std::string& nodeName, const glm::vec2& worldPos);
+        CmdCreateNode(const std::string& typeName, const glm::vec2& worldPos);
+        UUIDv4::UUID GetNodeID() const { return nodeID; }
 
         /**
          * @brief Создаёт ноду
@@ -45,7 +46,6 @@ namespace SwarmIDE::UI::Command {
         bool m_isFirstExecution = true;                              /** @brief < Первый ли это запуск */
         
         std::string typeName;                                        /** @brief < Тип ноды */
-        std::string nodeName;                                        /** @brief < Имя ноды */
         UUIDv4::UUID nodeID;                                         /** @brief < ID ноды */
         glm::vec2 worldPos = glm::vec2(0.0f, 0.0f);                  /** @brief < Положение ноды на экране */
         std::unique_ptr<Nodes::LogicNode> cachedNode = nullptr;      /** @brief < Кэш для ноды */

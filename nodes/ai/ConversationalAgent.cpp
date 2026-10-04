@@ -59,5 +59,5 @@ namespace SwarmIDE::Nodes {
     }
 
     // РЕГИСТРАЦИЯ НОДЫ В ФАБРИКЕ
-    REGISTER_NODE(ConversationalAgent, "ConversationalAgent");
+    REGISTER_NODE(ConversationalAgent, "ConversationalAgent", "Conversational Agent", "AGENTS");
 }

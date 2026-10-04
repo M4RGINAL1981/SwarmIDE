@@ -2,7 +2,10 @@
 #include "ui/windows/Menu.hpp"
 #include "imgui.h"
 #include "ui/command/CmdNodeOperations.hpp"
+#include "ui/command/CmdBatch.hpp"
+#include "ui/command/CmdSetProperty.hpp"
 #include "ui/command/CommandBus.hpp"
+#include "core/graph/GraphRegistry.hpp"
 #include "core/models/ModelManager.hpp"
 #include "ui/windows/ThemeManager.hpp"
 #include "graphics/Camera.hpp"
@@ -17,7 +20,6 @@ namespace SwarmIDE::UI {
     void Menu::Draw(Graphics::Camera* camera) {
         auto& theme = ThemeManager::getInstance();
         auto& command_bus = Command::CommandBus::getInstance();
-        auto& model_manager = Core::ModelManager::getInstance();
 
         // Установка глобальных цветов меню (оттенки серого)
         /** @todo В будущем сделать загрузку всех цветов из ThemeManager */
@@ -66,18 +68,20 @@ namespace SwarmIDE::UI {
         ImGui::Dummy(ImVec2(0.0f, 5.0f));
 
         // Универсальная функция отрисовки категорий без стрелок и лишних кнопок
-        auto DrawCategory = [&](const char* title, const std::vector<std::string>& items, auto spawnAction) {
+        auto DrawCategory = [&](const std::string& title, const auto& items, auto spawnAction) {
             // Заголовок категории жирным, более темным серым шрифтом
             if (theme.GetFontBold()) ImGui::PushFont(theme.GetFontBold());
-            ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "%s", title);
+            ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "%s", title.c_str());
             if (theme.GetFontBold()) ImGui::PopFont();
             
             ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
             for (const auto& item : items) {
+                if (title == "COGNITIVE MODELS") continue;
+                const std::string& itemName = item.displayName;
                 // Фильтрация по поиску
                 if (strlen(searchBuffer) > 0) {
-                    std::string itemLower = item;
+                    std::string itemLower = itemName;
                     std::string searchLower = searchBuffer;
                     std::transform(itemLower.begin(), itemLower.end(), itemLower.begin(), ::tolower);
                     std::transform(searchLower.begin(), searchLower.end(), searchLower.begin(), ::tolower);
@@ -85,42 +89,35 @@ namespace SwarmIDE::UI {
                 }
 
                 // Спавн по клику на элемент
-                if (ImGui::Selectable(item.c_str(), false, 0, ImVec2(0, 25.0f))) {
+                if (ImGui::Selectable(itemName.c_str(), false, 0, ImVec2(0, 25.0f))) {
                     spawnAction(item);
                 }
             }
             ImGui::Dummy(ImVec2(0.0f, 10.0f));
         };
 
-        // --- КАТЕГОРИЯ 1: AGENTS ---
-        DrawCategory("AGENTS", { "ConversationalAgent", "ToolsAgent", "PlanExecuteAgent" }, [&](const std::string& name) {
-            command_bus.PushAndExecute(std::make_unique<Command::CmdCreateNode>(name, name, centerWorldPos));
-        });
-        ImGui::Separator();
+        for (const auto& [category, items] : Core::GraphRegistry::getInstance().getTypesByCategory()) {
+            DrawCategory(category, items, [&](const Core::GraphRegistry::NodeTypeInfo& info) {
+                if (category == "COGNITIVE MODELS") return;
+                command_bus.PushAndExecute(std::make_unique<Command::CmdCreateNode>(info.typeName, centerWorldPos));
+            });
 
-        // --- КАТЕГОРИЯ 2: CORE ---
-        DrawCategory("CORE", { "TextNode", "MergeNode"}, [&](const std::string& name) {
-            command_bus.PushAndExecute(std::make_unique<Command::CmdCreateNode>(name, name, centerWorldPos));
-        });
-        ImGui::Separator();
-
-        // --- КАТЕГОРИЯ 3: MODELS ---
-        auto& allAssets = model_manager.getAllAssets();
-        std::vector<std::string> modelNames;
-        for (const auto& asset : allAssets) {
-            modelNames.push_back(asset->name);
+            if (category == "COGNITIVE MODELS") {
+                const auto& assets = Core::ModelManager::getInstance().getAllAssets();
+                for (const auto& asset : assets) {
+                    if (strlen(searchBuffer) > 0 && asset->name.find(searchBuffer) == std::string::npos) continue;
+                    if (ImGui::Selectable(asset->name.c_str(), false, 0, ImVec2(0, 25.0f))) {
+                        auto create = std::make_unique<Command::CmdCreateNode>("ModelNode", centerWorldPos);
+                        auto* createPtr = create.get();
+                        auto batch = std::make_unique<Command::CmdBatch>();
+                        batch->AddCommand(std::move(create));
+                        batch->AddCommand(std::make_unique<Command::CmdSetProperty>(createPtr, "modelID", Core::DataVariant(asset->id)));
+                        command_bus.PushAndExecute(std::move(batch));
+                    }
+                }
+            }
+            ImGui::Separator();
         }
-        DrawCategory("COGNITIVE MODELS", modelNames, [&](const std::string& name) {
-            command_bus.PushAndExecute(std::make_unique<Command::CmdCreateNode>("ModelNode", name, centerWorldPos));
-        });
-        ImGui::Separator();
-
-        // --- КАТЕГОРИЯ 3: MEMORY ---
-        DrawCategory("STORAGE & MEMORY", { "PostgreSQL" }, [](const std::string&) { /** @todo Нужно будет сделать в будушем */ });
-        ImGui::Separator();
-
-        // --- КАТЕГОРИЯ 4: TOOLS ---
-        DrawCategory("EXTERNAL TOOLS", { "JiraSoftware" }, [](const std::string&) { /** @todo Нужно будет сделать в будушем */ });
 
         ImGui::End();
 

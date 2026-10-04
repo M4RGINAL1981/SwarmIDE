@@ -7,6 +7,8 @@
 #include <memory>         
 #include <functional>     
 #include <unordered_map>  
+#include <map>
+#include <algorithm>
 
 namespace SwarmIDE::Core {
 
@@ -25,6 +27,16 @@ namespace SwarmIDE::Core {
      */
     class GraphRegistry {   // Фабрика объектов
     public:
+        struct NodeTypeInfo {
+            enum class ShapeHint { Auto, Rectangle, Circle, D };
+
+            std::string typeName;
+            std::string displayName;
+            std::string category;
+            std::string iconPath;
+            ShapeHint shape = ShapeHint::Auto;
+        };
+
         /**
          * @brief Глобальная точка доступа к единственному экземпляру фабрики GraphRegistry.
          * @return GraphRegistry& Ссылка на синглтон регистратора.
@@ -34,12 +46,12 @@ namespace SwarmIDE::Core {
         /**
          * @brief Регистрирует новый тип узла в системе, связывая его с функцией-создателем.
          * 
-         * @param[in] typeName Уникальный строковый идентификатор типа (например, "JiraSoftware").
+         * @param[in] info Метаданные зарегистрированного типа ноды.
          * @param[in] creator Функция-лямбда, возвращающая `std::unique_ptr<Nodes::LogicNode>` для этого типа.
          * 
          * @note Обычно вызывается автоматически на этапе инициализации приложения через макрос авторегистрации.
          */
-        void registerNode(const std::string& typeName, std::function<std::unique_ptr<Nodes::LogicNode>()> creator);
+        void registerNode(NodeTypeInfo info, std::function<std::unique_ptr<Nodes::LogicNode>()> creator);
 
         /**
          * @brief Динамически создает и возвращает новый экземпляр узла по его типу.
@@ -60,6 +72,9 @@ namespace SwarmIDE::Core {
          * @return std::vector<std::string> Список доступных строковых идентификаторов.
          */
         std::vector<std::string> getRegisteredNodeTypes();
+        std::vector<NodeTypeInfo> getRegisteredNodeInfos() const;
+        std::map<std::string, std::vector<NodeTypeInfo>> getTypesByCategory() const;
+        const NodeTypeInfo* findNodeTypeInfo(const std::string& typeName) const;
 
         // Запрещаем дублирование синглтона фабрики
         GraphRegistry(const GraphRegistry&) = delete;
@@ -71,8 +86,12 @@ namespace SwarmIDE::Core {
         GraphRegistry() { Core::LoggingManager::Info("[GRAPH_REGISTRY]: Constructor"); }
         ~GraphRegistry() { Core::LoggingManager::Info("[GRAPH_REGISTRY]: Destructor");}
 
-        /** @brief Внутренняя хэш-таблица, связывающая имя типа ноды с её фабричной функцией. */
-        std::unordered_map<std::string, std::function<std::unique_ptr<Nodes::LogicNode>()>> storage;
+        struct RegisteredNode {
+            NodeTypeInfo info;
+            std::function<std::unique_ptr<Nodes::LogicNode>()> creator;
+        };
+
+        std::unordered_map<std::string, RegisteredNode> storage;
     };
 
     /**
@@ -85,16 +104,20 @@ namespace SwarmIDE::Core {
      * **Пример использования:**
      * @code
      * // Внутри файла ConversationalAgent.cpp:
-     * REGISTER_NODE(ConversationalAgent, "ConversationalAgent")
+    * REGISTER_NODE(ConversationalAgent, "ConversationalAgent", "Conversational Agent", "AGENTS")
      * @endcode
      * 
-     * @param NodeType Настоящий C++ тип (класс) вашей ноды.
-     * @param TypeNameString Строковое имя для регистрации на холсте и в JSON-конфигах.
+    * @param[in] nodeClass C++ класс узла.
+    * @param[in] registeredTypeName Строковый идентификатор типа.
+    * @param[in] displayName Читаемое имя узла для UI.
+    * @param[in] category Категория узла для группировки в меню.
      */
-    #define REGISTER_NODE(NodeType, TypeNameString) \
-    static bool NodeType##_registered = []() { \
-        SwarmIDE::Core::GraphRegistry::getInstance().registerNode(TypeNameString, []() -> std::unique_ptr<SwarmIDE::Nodes::LogicNode> { \
-            return std::make_unique<NodeType>(TypeNameString); \
+    #define REGISTER_NODE(nodeClass, registeredTypeName, displayName, category) \
+    static bool nodeClass##_registered = []() { \
+        SwarmIDE::Core::GraphRegistry::getInstance().registerNode( \
+            {registeredTypeName, displayName, category, {}, SwarmIDE::Core::GraphRegistry::NodeTypeInfo::ShapeHint::Auto}, \
+            []() -> std::unique_ptr<SwarmIDE::Nodes::LogicNode> { \
+            return std::make_unique<nodeClass>(registeredTypeName); \
         }); \
         return true; \
     }();

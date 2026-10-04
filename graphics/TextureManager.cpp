@@ -6,8 +6,6 @@
 #include <iostream>
 
 namespace SwarmIDE::Graphics {
-
-    /*
     TextureManager& TextureManager::getInstance() {
         static TextureManager instance;
         return instance;
@@ -38,7 +36,7 @@ namespace SwarmIDE::Graphics {
             // Отвязываем текстуру, чтобы случайно не сломать что-то другое
             glBindTexture(GL_TEXTURE_2D, 0);
 
-            textura.id = gl_tex_id; // <-- ВОТ ТЕПЕРЬ ID ПРАВИЛЬНЫЙ! Это дескриптор OpenGL.
+            textura.id = static_cast<ImTextureID>(gl_tex_id);
             
             // Пиксели в RAM нам больше не нужны, они уже на видеокарте. Освобождаем!
             stbi_image_free(textura.data);
@@ -71,7 +69,6 @@ namespace SwarmIDE::Graphics {
             }
         }
     }
-    */
 }
 
 

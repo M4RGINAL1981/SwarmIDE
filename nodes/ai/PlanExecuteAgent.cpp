@@ -61,5 +61,5 @@ namespace SwarmIDE::Nodes {
     }
 
     // РЕГИСТРАЦИЯ НОДЫ В ФАБРИКЕ
-    REGISTER_NODE(PlanExecuteAgent, "PlanExecuteAgent");
+    REGISTER_NODE(PlanExecuteAgent, "PlanExecuteAgent", "PlanExecute Agent", "AGENTS");
 }

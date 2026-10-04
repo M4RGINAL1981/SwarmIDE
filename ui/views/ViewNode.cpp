@@ -3,6 +3,8 @@
 #include "ui/views/Shape/BaseShape.hpp"
 #include "core/graph/GraphManager.hpp"
 #include "core/engine/LoggingManager.hpp"
+#include "core/models/ModelManager.hpp"
+#include "core/graph/GraphRegistry.hpp"
 
 #include "ui/views/Shape/CircleShape.hpp"
 #include "ui/views/Shape/RectangleShape.hpp"
@@ -100,14 +102,17 @@ namespace SwarmIDE::UI {
             viewPins[pin->GetID()] = (std::make_unique<ViewPin>(pin->GetID(), localPos, normal));
         }
 
-        // 5. Логика определения фигуры на основе топологии
+        auto* typeInfo = Core::GraphRegistry::getInstance().findNodeTypeInfo(newNode->getTypeName());
+        auto shapeHint = typeInfo ? typeInfo->shape : Core::GraphRegistry::NodeTypeInfo::ShapeHint::Auto;
         int totalPins = leftPins.size() + rightPins.size() + topPins.size() + bottomPins.size();
 
-        if (totalPins == 1 && rightPins.size() == 1) {
+        if (shapeHint == Core::GraphRegistry::NodeTypeInfo::ShapeHint::D ||
+            (shapeHint == Core::GraphRegistry::NodeTypeInfo::ShapeHint::Auto && totalPins == 1 && rightPins.size() == 1)) {
             // 0 входов, 1 выход DataStream -> D-Образная фигура
             shape = std::make_unique<Shape::DShape>();
         }
-        else if (totalPins == 1 && topPins.size() == 1) {
+        else if (shapeHint == Core::GraphRegistry::NodeTypeInfo::ShapeHint::Circle ||
+             (shapeHint == Core::GraphRegistry::NodeTypeInfo::ShapeHint::Auto && totalPins == 1 && topPins.size() == 1)) {
             // 0 входов, 1 выход не-DataStream -> Круг
             shape = std::make_unique<Shape::CircleShape>();
         }
@@ -131,6 +136,27 @@ namespace SwarmIDE::UI {
 
         // Передаем scaledSize вместо статичного nodeSize
         shape->DrawBackground(drawList, screenPos, scaledSize, zoom, state, isHovered, isSelected);
+
+        std::string iconPath;
+        if (auto* typeInfo = Core::GraphRegistry::getInstance().findNodeTypeInfo(
+                Core::GraphManager::getInstance().findNodeByID(nodeID)->getTypeName())) {
+            iconPath = typeInfo->iconPath;
+        }
+        auto logicNode = Core::GraphManager::getInstance().findNodeByID(nodeID);
+        if (logicNode && logicNode->getTypeName() == "ModelNode") {
+            auto modelProperty = Core::ModelManager::getInstance().getAssetByID(
+                logicNode->properties().front().get().getValue<std::string>());
+            if (modelProperty) iconPath = modelProperty->fileIcon;
+        }
+        if (!iconPath.empty()) {
+            auto& textures = Graphics::TextureManager::getInstance();
+            textures.loadTexture(iconPath, iconPath);
+            if (auto texture = textures.getTexture(iconPath)) {
+                ImVec2 iconSize(24.0f * zoom, 24.0f * zoom);
+                ImVec2 iconPos(screenPos.x + (scaledSize.x - iconSize.x) * 0.5f, screenPos.y + 8.0f * zoom);
+                drawList->AddImage(texture->id, iconPos, ImVec2(iconPos.x + iconSize.x, iconPos.y + iconSize.y));
+            }
+        }
 
         // Отрисовка пинов
         for(auto& [id, viewPin] : viewPins) {

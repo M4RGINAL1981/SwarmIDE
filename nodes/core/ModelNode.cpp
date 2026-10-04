@@ -61,5 +61,5 @@ namespace SwarmIDE::Nodes {
     }
 
     // РЕГИСТРАЦИЯ НОДЫ В ФАБРИКЕ
-    REGISTER_NODE(ModelNode, "ModelNode");
+    REGISTER_NODE(ModelNode, "ModelNode", "Model", "COGNITIVE MODELS");
 }

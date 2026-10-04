@@ -48,5 +48,5 @@ namespace SwarmIDE::Nodes {
     }
 
     // РЕГИСТРАЦИЯ НОДЫ В ФАБРИКЕ
-    REGISTER_NODE(TextNode, "TextNode");
+    REGISTER_NODE(TextNode, "TextNode", "Text", "CORE");
 }

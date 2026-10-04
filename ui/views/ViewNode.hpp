@@ -4,6 +4,7 @@
 #include "ui/views/Shape/BaseShape.hpp"
 #include "ui/views/ViewPin.hpp"
 #include "ui/windows/ThemeManager.hpp"
+#include "graphics/TextureManager.hpp"
 #include "glm/glm.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"

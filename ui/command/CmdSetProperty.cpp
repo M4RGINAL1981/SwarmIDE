@@ -1,6 +1,7 @@
 #include "SwarmIDE.hpp"
 #include "ui/command/CmdSetProperty.hpp"
 #include "core/graph/GraphManager.hpp"
+#include "ui/command/CmdNodeOperations.hpp"
 
 namespace SwarmIDE::UI::Command {
 
@@ -10,8 +11,12 @@ namespace SwarmIDE::UI::Command {
         this->newValue = newValue;
     }
 
+    CmdSetProperty::CmdSetProperty(CmdCreateNode* createCommand, std::string key, Core::DataVariant newValue)
+        : key(std::move(key)), newValue(std::move(newValue)), createCommand(createCommand) {}
+
 
     void CmdSetProperty::Execute() {
+        if (createCommand) nodeID = createCommand->GetNodeID();
         auto logicNode = Core::GraphManager::getInstance().findNodeByID(nodeID);
         if (!logicNode) return;
 

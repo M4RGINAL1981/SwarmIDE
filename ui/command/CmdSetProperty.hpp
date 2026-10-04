@@ -5,11 +5,14 @@
 
 #include "uuid_v4/uuid_v4.h"
 
+namespace SwarmIDE::UI::Command { class CmdCreateNode; }
+
 namespace SwarmIDE::UI::Command {
 
     class CmdSetProperty : public Cmd {
     public:
         CmdSetProperty(UUIDv4::UUID nodeID, std::string key, Core::DataVariant newValue);
+        CmdSetProperty(CmdCreateNode* createCommand, std::string key, Core::DataVariant newValue);
 
         /**
          * @brief Установить новое значение для ноды
@@ -28,6 +31,7 @@ namespace SwarmIDE::UI::Command {
         Core::DataVariant oldValue;        /** @brief < Старое значение для ноды. */
         Core::DataVariant newValue;        /** @brief < Новое значение для ноды. */
         bool hasOldValue = false;
+        CmdCreateNode* createCommand = nullptr;
     };
 
 }

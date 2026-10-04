@@ -61,5 +61,5 @@ namespace SwarmIDE::Nodes {
     }
 
     // РЕГИСТРАЦИЯ НОДЫ В ФАБРИКЕ
-    REGISTER_NODE(ToolsAgent, "ToolsAgent");
+    REGISTER_NODE(ToolsAgent, "ToolsAgent", "Tools Agent", "AGENTS");
 }

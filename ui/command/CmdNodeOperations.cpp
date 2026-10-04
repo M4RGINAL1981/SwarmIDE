@@ -11,7 +11,7 @@ namespace SwarmIDE::UI::Command {
                 CMD_CREATE_NODE
        ######################################## */
 
-    CmdCreateNode::CmdCreateNode(const std::string& typeName, const std::string& nodeName, const glm::vec2& worldPosNode) : typeName(typeName), nodeName(nodeName), worldPos(worldPosNode) {}
+    CmdCreateNode::CmdCreateNode(const std::string& typeName, const glm::vec2& worldPosNode) : typeName(typeName), worldPos(worldPosNode) {}
 
     void CmdCreateNode::Execute() {
         Core::LoggingManager::Info("[CREATE]: Node create.");

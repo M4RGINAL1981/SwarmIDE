@@ -5,12 +5,13 @@
 #include <unordered_map>
 #include <string>
 #include <optional>
+#include "imgui.h"
 
 namespace SwarmIDE::Graphics {
 
     struct Texture {
         unsigned char* data;   // Сама Иконки/Текстура
-        UUIDv4::UUID id;       // id Иконки/Текстуры
+        ImTextureID id = 0; // OpenGL/ImGui id Иконки/Текстуры
         int width;             // Ширина Иконки/Текстуры
         int height;            // Высота Иконки/Текстуры
         int channels;          // Кол-во каналов Иконки/Текстуры
