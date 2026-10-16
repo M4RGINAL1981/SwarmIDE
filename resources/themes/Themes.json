@@ -1,0 +1,102 @@
+{
+    "themes": [
+
+        {
+            "ThemeName": "Dark (Default)",
+            "Grid": {
+                "BackgroundColor": "#1E1E1E",
+                "LineColor":       "#2A2A2A",
+                "Step":            50.0,
+                "Thickness":       1.5
+            },
+            "Menu": {
+                "BackgroundColor": "#252526d1",
+                "Rounding":        0.1,
+                "BorderColor":     "#333333"
+            },
+            "Node": {
+                "Rounding":        8.0,
+                "BorderThickness": 1.0,
+                "BorderColor":     "#000000",
+                "HoverColor":      "#3F3F46",
+                "States": {
+                    "Idle":        "#333333",
+                    "Waiting":     "#D7BA7D",
+                    "Executing":   "#007ACC",
+                    "Success":     "#4CAF50",
+                    "Failed":      "#b5352c"
+                }
+            },
+            "Notification": {
+                "NotificationInfo":       "#00CCCC80",
+                "NotificationWarning":    "#F3E60080",
+                "NotificationError":      "#B5352C80"
+            },
+            "Pin": {
+                "Radius":          5.0,
+                "Shape":           "Circle",
+                "ColorDefault":    "#999999",
+                "ColorHover":      "#FFFFFF"
+            },
+            "Connection": {
+                "Thickness":       9.0,
+                "Strength":        25.0,
+                "Style":           "Solid",
+                "Color":           "#a0a0a0"
+            }
+        },
+        {
+            "ThemeName": "Light (Default)",
+            "Grid": {
+                "BackgroundColor": "#F5F5F5",
+                "LineColor":       "#E0E0E0",
+                "Step":            50.0,
+                "Thickness":       1.5
+            },
+            "Menu": {
+                "BackgroundColor": "#FFFFFFD1",
+                "Rounding":        0.1,
+                "BorderColor":     "#CCCCCC"
+            },
+            "Node": {
+                "Rounding":        8.0,
+                "BorderThickness": 1.0,
+                "BorderColor":     "#B0B0B0",
+                "HoverColor":      "#E5E5E5",
+                "States": {
+                    "Idle":        "#EFEFEF",
+                    "Waiting":     "#F1C40F",
+                    "Executing":   "#2980B9",
+                    "Success":     "#2ECC71",
+                    "Failed":      "#E74C3C"
+                }
+            },
+            "Notification": {
+                "NotificationInfo":       "#2980B980",
+                "NotificationWarning":    "#F1C40F80",
+                "NotificationError":      "#E74C3C80"
+            },
+            "Pin": {
+                "Radius":          5.0,
+                "Shape":           "Circle",
+                "ColorDefault":    "#7F8C8D",
+                "ColorHover":      "#333333"
+            },
+            "Connection": {
+                "Thickness":       9.0,
+                "Strength":        25.0,
+                "Style":           "Solid",
+                "Color":           "#7F8C8D"
+            }
+        },
+
+        {
+            "ThemeName": "Cyberpunk",
+            "Node": {
+                "States": {
+                    "Waiting":     "#F3E600"
+                }
+            }
+        }
+    ]
+}

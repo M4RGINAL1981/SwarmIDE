@@ -2,27 +2,41 @@
 .venv/
 ENV/
 
-# Настройки редакторов
+# Настройки редакторов и IDE
 .vscode/
+.vs/
+*.user
+*.suo
+*.sln
 
 # Временные файлы систем и ImGui
 desktop.ini
 imgui.ini
 
-# Сборка и бинарники
+# Сборка и бинарники проекта
 build/
 bin/
 obj/
 out/
-.vs/
-*.user
-*.sln
-
-# Внешние библиотеки (если они лежат локально и качаются отдельно)
-external/
-
-# Модели
-resources/
 
 # Логи и временные файлы
 *.log
+
+# Модели ИИ (не заливаем гигабайтные файлы весов .gguf!)
+resources/models/
+*.gguf
+
+# Игнорируем результаты сборки встроенного Doxygen
+doc_swarmide/
+html/
+latex/
+
+# --- ПРАВИЛЬНАЯ НАСТРОЙКА ДЛЯ EXTERNAL ---
+# Разрешаем загрузку исходного кода библиотек, но полностью отсекаем 
+# артефакты сборки, кэш CMake и бинарники внутри external папок.
+external/**/.cmake/
+external/**/CMakeCache.txt
+external/**/CMakeFiles/
+external/**/Makefile
+external/**/*.VisualX
+external/**/ipch/
